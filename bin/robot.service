@@ -1,0 +1,11 @@
+[Unit]
+Description=Robot
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/projects/robot/__main__.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

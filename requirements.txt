@@ -1,0 +1,4 @@
+numpy
+psutil
+python-dotenv
+OPi.GPIO

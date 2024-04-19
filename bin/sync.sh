@@ -1,0 +1,1 @@
+rsync -a --update --progress ~/Documents/RaspberryPi/projects/robot/ pi@pi:/home/pi/projects/robot

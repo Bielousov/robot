@@ -1,0 +1,19 @@
+v4
+
+INPUT
+-----
+0: awake
+1: exhaust
+2. stress
+3: cpu temp
+4: noise level
+
+
+OUTPUT
+------
+0: wakeup
+1: train
+2: blink
+3: alert
+4. anger
+5. joy

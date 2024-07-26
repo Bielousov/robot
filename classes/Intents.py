@@ -16,7 +16,7 @@ class Intents:
       'anger',
       'joy'
     ]
-    self.__treshold = ENV.INTENTS_THRESHOLD
+    self.__treshold = ENV.INTENTS_THRESHOLD * 1
     self.queue = Queue()
 
   def classify(self, decision):
@@ -32,8 +32,7 @@ class Intents:
     # print('Intents:', intents);
     for intent in intents:
       intentId, value = intent
-      threshold = self.__treshold * random.uniform(0.5, 1.5)
-      if value > threshold:
+      if value > self.__treshold:
         self.queue.put([intentId, value])
         handled = True
       break

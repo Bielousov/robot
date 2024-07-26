@@ -26,8 +26,9 @@ class IntentHandler:
     self.eyes.blink(confidenceScore)
 
   def joy(self, confidenceScore):
-    setStateIncrease('exhaust', -confidenceScore / 4 )
-    setStateIncrease('stress', confidenceScore / 4)
+    # TODO: smile
+    setStateIncrease('exhaust', -confidenceScore )
+    setStateIncrease('stress', - confidenceScore)
 
   def train(self, confidenceScore):
     self.eyes.wonder()

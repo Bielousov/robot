@@ -16,7 +16,7 @@ class Intents:
       'anger',
       'joy'
     ]
-    self.__treshold = ENV.INTENTS_THRESHOLD * 1
+    self.__treshold = float(ENV.INTENTS_THRESHOLD)
     self.queue = Queue()
 
   def classify(self, decision):

@@ -1,13 +1,13 @@
-from config import Config
+from config import ModelConfig
 from classes.Benchmark import Benchmark
 from classes.Decisions import Decisions
 
 testTrainingPerformance = Benchmark()
 
 decisions = Decisions(
-    modelPath = Config.MODEL_PATH,
-    trainingSetPath = Config.MODEL_DATA_PATH,
-    validationSetPath = Config.MODEL_DATA_VALIDATION_PATH,
+    modelPath = ModelConfig.MODEL_PATH,
+    trainingSetPath = ModelConfig.MODEL_DATA_PATH,
+    validationSetPath = ModelConfig.MODEL_DATA_VALIDATION_PATH,
     trainingEpochs = 1000,
 )
 

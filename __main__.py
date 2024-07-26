@@ -1,6 +1,6 @@
 import numpy as np, signal, sys, time
 
-from config import Config, ENV
+from config import ModelConfig, ENV
 from intents import IntentHandler
 from threads import DecisionThread, EyesThread, IntentsThread
 from state import cleanupState
@@ -13,9 +13,9 @@ np.set_printoptions(suppress=True)
 
 eyes = Eyes()
 decisions = Decisions(
-    modelPath = Config.MODEL_PATH,
-    trainingSetPath = Config.MODEL_DATA_PATH,
-    validationSetPath = Config.MODEL_DATA_VALIDATION_PATH,
+    modelPath = ModelConfig.MODEL_PATH,
+    trainingSetPath = ModelConfig.MODEL_DATA_PATH,
+    validationSetPath = ModelConfig.MODEL_DATA_VALIDATION_PATH,
     trainingEpochs = ENV.TRAINING_EPOCHS,
 )
 intentHandler = IntentHandler(decisions, eyes)
@@ -33,7 +33,7 @@ def startup():
 def shutdown():
     print(ENV.NAME, "is leaving this world!")
     eyes.clear()
-    time.spleep(0.5)
+    time.sleep(0.5)
     threads.stop()
     cleanupState()
 

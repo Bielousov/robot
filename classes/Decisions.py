@@ -1,9 +1,7 @@
 from numpy import array, loadtxt
 
-from config import Config
+from config import ModelConfig
 from .NeuralNetwork import NeuralNetwork
-
-MODEL_ACCURACY_SAVE_THRESHOLD = 0.51
 
 class Decisions:
     def __init__(self, trainingSetPath, modelPath, validationSetPath, trainingEpochs = 1000):
@@ -13,9 +11,9 @@ class Decisions:
 
         self.trainingEpochs = trainingEpochs
 
-        self.neuralNetworkInputs = 5
-        self.neuralNetworkNeurons = [5, 10, 6]
-        self.neuralNetworkOutputs = 6
+        self.neuralNetworkInputs = ModelConfig.INPUTS
+        self.neuralNetworkNeurons = [ModelConfig.INPUTS, *ModelConfig.LAYERS, ModelConfig.OUTPUTS]
+        self.neuralNetworkOutputs = ModelConfig.OUTPUTS
 
     def __loadTrainingSet(self):
         try:
@@ -24,7 +22,7 @@ class Decisions:
             self.__trainingSetInputs = array(trainingSet[:,0:self.neuralNetworkInputs])
             self.__trainingSetOutputs = array(trainingSet[:,self.neuralNetworkInputs:self.neuralNetworkInputs + self.neuralNetworkOutputs])
         except FileNotFoundError:
-            print("Training data set file not found at", Config.MODEL_DATA_PATH)
+            print("Training data set file not found at", ModelConfig.MODEL_DATA_PATH)
     
     def __loadModel(self):
         if (self.modelPath):
@@ -63,7 +61,7 @@ class Decisions:
         )
         self.neuralNetwork.summary()
 
-        if self.neuralNetwork.accuracy > MODEL_ACCURACY_SAVE_THRESHOLD and self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy:
+        if self.neuralNetwork.accuracy > ModelConfig.TRAIN_THRESHOLD and self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy:
             self.__saveModel()
             return True
         else:

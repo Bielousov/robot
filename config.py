@@ -14,6 +14,17 @@ ENV = Enum (
   TRAINING_EPOCHS         = int(os.getenv('TRAINING_EPOCHS')),
 )
 
+ModelConfig = Enum (
+  INPUTS = 5,
+  LAYERS = [30],
+  OUTPUTS = 6,
+  TRAIN_THRESHOLD = 0.6,
+
+  MODEL_DATA_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-training.csv'),
+  MODEL_DATA_VALIDATION_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-validation.csv'),
+  MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models/build/decisions.model.npy'),
+)
+
 Config = Enum (
   MODEL_DATA_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-training.csv'),
   MODEL_DATA_VALIDATION_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-validation.csv'),

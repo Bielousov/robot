@@ -26,7 +26,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable robot.service
 sudo systemctl status robot.service
 
-sudo systemctl restart robot.servicel
+sudo systemctl restart robot.service
 ```
 
 ## Git Performance on board

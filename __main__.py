@@ -1,11 +1,11 @@
 import numpy as np, signal, sys, time
 
 from config import Config, ENV
+from intents import IntentHandler
 from threads import DecisionThread, EyesThread, IntentsThread
 from state import cleanupState
 from classes.Decisions import Decisions
 from classes.Eyes import Eyes
-from classes.IntentHandler import IntentHandler
 from classes.Intents import Intents
 from classes.Threads import Threads
 

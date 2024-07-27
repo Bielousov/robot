@@ -23,10 +23,13 @@ ModelConfig = Enum (
   MODEL_DATA_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-training.csv'),
   MODEL_DATA_VALIDATION_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-validation.csv'),
   MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models/build/decisions.model.npy'),
-)
 
-Config = Enum (
-  MODEL_DATA_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-training.csv'),
-  MODEL_DATA_VALIDATION_PATH = os.path.join(os.path.dirname(__file__), 'models/data/decisions-validation.csv'),
-  MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models/build/decisions.model.npy'),
+  MODEL_OUTPUT_ANNOTATION = [
+    'wakeup',
+    'train',
+    'blink',
+    'alert',
+    'anger',
+    'joy'
+  ]
 )

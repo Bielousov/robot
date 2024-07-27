@@ -1,6 +1,6 @@
 import random
 from queue import Queue
-from config import ENV
+from config import ENV, ModelConfig
 from .Enum import Enum
 
 class Intents:
@@ -8,16 +8,10 @@ class Intents:
     self.__biases = Enum(
       blink = 1,
     )
-    self.__intentsMap = [
-      'wakeup',
-      'train',
-      'blink',
-      'alert',
-      'anger',
-      'joy'
-    ]
+    self.__intentsMap = ModelConfig.MODEL_OUTPUT_ANNOTATION
     self.__treshold = float(ENV.INTENTS_THRESHOLD)
     self.queue = Queue()
+
 
   def classify(self, decision):
     intents = {}
@@ -32,7 +26,9 @@ class Intents:
     # print('Intents:', intents);
     for intent in intents:
       intentId, value = intent
-      if value > self.__treshold:
+      if value > self.__treshold * random.uniform(0.75, 1.25):
+        #dedupe
+        if self.queue.
         self.queue.put([intentId, value])
         handled = True
       break

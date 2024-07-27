@@ -7,28 +7,21 @@ class Intents:
   def __init__(self):
     self.__intentsMap = ModelConfig.MODEL_OUTPUT_ANNOTATION
     self.__treshold = float(ENV.INTENTS_THRESHOLD)
-    self.queue = Queue()
+    self.__queue = Queue()
 
   def __addDeduped(self, intentId, value):
     isDuplicate = False
-    size = self.queue.qsize()
+    size = self.__queue.qsize()
     for _ in range(size):
-      item = self.queue.get()
-      self.queue.put(item) 
+      item = self.__queue.get()
+      self.__queue.put(item) 
       if item[0] == intentId:
         isDuplicate = True
     if isDuplicate == False:
-      self.queue.put([intentId, value])
+      self.__queue.put([intentId, value])
+    self.__queue.task_done()
 
-  def classify(self, decision):
-    intents = {}
-    for idx, score in enumerate(decision):
-      if idx < len(self.__intentsMap):
-        intents[self.__intentsMap[idx]] = score
-    intents = sorted(intents.items(), key=lambda x: x[1], reverse=True)
-    self.handleIntents(intents)
-
-  def handleIntents(self, intents):
+  def __handleIntents(self, intents):
     handled = False
     # print('Intents:', intents);
     for intent in intents:
@@ -39,4 +32,18 @@ class Intents:
       break
     
     if handled == False:
-      self.queue.put(['noIntent', intents[0][1]])
+      self.__queue.put(['noIntent', intents[0][1]])
+
+  def classify(self, decision):
+    intents = {}
+    for idx, score in enumerate(decision):
+      if idx < len(self.__intentsMap):
+        intents[self.__intentsMap[idx]] = score
+    intents = sorted(intents.items(), key=lambda x: x[1], reverse=True)
+    self.__handleIntents(intents)
+
+  def getIntent(self):
+    return self.__queue.get()
+  
+  def doneProcessingIntent(self):
+    return self.__queue.task_done()

@@ -18,9 +18,9 @@ def IntentsThread(intents, intentHandler):
     threadInterval = 1 / int(ENV.INTENTS_FPS)
 
     def runThread():
-        intent, confidenceScore = intents.queue.get()
+        intent, confidenceScore = intents.getIntent()
         intentHandler.handle(intent, confidenceScore)
-        intents.queue.task_done()
+        intents.doneProcessingIntent()
     
     return Thread(threadInterval, runThread)
 

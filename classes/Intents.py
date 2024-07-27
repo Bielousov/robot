@@ -19,7 +19,6 @@ class Intents:
         isDuplicate = True
     if isDuplicate == False:
       self.__queue.put([intentId, value])
-    self.__queue.task_done()
 
   def __handleIntents(self, intents):
     handled = False
@@ -46,4 +45,4 @@ class Intents:
     return self.__queue.get()
   
   def doneProcessingIntent(self):
-    return self.__queue.task_done()
+    self.__queue.task_done()

@@ -5,14 +5,11 @@ from .Enum import Enum
 
 class Intents:
   def __init__(self):
-    self.__biases = Enum(
-      blink = 1,
-    )
     self.__intentsMap = ModelConfig.MODEL_OUTPUT_ANNOTATION
     self.__treshold = float(ENV.INTENTS_THRESHOLD)
     self.queue = Queue()
 
-  def __addDeduped__(self, intentId, value):
+  def __addDeduped(self, intentId, value):
     isDuplicate = False
     size = self.queue.qsize()
     for _ in range(size):
@@ -37,12 +34,9 @@ class Intents:
     for intent in intents:
       intentId, value = intent
       if value > self.__treshold * random.uniform(0.75, 1.25):
-        self.__addDeduped__([intentId, value])
+        self.__addDeduped(intentId, value)
         handled = True
       break
     
     if handled == False:
       self.queue.put(['noIntent', intents[0][1]])
-
-  def setBias(self, key, value):
-    self.__biases.set(key, value)

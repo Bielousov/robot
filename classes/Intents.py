@@ -12,6 +12,17 @@ class Intents:
     self.__treshold = float(ENV.INTENTS_THRESHOLD)
     self.queue = Queue()
 
+  def __addDeduped__(self, intentId, value):
+    isDuplicate = False
+    size = self.queue.qsize()
+    for _ in range(size):
+      item = self.queue.get()
+      self.queue.put(item) 
+      if item[0] == intentId:
+        isDuplicate = True
+    if isDuplicate == False:
+      self.queue.put([intentId, value])
+
   def classify(self, decision):
     intents = {}
     for idx, score in enumerate(decision):
@@ -26,7 +37,7 @@ class Intents:
     for intent in intents:
       intentId, value = intent
       if value > self.__treshold * random.uniform(0.75, 1.25):
-        self.queue.put([intentId, value])
+        self.__addDeduped__([intentId, value])
         handled = True
       break
     

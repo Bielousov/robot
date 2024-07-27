@@ -12,7 +12,6 @@ class Intents:
     self.__treshold = float(ENV.INTENTS_THRESHOLD)
     self.queue = Queue()
 
-
   def classify(self, decision):
     intents = {}
     for idx, score in enumerate(decision):
@@ -27,8 +26,6 @@ class Intents:
     for intent in intents:
       intentId, value = intent
       if value > self.__treshold * random.uniform(0.75, 1.25):
-        #dedupe
-        if self.queue.
         self.queue.put([intentId, value])
         handled = True
       break

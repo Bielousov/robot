@@ -1,6 +1,6 @@
 import numpy as np, os, signal, sys, time
 
-# Add the 'lib' directory to sys.path to ensure Lib1 and Lib2 can be imported
+# Add the 'lib' directory to sys.path to ensurethat libs can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../lib'))
 
 from config import ModelConfig, ENV

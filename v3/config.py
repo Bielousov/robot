@@ -5,6 +5,7 @@ from lib.Enum import Enum
 load_dotenv()
 
 ENV = Enum (
+  CHAT_FPS                = int(os.getenv('CHAT_FPS')),
   EYES_FPS                = int(os.getenv('EYES_FPS')),
   NAME                    = os.getenv('NAME'),
 )

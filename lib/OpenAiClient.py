@@ -5,7 +5,8 @@ class OpenAiClient:
         self.chatLog = []
         self.client = OpenAI()
         self.model = model
-        self.personality= personality
+        self.personality = personality
+        self.query = ""
 
         self.__reset__()
 
@@ -14,19 +15,24 @@ class OpenAiClient:
             "role": "system",
             "content": self.personality,
         }]
+
+    def setQuery(self, query):
+        self.query = query
     
-    def query(self, query):
-        if not query:
+    def runQuery(self):
+        if not self.query:
             return
         
         self.chatLog.append({
             "role": "user",
-            "content": query,
+            "content": self.query,
         })
 
         self.response = self.client.chat.completions.create(
             model=self.model,
             messages=self.chatLog
         )
+
+        print(">> OpenAI: ", self.response.choices[0].message.content)
 
         return self.response.choices[0].message.content

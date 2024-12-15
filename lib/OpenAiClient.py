@@ -3,7 +3,6 @@ from openai import OpenAI
 
 class OpenAiClient:
     def __init__(self):
-        self.response
         self.log = []
         self.client = OpenAI()
         self.model = "gpt-4o-mini"

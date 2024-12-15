@@ -19,7 +19,7 @@ def run():
     eyes.clear()
     threads.start(EyesThread(eyes))
 
-    print(OpenAiClient.message('indtroduce yourself'))
+    print(chatGPT.message('indtroduce yourself'))
 
 def shutdown():
     print("You killed " .ENV.NAME, ", hope you are happy!")

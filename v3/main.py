@@ -17,8 +17,9 @@ def start():
     threads.start(ChatThread(chatGPT))
     threads.start(EyesThread(eyes))
 
+    eyes.open()
     chatGPT.setQuery('Who are you?')
-
+    eyes.blink()
 
 def shutdown():
     print("Fine, you killed " .ENV.NAME, ", hope you are happy!")

@@ -1,9 +1,9 @@
-import numpy as np, os, signal, sys, time
+import os, sys, time
 
 # Add the 'lib' directory to sys.path to ensurethat libs can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from config import ModelConfig, ENV
+from config import ENV
 from threads import EyesThread
 from lib.Eyes import Eyes
 from lib.Threads import Threads

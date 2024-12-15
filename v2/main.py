@@ -25,7 +25,7 @@ intentHandler = IntentHandler(decisions, eyes)
 intents = Intents()
 threads = Threads()
 
-def run():
+def start():
     decisions.setup()
     decisions.initializeModel()
     threads.start(EyesThread(eyes))

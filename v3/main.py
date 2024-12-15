@@ -15,14 +15,14 @@ eyes = Eyes()
 chatGPT = OpenAiClient()
 threads = Threads()
 
-def run():
+def start():
     eyes.clear()
     threads.start(EyesThread(eyes))
 
-    print(chatGPT.message('indtroduce yourself'))
+    print(chatGPT.query('Who are you?'))
 
 def shutdown():
-    print("You killed " .ENV.NAME, ", hope you are happy!")
+    print("Fine, you killed " .ENV.NAME, ", hope you are happy!")
     eyes.clear()
     time.sleep(0.5)
     threads.stop()

@@ -27,6 +27,7 @@ class OpenAiClient:
             "role": "user",
             "content": self.query,
         })
+        self.query = ""
 
         self.response = self.client.chat.completions.create(
             model=self.model,

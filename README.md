@@ -18,3 +18,22 @@ The eyes now would only rely on the state to indicate:
 - detecting prompt
 - listening and parsing
 - requesting API model
+
+## Autostart Daemon
+
+```
+
+sudo cp ./bin/robot.service  /etc/systemd/system/robot.service
+sudo systemctl daemon-reload
+sudo systemctl enable robot.service
+sudo systemctl status robot.service
+
+sudo systemctl restart robot.service
+```
+
+## Git Performance on board
+
+- Enable git parallel index preload: `git config --global core.preloadindex true`
+- Minimize the number of files in .git folder: `git config --global gc.auto 256`
+- Run git garbage collector: `git gc`
+- Remove untracked files `git clean -xf`. Use `git clean -xfn` for a dry-run to check that everything is ok.

@@ -1,16 +1,19 @@
-import numpy as np, signal, sys, time
+import numpy as np, os, signal, sys, time
+
+# Add the 'lib' directory to sys.path to ensure Lib1 and Lib2 can be imported
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../lib'))
 
 from config import ModelConfig, ENV
 from threads import EyesThread
-from classes.Eyes import Eyes
-from classes.Threads import Threads
+from lib.Eyes import Eyes
+from lib.Threads import Threads
 
 np.set_printoptions(suppress=True)
 
 eyes = Eyes()
 threads = Threads()
 
-def startup():
+def run():
     eyes.clear()
     threads.start(EyesThread(eyes))
     print(ENV.NAME, "is here!")
@@ -21,12 +24,3 @@ def shutdown():
     time.sleep(0.5)
     threads.stop()
 
-def exitSignal(signal, frame):
-    print("Handling exit signal:",signal)
-    shutdown()
-    sys.exit(0)
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, exitSignal)
-    signal.signal(signal.SIGTERM, exitSignal)
-    startup()

@@ -1,8 +1,8 @@
 from config import ENV
 from copy import deepcopy
 from numpy import array
-from classes.Enum import Enum
-from classes.Sensors import Sensors
+from lib.Enum import Enum
+from lib.Sensors import Sensors
 
 MAX_STATE_VALUE = 8
 MIN_STATE_VALUE = 0

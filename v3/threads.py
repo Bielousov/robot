@@ -1,5 +1,5 @@
 from config import ENV
-from classes.Threads import Thread
+from lib.Threads import Thread
 
 def EyesThread(eyes):
     threadInterval = 1 / int(ENV.EYES_FPS)

@@ -1,6 +1,6 @@
 from config import ModelConfig
-from classes.Benchmark import Benchmark
-from classes.Decisions import Decisions
+from lib.Benchmark import Benchmark
+from lib.Decisions import Decisions
 
 testTrainingPerformance = Benchmark()
 

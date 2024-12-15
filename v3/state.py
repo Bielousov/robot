@@ -1,6 +1,6 @@
 from copy import deepcopy
-from classes.Enum import Enum
-from classes.Sensors import Sensors
+from lib.Enum import Enum
+from lib.Sensors import Sensors
 
 sensors = Sensors()
 

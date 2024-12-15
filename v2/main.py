@@ -1,13 +1,13 @@
-import numpy as np, signal, sys, time
+import numpy as np, time
 
 from config import ModelConfig, ENV
 from intents import IntentHandler
 from threads import DecisionThread, EyesThread, IntentsThread
 from state import cleanupState
-from classes.Decisions import Decisions
-from classes.Eyes import Eyes
-from classes.Intents import Intents
-from classes.Threads import Threads
+from lib.Decisions import Decisions
+from lib.Eyes import Eyes
+from lib.Intents import Intents
+from lib.Threads import Threads
 
 np.set_printoptions(suppress=True)
 
@@ -22,7 +22,7 @@ intentHandler = IntentHandler(decisions, eyes)
 intents = Intents()
 threads = Threads()
 
-def startup():
+def run():
     decisions.setup()
     decisions.initializeModel()
     threads.start(EyesThread(eyes))
@@ -36,13 +36,3 @@ def shutdown():
     time.sleep(0.5)
     threads.stop()
     cleanupState()
-
-def exitSignal(signal, frame):
-    print("Handling exit signal:",signal)
-    shutdown()
-    sys.exit(0)
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, exitSignal)
-    signal.signal(signal.SIGTERM, exitSignal)
-    startup()

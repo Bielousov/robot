@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from classes.Enum import Enum
+from lib.Enum import Enum
 
 load_dotenv()
 

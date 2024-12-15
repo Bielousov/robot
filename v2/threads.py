@@ -1,6 +1,6 @@
 from config import ENV
 from state import State, getStateContext
-from classes.Threads import Thread
+from lib.Threads import Thread
 
 def DecisionThread(decisions, intents):
   print('Starting a decisions thread at', ENV.DECISION_FPS, 'fps rate')

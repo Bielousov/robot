@@ -5,6 +5,8 @@ After=multi-user.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/python3 /home/pi/projects/robot
+User=pi
+Group=pi
 Restart=on-failure
 
 [Install]

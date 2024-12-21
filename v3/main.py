@@ -18,7 +18,7 @@ def start():
     threads.start(EyesThread(eyes))
 
     eyes.open()
-    chatGPT.setQuery('Who are you?')
+    chatGPT.setPrompt('Who are you?')
     eyes.blink()
 
 def shutdown():
@@ -26,4 +26,3 @@ def shutdown():
     eyes.clear()
     time.sleep(0.5)
     threads.stop()
-

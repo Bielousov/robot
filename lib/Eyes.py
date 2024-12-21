@@ -13,7 +13,7 @@ EyeBitmap = np.array([
   [1, 1, 1, 1, 1, 1, 1, 1],
   [0, 1, 1, 1, 1, 1, 1, 0],
   [0, 0, 1, 1, 1, 1, 0, 0],
-], np.int)
+], np.int8)
 EyeBitmap.flags.writeable = False
 
 class Eyes:

@@ -1,12 +1,16 @@
-from openai import OpenAI
+import os
+import openai
 
 class OpenAiClient:
     def __init__(self, model, personality):
+
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+
         self.chatLog = []
-        self.client = OpenAI()
+        self.client = openai()
         self.model = model
         self.personality = personality
-        self.query = ""
+        self.prompt = ""
 
         self.__reset__()
 
@@ -16,24 +20,26 @@ class OpenAiClient:
             "content": self.personality,
         }]
 
-    def setQuery(self, query):
-        self.query = query
+    def setPrompt(self, prompt):
+        self.prompt = prompt
     
     def runQuery(self):
-        if not self.query:
+        if not self.prompt:
             return
         
         self.chatLog.append({
             "role": "user",
-            "content": self.query,
+            "content": self.prompt,
         })
-        self.query = ""
+        self.prompt = ""
 
         self.response = self.client.chat.completions.create(
             model=self.model,
             messages=self.chatLog
         )
 
-        print(">> OpenAI: ", self.response.choices[0].message.content)
+        answer = self.response.choices[0].message.content
 
-        return self.response.choices[0].message.content
+        print(">> OpenAI: ", answer)
+
+        return answer

@@ -19,17 +19,41 @@ The eyes now would only rely on the state to indicate:
 - listening and parsing
 - requesting API model
 
+## Dependencies
+
+1. `sudo apt install python3-pip python3-dev`
+1. `sudo apt install libjpeg-dev zlib1g-dev`
+1. `sudo apt install rpi.gpio-common`
+1. `pip install --upgrade pip setuptools`
+1. `pip install python-dotenv`
+1. `pip install numpy`
+1. `pip install spidev`
+1. `pip install luma.core`
+1. `pip install luma.led_matrix`
+1. `pip install OPi.GPIO`
+1. `pip install openai`
+
+## SPI and GPIO Permissions
+
+1. `sudo apt install rpi.gpio-common`
+1. `sudo nano /boot/armbianEnv.txt`
+   > overlays=spi-spidev
+   > param_spidev_spi_bus=0
+1. `sudo groupadd spi`
+1. `sudo usermod -aG spi pi`
+1. `sudo usermod -aG dialout pi`
+1. `sudo nano /etc/udev/rules.d/99-spi-permissions.rules`
+   > SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"
+1. `sudo udevadm control --reload-rules`
+1. `sudo reboot`
+
 ## Autostart Daemon
 
-```
-
-sudo cp ./bin/robot.service  /etc/systemd/system/robot.service
-sudo systemctl daemon-reload
-sudo systemctl enable robot.service
-sudo systemctl status robot.service
-
-sudo systemctl restart robot.service
-```
+1. `sudo cp ./bin/robot.service  /etc/systemd/system/robot.service`
+1. `sudo systemctl daemon-reload`
+1. `sudo systemctl enable robot.service`
+1. `sudo systemctl status robot.service`
+1. `sudo systemctl restart robot.service`
 
 ## Git Performance on board
 

@@ -2,7 +2,7 @@ from time import sleep
 from pyaudio import PyAudio, paInt16
 
 class Audio:
-    def output(self, audioData):
+    def output(self, audioBuffer):
         self.audio = PyAudio()
 
         # Open a stream with the correct format and sample rate
@@ -13,12 +13,13 @@ class Audio:
             output=True,
             frames_per_buffer=1024
         )
+
+        chunk = audioBuffer.read(1024)
     
-        # Simulate streaming audio data in chunks
-        for chunk in audioData:
-            # Write data to the output stream in real-time
+        while audioBuffer:
             self.stream.write(chunk)
-            sleep(0.1)  # Sleep for a short time to simulate real-time streaming
+            chunk = audioBuffer.read(1024)
+
 
          # Close the stream after all data is played
         self.stream.stop_stream()

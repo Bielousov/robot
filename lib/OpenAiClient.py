@@ -1,16 +1,17 @@
 from openai import OpenAI
 
 class OpenAiClient:
-    def __init__(self, config, voiceBuffer):
+    def __init__(self, config, voiceBuffer, voiceBufferSize):
 
         self.client = OpenAI()
         self.voiceBuffer = voiceBuffer
 
         self.model = config.MODEL
-        self.model_tts = config.TTS_MODEL
         self.personality = config.PERSONALITY
         self.tts_format = config.TTS_FORMAT
+        self.tts_model = config.TTS_MODEL
         self.voice = config.TTS_VOICE
+        self.voiceBufferSize = voiceBufferSize
 
         self.__reset__()
 
@@ -23,11 +24,13 @@ class OpenAiClient:
 
     def setPrompt(self, prompt):
         self.prompt = prompt
+        print(">> Human: ", self.prompt)
     
     def runQuery(self):
         if not self.prompt:
             return
         
+
         self.chatLog.append({
             "role": "user",
             "content": self.prompt,
@@ -39,8 +42,6 @@ class OpenAiClient:
         print(">> OpenAI: ", response)
 
         self.generateSpeech(response)
-
-        return
     
     def query(self, messages):
         response = self.client.chat.completions.create(
@@ -59,11 +60,11 @@ class OpenAiClient:
             # Request text-to-speech from OpenAI API
             with self.client.audio.speech.with_streaming_response.create(
                 input=text,
-                model=self.model_tts,
+                model=self.tts_model,
                 response_format=self.tts_format,
                 voice=self.voice
             ) as response:
-                for chunk in response.iter_bytes(self.audio.frames_per_buffer):
+                for chunk in response.iter_bytes(self.voiceBufferSize):
                     self.voiceBuffer.append(chunk)
 
         except:

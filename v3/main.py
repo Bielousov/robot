@@ -12,9 +12,16 @@ from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads
 
 eyes = Eyes()
-chatGPT = OpenAiClient(OPEN_AI, voiceBuffer)
+chatGPT = OpenAiClient(
+    config = OPEN_AI, 
+    voiceBuffer = voiceBuffer, 
+    voiceBufferSize = ENV.VOICE_FRAMES_PER_BUFFER,
+)
+voice = Audio(
+    bufferSize = ENV.VOICE_FRAMES_PER_BUFFER,
+    sampleRate = ENV.VOICE_SAMPLE_RATE,
+)
 threads = Threads()
-voice = Audio()
 
 def start():
     threads.start(ChatThread(chatGPT))
@@ -28,8 +35,9 @@ def start():
     chatGPT.setPrompt("What's new?")
 
 def shutdown():
-    print("Fine, you killed " .ENV.NAME, ", hope you are happy!")
+    chatGPT.setPrompt("What would be your last words before being killed?")
+    print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()
     voice.clear()
-    time.sleep(0.5)
+    time.sleep(5)
     threads.stop()

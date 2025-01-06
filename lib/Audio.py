@@ -1,12 +1,12 @@
 from pyaudio import PyAudio, paInt16
 
 class Audio:
-    def __init__(self):
+    def __init__(self, bufferSize, sampleRate):
         self.audio = PyAudio()
         self.channels=1
         self.format=paInt16
-        self.frames_per_buffer=1024
-        self.sample_rate=24_000
+        self.frames_per_buffer=bufferSize
+        self.sample_rate=sampleRate
 
         self.stream = self.audio.open(
             format=self.format,

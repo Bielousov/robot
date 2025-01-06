@@ -30,9 +30,6 @@ def start():
 
     eyes.open()
     chatGPT.setPrompt('Hello. Tell me about yourself.')
-    eyes.blink()
-    time.sleep(5)
-    chatGPT.setPrompt("What's new?")
 
 def shutdown():
     chatGPT.setPrompt("What would be your last words before being killed?")

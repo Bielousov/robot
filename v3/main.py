@@ -1,11 +1,11 @@
-import os, sys, time
+import os, sys,
 
 # Add the 'lib' directory to sys.path to ensurethat libs can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import ENV, OPEN_AI
 from threads import ChatThread, EyesThread, VoiceThread
-from lib.Audio import Audio, AudioBuffer
+from lib.Audio import Audio
 from lib.Eyes import Eyes
 from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads

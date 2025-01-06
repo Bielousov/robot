@@ -1,15 +1,15 @@
 from io import BytesIO
-import os, openai
-
+from os import getenv
+from openai import OpenAI
 from .Audio import Audio
 
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# openai.api_key = getenv('OPENAI_API_KEY')
 
 class OpenAiClient:
     def __init__(self, model, personality):
 
         self.audio = Audio()
-        self.client = openai
+        self.client = OpenAI()
 
         self.chatLog = []
         self.model = model
@@ -56,15 +56,16 @@ class OpenAiClient:
 
 
     def generateSpeech(self, text):
-        if not input:
+        if not text:
             return
         
         # Request text-to-speech from OpenAI API
-        response = self.client.audio.speech.create(
+        with self.client.audio.speech.with_streaming_response.create(
+            input=text,
             model="tts-1",
-            voice="alloy",
-            input=text
-        )
+            response_format="pcm",
+            voice="alloy"
+        ) as response:
+            for chunk in response.iter_bytes(1024):
+                self.audio.stream.write(chunk)
 
-        # The response contains the audio data (in binary format)
-        return BytesIO(response['data'])

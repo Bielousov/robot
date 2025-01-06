@@ -21,7 +21,7 @@ def start():
     chatGPT.setPrompt('Who are you?')
     eyes.blink()
     time.sleep(20)
-    chatGPT.setPrompt('Hey Bender, tell me a joke')
+    chatGPT.setPrompt('Hey Bender, tell me some fun fact')
 
 def shutdown():
     print("Fine, you killed " .ENV.NAME, ", hope you are happy!")

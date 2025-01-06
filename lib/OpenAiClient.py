@@ -1,15 +1,10 @@
 from io import BytesIO
-from os import getenv
-from time import sleep
 from openai import OpenAI
-from .Audio import Audio
-
-# openai.api_key = getenv('OPENAI_API_KEY')
 
 class OpenAiClient:
-    def __init__(self, model, model_tts, personality, voice):
+    def __init__(self, model, model_tts, personality, voice, audio):
 
-        self.audio = Audio()
+        self.audio = audio
         self.client = OpenAI()
 
         self.chatLog = []
@@ -63,12 +58,16 @@ class OpenAiClient:
         if not text:
             return
         
-        # Request text-to-speech from OpenAI API
-        with self.client.audio.speech.with_streaming_response.create(
-            input=text,
-            model=self.model_tts,
-            response_format=self.tts_format,
-            voice=self.voice
-        ) as response:
-            for chunk in response.iter_bytes(self.tts_buffer):
-                self.audio.output(chunk)
+        try:
+            # Request text-to-speech from OpenAI API
+            with self.client.audio.speech.with_streaming_response.create(
+                input=text,
+                model=self.model_tts,
+                response_format=self.tts_format,
+                voice=self.voice
+            ) as response:
+                for chunk in response.iter_bytes(self.tts_buffer):
+                    self.audio.output(chunk)
+
+        except:
+            print("generateSpeech: an exception occurred")

@@ -4,8 +4,6 @@ from lib.Sensors import Sensors
 
 sensors = Sensors()
 
-voiceBuffer = []
-
 State = Enum (
   awake = 0,
 )

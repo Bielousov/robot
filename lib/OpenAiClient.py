@@ -1,18 +1,19 @@
 from openai import OpenAI
 
 class OpenAiClient:
-    def __init__(self, config, voiceBuffer, voiceBufferSize):
+    def __init__(self, config, voice):
 
         self.client = OpenAI()
-        self.voiceBuffer = voiceBuffer
+        self.voice = voice
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
-        self.tts_format = config.TTS_FORMAT
-        self.tts_model = config.TTS_MODEL
-        self.voice = config.TTS_VOICE
-        self.voiceBufferSize = voiceBufferSize
-
+        self.tts = {
+            'format': config.TTS_FORMAT,
+            'model': config.TTS_MODEL,
+            'voice': config.TTS_VOICE
+        }
+        
         self.__reset__()
 
     def __reset__(self):
@@ -60,12 +61,10 @@ class OpenAiClient:
             # Request text-to-speech from OpenAI API
             with self.client.audio.speech.with_streaming_response.create(
                 input=text,
-                model=self.tts_model,
-                response_format=self.tts_format,
-                voice=self.voice
+                **self.tts
             ) as response:
-                for chunk in response.iter_bytes(self.voiceBufferSize):
-                    self.voiceBuffer.append(chunk)
+                for chunk in response.iter_bytes(self.voice.frames_per_buffer):
+                    self.voice.append(chunk)
 
         except:
             print("generateSpeech: an exception occurred")

@@ -6,21 +6,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import ENV, OPEN_AI
 from state import voiceBuffer
 from threads import ChatThread, EyesThread, VoiceThread
-from lib.Audio import Audio
+from lib.Audio import Audio, AudioBuffer
 from lib.Eyes import Eyes
 from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads
 
 eyes = Eyes()
-chatGPT = OpenAiClient(
-    config = OPEN_AI, 
-    voiceBuffer = voiceBuffer, 
-    voiceBufferSize = ENV.VOICE_FRAMES_PER_BUFFER,
-)
 voice = Audio(
     bufferSize = ENV.VOICE_FRAMES_PER_BUFFER,
     sampleRate = ENV.VOICE_SAMPLE_RATE,
 )
+chatGPT = OpenAiClient(
+    config = OPEN_AI, 
+    voice = voice, 
+)
+
 threads = Threads()
 
 def start():
@@ -33,8 +33,8 @@ def start():
 
 def shutdown():
     chatGPT.setPrompt("What would be your last words before being killed?")
+    chatGPT.runQuery()
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()
     voice.clear()
-    time.sleep(5)
     threads.stop()

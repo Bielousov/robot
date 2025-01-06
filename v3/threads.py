@@ -32,7 +32,6 @@ def VoiceThread(voice):
     threadInterval = 1 / int(ENV.VOICE_FPS)
 
     def runThread():
-      if voiceBuffer:
-        voice.output(voiceBuffer.pop(0))
+      voice.output()
     
     return Thread(threadInterval, runThread)

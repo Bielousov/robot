@@ -1,5 +1,6 @@
 from io import BytesIO
 from os import getenv
+from time import sleep
 from openai import OpenAI
 from .Audio import Audio
 
@@ -16,7 +17,7 @@ class OpenAiClient:
         self.model_tts = model_tts
         self.personality = personality
         self.prompt = ""
-        self.tts_buffer=4096
+        self.tts_buffer=1024
         self.tts_format='pcm'
         self.voice=voice
 
@@ -71,4 +72,5 @@ class OpenAiClient:
         ) as response:
             for chunk in response.iter_bytes(self.tts_buffer):
                 self.audio.output(chunk)
+                sleep(0.05)
 

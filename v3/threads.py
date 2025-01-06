@@ -1,6 +1,6 @@
 from config import ENV
 from lib.Threads import Thread
-from state import State, getStateContext, voiceBuffer
+from state import State, getStateContext
 
 def ChatThread(chatGPT):
     threadInterval = 1 / int(ENV.CHAT_FPS)

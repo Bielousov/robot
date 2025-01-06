@@ -59,12 +59,12 @@ class OpenAiClient:
             # Request text-to-speech from OpenAI API
             with self.client.audio.speech.with_streaming_response.create(
                 input=text,
-                format=self.ttsFormat,
                 model=self.ttsModel,
+                response_format=self.ttsFormat,
                 voice=self.ttsVoice,
             ) as response:
-                for chunk in response.iter_bytes(self.voice.frames_per_buffer):
-                    self.voice.append(chunk)
+                for chunk in response.iter_bytes(self.audio.frames_per_buffer):
+                    self.audio.append(chunk)
 
         except:
             print("generateSpeech: an exception occurred")

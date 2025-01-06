@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, time
 
 # Add the 'lib' directory to sys.path to ensurethat libs can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -31,9 +31,11 @@ def start():
     chatGPT.setPrompt('Hello. Tell me about yourself.')
 
 def shutdown():
-    chatGPT.setPrompt("What would be your last words before being killed?")
+    chatGPT.setPrompt("Get ready to die! Say goodbyes and your catch phrase before being turned off.")
     chatGPT.runQuery()
+    time.sleep(5)
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()
     voice.clear()
     threads.stop()
+

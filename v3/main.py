@@ -1,4 +1,4 @@
-import os, sys,
+import os, sys
 
 # Add the 'lib' directory to sys.path to ensurethat libs can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

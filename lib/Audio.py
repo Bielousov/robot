@@ -4,7 +4,7 @@ from pyaudio import PyAudio
 class Audio:
     def __init__(self):
         self.audio = PyAudio()
-        self.stream = self.audio(
+        self.stream = self.audio.open(
             format=8,
             channels=1,
             rate=24_000,

@@ -12,7 +12,7 @@ class Audio:
             format=self.format,
             channels=self.channels,
             rate=self.sample_rate,
-            output=True
+            output=True,
             output_latency=self.latency
         )
     def output(self, audio):

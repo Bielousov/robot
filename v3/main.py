@@ -18,10 +18,10 @@ def start():
     threads.start(EyesThread(eyes))
 
     eyes.open()
-    chatGPT.setPrompt('Who are you?')
+    chatGPT.setPrompt('Hello. Tell me about yourself.')
     eyes.blink()
-    time.sleep(10)
-    chatGPT.setPrompt('Hey Bender, tell me some fun fact')
+    time.sleep(5)
+    chatGPT.setPrompt("What's new?")
 
 def shutdown():
     print("Fine, you killed " .ENV.NAME, ", hope you are happy!")

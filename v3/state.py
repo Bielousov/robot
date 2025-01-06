@@ -6,8 +6,6 @@ sensors = Sensors()
 
 State = Enum (
   awake = 0,
-  exhaust = 1,
-  stress = 0,
 )
 
 def setState(key, value):

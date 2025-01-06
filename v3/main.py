@@ -17,7 +17,7 @@ voice = Audio(
 )
 chatGPT = OpenAiClient(
     config = OPEN_AI, 
-    voice = voice, 
+    audio = voice, 
 )
 
 threads = Threads()

@@ -1,19 +1,17 @@
 from openai import OpenAI
 
 class OpenAiClient:
-    def __init__(self, config, voice):
+    def __init__(self, config, audio):
 
         self.client = OpenAI()
-        self.voice = voice
+        self.audio = audio
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
-        self.tts = {
-            'format': config.TTS_FORMAT,
-            'model': config.TTS_MODEL,
-            'voice': config.TTS_VOICE
-        }
-        
+        self.ttsFormat = config.TTS_FORMAT
+        self.ttsModel = config.TTS_MODEL
+        self.ttsVoice=config.TTS_VOICE
+    
         self.__reset__()
 
     def __reset__(self):
@@ -61,7 +59,9 @@ class OpenAiClient:
             # Request text-to-speech from OpenAI API
             with self.client.audio.speech.with_streaming_response.create(
                 input=text,
-                **self.tts
+                format=self.ttsFormat,
+                model=self.ttsModel,
+                voice=self.ttsVoice,
             ) as response:
                 for chunk in response.iter_bytes(self.voice.frames_per_buffer):
                     self.voice.append(chunk)

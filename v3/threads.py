@@ -1,6 +1,6 @@
 from config import ENV
 from lib.Threads import Thread
-from state import State, getStateContext
+from state import State, getStateContext, voiceBuffer
 
 def ChatThread(chatGPT):
     threadInterval = 1 / int(ENV.CHAT_FPS)
@@ -25,5 +25,14 @@ def EyesThread(eyes):
 
     def runThread():
       eyes.render()
+    
+    return Thread(threadInterval, runThread)
+
+def VoiceThread(voice):
+    threadInterval = 1 / int(ENV.VOICE_FPS)
+
+    def runThread():
+      if voiceBuffer:
+        voice.output(voiceBuffer.pop(0))
     
     return Thread(threadInterval, runThread)

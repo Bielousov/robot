@@ -4,20 +4,22 @@ import os, sys, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import ENV, OPEN_AI
-from threads import ChatThread, EyesThread
+from state import voiceBuffer
+from threads import ChatThread, EyesThread, VoiceThread
 from lib.Audio import Audio
 from lib.Eyes import Eyes
 from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads
 
-audio = Audio()
 eyes = Eyes()
-chatGPT = OpenAiClient(OPEN_AI.MODEL, OPEN_AI.MODEL_TTS, OPEN_AI.PERSONALITY, OPEN_AI.VOICE, audio)
+chatGPT = OpenAiClient(OPEN_AI, voiceBuffer)
 threads = Threads()
+voice = Audio()
 
 def start():
     threads.start(ChatThread(chatGPT))
     threads.start(EyesThread(eyes))
+    threads.start(VoiceThread(voice))
 
     eyes.open()
     chatGPT.setPrompt('Hello. Tell me about yourself.')
@@ -28,6 +30,6 @@ def start():
 def shutdown():
     print("Fine, you killed " .ENV.NAME, ", hope you are happy!")
     eyes.clear()
-    audio.clear()
+    voice.clear()
     time.sleep(0.5)
     threads.stop()

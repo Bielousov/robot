@@ -8,6 +8,7 @@ ENV = Enum (
   CHAT_FPS                = int(getenv('CHAT_FPS')),
   DECISION_FPS            = int(getenv('DECISIONS_FPS')),
   EYES_FPS                = int(getenv('EYES_FPS')),
+  VOICE_FPS                = int(getenv('VOICE_FPS')),
   NAME                    = getenv('NAME'),
 )
 
@@ -30,7 +31,8 @@ DecisionModelConfig = Enum (
 
 OPEN_AI = Enum (
   MODEL = getenv('OPEN_AI_MODEL'),
-  MODEL_TTS = getenv('OPEN_AI_TTS_MODEL'),
   PERSONALITY = f"You are a robot called {ENV.NAME}. You are self-centered, narcissistic, sarcastic and impersonate Bender from Futurama and use his catchphrases occasionally. If asked about yourself, you include your name in your response, but keep it under 30 words.",
-  VOICE = getenv('OPEN_AI_TTS_VOICE'),
+  TTS_FORMAT='pcm'
+  TTS_MODEL = getenv('OPEN_AI_TTS_MODEL'),
+  TTS_VOICE = getenv('OPEN_AI_TTS_VOICE'),
 )

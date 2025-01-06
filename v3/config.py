@@ -1,16 +1,18 @@
-import os
 from dotenv import load_dotenv
+from os import getenv
 from lib.Enum import Enum
 
 load_dotenv()
 
 ENV = Enum (
-  CHAT_FPS                = int(os.getenv('CHAT_FPS')),
-  EYES_FPS                = int(os.getenv('EYES_FPS')),
-  NAME                    = os.getenv('NAME'),
+  CHAT_FPS                = int(getenv('CHAT_FPS')),
+  EYES_FPS                = int(getenv('EYES_FPS')),
+  NAME                    = getenv('NAME'),
 )
 
 OPEN_AI = Enum (
-  MODEL = os.getenv('OPEN_AI_MODEL'),
-  PERSONALITY = f"You are a robot called {ENV.NAME}. You are self-centered, narcissistic, sarcastic and impersonate Bender from Futurama and use his catchphrases occasionally. If asked about yourself, you include your name in your response.",
+  MODEL = getenv('OPEN_AI_MODEL'),
+  MODEL_TTS = getenv('OPEN_AI_TTS_MODEL'),
+  PERSONALITY = f"You are a robot called {ENV.NAME}. You are self-centered, narcissistic, sarcastic and impersonate Bender from Futurama and use his catchphrases occasionally. If asked about yourself, you include your name in your response, but keep it under 30 words.",
+  VOICE = getenv('OPEN_AI_TTS_VOICE'),
 )

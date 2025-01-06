@@ -10,7 +10,7 @@ from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads
 
 eyes = Eyes()
-chatGPT = OpenAiClient(OPEN_AI.MODEL, OPEN_AI.PERSONALITY)
+chatGPT = OpenAiClient(OPEN_AI.MODEL, OPEN_AI.MODEL_TTS, OPEN_AI.PERSONALITY, OPEN_AI.VOICE)
 threads = Threads()
 
 def start():

@@ -6,15 +6,19 @@ from .Audio import Audio
 # openai.api_key = getenv('OPENAI_API_KEY')
 
 class OpenAiClient:
-    def __init__(self, model, personality):
+    def __init__(self, model, model_tts, personality, voice):
 
         self.audio = Audio()
         self.client = OpenAI()
 
         self.chatLog = []
         self.model = model
+        self.model_tts = model_tts
         self.personality = personality
         self.prompt = ""
+        self.tts_buffer=4096
+        self.tts_format='pcm'
+        self.voice=voice
 
         self.__reset__()
 
@@ -37,19 +41,18 @@ class OpenAiClient:
         })
         self.prompt = ""
 
-        response = self.generateText();
+        response = self.query(self.chatLog);
 
         print(">> OpenAI: ", response)
 
-        voiceResponse = self.generateSpeech(response)
-        self.audio.stream(voiceResponse)
+        self.generateSpeech(response)
 
         return
     
-    def generateText(self):
+    def query(self, messages):
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.chatLog
+            messages=messages
         )
 
         return response.choices[0].message.content;
@@ -62,10 +65,10 @@ class OpenAiClient:
         # Request text-to-speech from OpenAI API
         with self.client.audio.speech.with_streaming_response.create(
             input=text,
-            model="tts-1",
-            response_format="pcm",
-            voice="alloy"
+            model=self.model_tts,
+            response_format=self.tts_format,
+            voice=self.voice
         ) as response:
-            for chunk in response.iter_bytes(1024):
-                self.audio.stream.write(chunk)
+            for chunk in response.iter_bytes(self.tts_buffer):
+                self.audio.output(chunk)
 

@@ -16,9 +16,9 @@ pip install OPi.GPIO
 
 ### OpenAI
 
-pip install --upgrade opeanai
+pip install --upgrade openai
 
 ### Sound output
 
+sudo apt install alsa-utils alsa-oss
 sudo apt install python3-pyaudio
-pip install pygame

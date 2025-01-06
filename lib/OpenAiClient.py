@@ -72,5 +72,3 @@ class OpenAiClient:
         ) as response:
             for chunk in response.iter_bytes(self.tts_buffer):
                 self.audio.output(chunk)
-                sleep(0.05)
-

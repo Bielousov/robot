@@ -4,7 +4,6 @@ import os, sys, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import ENV, OPEN_AI
-from state import voiceBuffer
 from threads import ChatThread, EyesThread, VoiceThread
 from lib.Audio import Audio, AudioBuffer
 from lib.Eyes import Eyes

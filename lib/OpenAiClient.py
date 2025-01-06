@@ -1,4 +1,3 @@
-from io import BytesIO
 from openai import OpenAI
 
 class OpenAiClient:

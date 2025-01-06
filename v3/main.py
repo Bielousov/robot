@@ -20,7 +20,7 @@ def start():
     eyes.open()
     chatGPT.setPrompt('Who are you?')
     eyes.blink()
-    time.sleep(20)
+    time.sleep(10)
     chatGPT.setPrompt('Hey Bender, tell me some fun fact')
 
 def shutdown():

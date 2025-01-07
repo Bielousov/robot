@@ -66,7 +66,7 @@ class IntentsModel:
         )
         self.neuralNetwork.summary()
 
-        if forceSave or (self.neuralNetwork.accuracy > self.trainingThreshold and self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy):
+        if self.neuralNetwork.accuracy > self.trainingThreshold and (self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy or forceSave):
             self.__saveModel()
             return True
         else:

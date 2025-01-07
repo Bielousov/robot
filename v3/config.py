@@ -13,7 +13,7 @@ ENV = Enum (
 
 MODEL = Enum (
   INPUTS = 5,
-  LAYERS = [30],
+  LAYERS = [12],
   OUTPUTS = 6,
   TRAINING_EPOCHS     = int(getenv('TRAINING_EPOCHS')),
   TRAINING_THRESHOLD     = float(getenv('TRAINING_THRESHOLD')),

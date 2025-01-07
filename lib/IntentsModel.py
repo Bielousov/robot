@@ -51,7 +51,6 @@ class IntentsModel:
 
         self.__loadTrainingSet()
         self.__loadModel()
-        self.neuralNetwork.summary()
 
     def initializeModel(self):
         self.__initialTrain(accuracy=self.trainingThreshold)

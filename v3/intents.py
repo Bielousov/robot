@@ -11,7 +11,7 @@ class IntentHandler:
   def handle(self, intentId, confidenceScore):
     if intentId != 'noIntent':
       print(datetime.now().strftime('%H:%M:%S.%f')[:-3], 'Handling intent', intentId, 'with confidence', confidenceScore)
-    return getattr(self, intentId, lambda: self.noIntent)()
+    return getattr(self, intentId, lambda: self.noIntent)(confidenceScore)
   
   def ask(self):
     response = self.openai.ask(State.promptQueue.pop(0))
@@ -23,7 +23,7 @@ class IntentHandler:
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
-  def say(self):
+  def say(self, confidenceScore):
     if self.openai.ttsEnabled:
       self.openai.tts(State.voiceQueue.pop(0))
     else:
@@ -31,14 +31,15 @@ class IntentHandler:
 
     self.eyes.wonder()
   
-  def train(self):
+  def train(self, confidenceScore):
     self.eyes.wonder()
     self.intentsModel.train()
 
-  def wakeup(self):
+  def wakeup(self, confidenceScore):
     setState('awake', 1)
-    self.eyes.open()
+    self.eyes.open(confidenceScore)
     print('Waking up!')
 
-  def noIntent(self):
+  def noIntent(self, confidenceScore):
     return
+  

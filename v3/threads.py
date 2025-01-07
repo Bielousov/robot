@@ -13,7 +13,7 @@ def EyesThread(eyes):
 
 def IntentsThread(intentsModel, intentHandler):
   intents = Intents(
-    annotations=MODEL.OUTPUT_ANNOTATION,
+    annotations=MODEL.INTENT_ANNOTATION,
     threshold=MODEL.INTENT_THRESHOLD,
   )
 

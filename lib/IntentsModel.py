@@ -5,8 +5,8 @@ from .NeuralNetwork import NeuralNetwork
 class IntentsModel:
     def __init__(self, config):
         self.modelPath = config.PATH
-        self.trainingSetPath = config.DATA_PATH
-        self.validationSetPath = config.DATA_VALIDATION_PATH
+        self.trainingSetPath = config.TRAINING_DATA_PATH
+        self.validationSetPath = config.VALIDATION_DATA_PATH
 
         self.trainingEpochs = config.TRAINING_EPOCHS
         self.trainingThreshold = config.TRAINING_THRESHOLD

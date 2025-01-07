@@ -15,15 +15,15 @@ MODEL = Enum (
   INPUTS = 5,
   LAYERS = [30],
   OUTPUTS = 6,
-  INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),
   TRAINING_EPOCHS     = int(getenv('TRAINING_EPOCHS')),
   TRAINING_THRESHOLD     = float(getenv('TRAINING_THRESHOLD')),
 
-  DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-training.csv'),
-  DATA_VALIDATION_PATH = path.join(path.dirname(__file__), 'models/data/intents-validation.csv'),
+  TRAINING_DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-training.csv'),
+  VALIDATION_DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-validation.csv'),
   PATH = path.join(path.dirname(__file__), 'models/build/intents.model.npy'),
 
-  OUTPUT_ANNOTATION = [
+  INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),
+  INTENT_ANNOTATION = [
     'wakeup',
     'ask',
     'blink',

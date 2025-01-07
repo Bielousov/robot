@@ -1,32 +1,30 @@
 from datetime import datetime
-from state import setState, setStateIncrease
+from state import setState, setStateIncrease, State
 
 class IntentHandler:
-  def __init__(self, decisions, eyes):
+  def __init__(self, eyes, openai, voice):
     self.eyes = eyes
-    self.decisions = decisions
+    self.openai = openai
+    self.voice = voice
 
   def handle(self, intentId, confidenceScore):
     if intentId != 'noIntent':
       print(datetime.now().strftime('%H:%M:%S.%f')[:-3], 'Handling intent', intentId, 'with confidence', confidenceScore)
-    return getattr(self, intentId, lambda: self.unhandledIntent)(confidenceScore)
+    return getattr(self, intentId, lambda: self.noIntent)()
+  
+  def ask(self, prompt,):
+    response = self.openai.ask(prompt)
+    self.eyes.wonder()
+
+    if response:
+      State.voiceQueue.append(response)
 
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
-  def train(self, confidenceScore):
+  def say(self, text):
+    self.voice.say(text)
     self.eyes.wonder()
-    self.decisions.train()
 
-  def wakeup(self, confidenceScore):
-    setState('awake', 1)
-    print('Waking up!')
-    self.eyes.open(confidenceScore)
-
-  def noIntent(self, confidenceScore):
-    setStateIncrease('exhaust', 0.01 )
-    setStateIncrease('stress', -0.01)
-
-  def unhandledIntent(self, confidenceScore):
-    print('Unhandled intent', confidenceScore)
-  
+  def noIntent(self):
+    return

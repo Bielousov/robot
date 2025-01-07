@@ -5,10 +5,10 @@ from lib.Enum import Enum
 load_dotenv()
 
 ENV = Enum (
-  CHAT_FPS                = int(getenv('CHAT_FPS')),
-  DECISION_FPS            = int(getenv('DECISIONS_FPS')),
+  INTENT_FPS              = int(getenv('INTENT_FPS')),
   EYES_FPS                = int(getenv('EYES_FPS')),
   VOICE_FPS               = int(getenv('VOICE_FPS')),
+  VOICE                   = int(getenv('VOICE')),
   VOICE_FRAMES_PER_BUFFER = int(getenv('VOICE_FRAMES_PER_BUFFER')),
   VOICE_SAMPLE_RATE       = int(getenv('VOICE_SAMPLE_RATE')),
   NAME                    = getenv('NAME'),
@@ -38,4 +38,5 @@ OPEN_AI = Enum (
   TTS_FRAMES_PER_BUFFER = getenv('VOICE_FRAMES_PER_BUFFER'),
   TTS_MODEL = getenv('OPEN_AI_TTS_MODEL'),
   TTS_VOICE = getenv('OPEN_AI_TTS_VOICE'),
+  USE_OPEN_AI_TTS = getenv('USE_OPEN_AI_TTS'),
 )

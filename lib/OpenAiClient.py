@@ -1,16 +1,16 @@
 from openai import OpenAI
 
+
 class OpenAiClient:
-    def __init__(self, config, audio):
+    def __init__(self, config):
 
         self.client = OpenAI()
-        self.audio = audio
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
-        self.ttsFormat = config.TTS_FORMAT
-        self.ttsModel = config.TTS_MODEL
-        self.ttsVoice=config.TTS_VOICE
+        # self.ttsFormat = config.TTS_FORMAT
+        # self.ttsModel = config.TTS_MODEL
+        # self.ttsVoice=config.TTS_VOICE
     
         self.__reset__()
 
@@ -19,28 +19,24 @@ class OpenAiClient:
             "role": "system",
             "content": self.personality,
         }]
-        self.prompt = ''
 
-    def setPrompt(self, prompt):
-        self.prompt = prompt
-        print(">> Human: ", self.prompt)
-    
-    def runQuery(self):
-        if not self.prompt:
+    def ask(self, prompt):
+        if not prompt:
             return
         
 
         self.chatLog.append({
             "role": "user",
-            "content": self.prompt,
+            "content": prompt,
         })
-        self.prompt = ""
 
         response = self.query(self.chatLog);
 
         print(">> OpenAI: ", response)
 
-        self.generateSpeech(response)
+        return response
+
+        # self.generateSpeech(response)
     
     def query(self, messages):
         response = self.client.chat.completions.create(
@@ -51,20 +47,20 @@ class OpenAiClient:
         return response.choices[0].message.content;
 
 
-    def generateSpeech(self, text):
-        if not text:
-            return
+    # def generateSpeech(self, text):
+    #     if not text:
+    #         return
 
-        try:
-            # Request text-to-speech from OpenAI API
-            with self.client.audio.speech.with_streaming_response.create(
-                input=text,
-                model=self.ttsModel,
-                response_format=self.ttsFormat,
-                voice=self.ttsVoice,
-            ) as response:
-                for chunk in response.iter_bytes(self.audio.frames_per_buffer):
-                    self.audio.append(chunk)
+    #     try:
+    #         # Request text-to-speech from OpenAI API
+    #         with self.client.audio.speech.with_streaming_response.create(
+    #             input=text,
+    #             model=self.ttsModel,
+    #             response_format=self.ttsFormat,
+    #             voice=self.ttsVoice,
+    #         ) as response:
+    #             for chunk in response.iter_bytes(self.audio.frames_per_buffer):
+    #                 self.audio.append(chunk)
 
-        except:
-            print("generateSpeech: an exception occurred")
+    #     except:
+    #         print("generateSpeech: an exception occurred")

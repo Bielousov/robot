@@ -6,6 +6,8 @@ sensors = Sensors()
 
 State = Enum (
   awake = 0,
+  promptQueue = [],
+  voiceQueue = []
 )
 
 def setState(key, value):

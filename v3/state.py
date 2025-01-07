@@ -46,7 +46,7 @@ def handleError(error):
       print(f"{error}: Unhandled error")
       State.voiceQueue.append(Responses['errors']['generic'])
 
-def normalizeCpuTemp(temp, minValue=0.2, maxValue=0.3):
+def normalizeCpuTemp(temp, minValue=0.2, maxValue=0.4):
     # Clip values to avoid errors (e.g., log(0))
     x = clip(temp, 1e-10, 1.0)  # Ensure values are within the range (0, 1]
 

@@ -1,4 +1,4 @@
-from numpy import array, loadtxt, round
+from numpy import array, loadtxt
 
 from .NeuralNetwork import NeuralNetwork
 
@@ -36,8 +36,10 @@ class IntentsModel:
             self.neuralNetwork.save(self.modelPath)
 
     def __initialTrain(self, accuracy = 0.6, maxEpochs = 100000):
-        while (self.neuralNetwork.epoch < maxEpochs and self.neuralNetwork.accuracy < accuracy):
-            self.train()
+        initialTraining=True
+        while initialTraining or (self.neuralNetwork.epoch < maxEpochs and self.neuralNetwork.accuracy < accuracy):
+            self.train(initialTraining)
+            initialTraining=False
 
     def run(self, context):
         return self.neuralNetwork.run([context])
@@ -56,7 +58,7 @@ class IntentsModel:
         self.neuralNetwork.summary()
         self.validate()
 
-    def train(self):
+    def train(self, forceSave=False):
         self.neuralNetwork.train(
             self.__trainingSetInputs,
             self.__trainingSetOutputs,
@@ -64,7 +66,7 @@ class IntentsModel:
         )
         self.neuralNetwork.summary()
 
-        if self.neuralNetwork.accuracy > self.trainingThreshold and self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy:
+        if forceSave or (self.neuralNetwork.accuracy > self.trainingThreshold and self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy):
             self.__saveModel()
             return True
         else:
@@ -76,4 +78,4 @@ class IntentsModel:
             self.__validationSet = loadtxt(self.validationSetPath, delimiter=',')
         print("Validating model with data:\n", self.__validationSet)
         validationResults = self.run(self.__validationSet)
-        print("Validating results:\n", round(validationResults,5))
+        print("Validating results:\n", validationResults)

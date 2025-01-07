@@ -59,7 +59,8 @@ class OpenAiClient:
             return
 
         try:
-
+            self.ttsAudio.stream.start_stream()
+            
             # Request text-to-speech from OpenAI API
             with self.client.audio.speech.with_streaming_response.create(
                 input=text,

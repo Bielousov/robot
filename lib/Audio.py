@@ -17,14 +17,13 @@ class Audio:
         )
     
     def output(self, audioData):
-        if not self.audioBuffer:
+        if not audioData:
             return
     
         self.stream.write(audioData)
 
 
     def clear(self):
-        self.audioBuffer=[]
         self.stream.stop_stream()
         self.stream.close()
         self.audio.terminate()

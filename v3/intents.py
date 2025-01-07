@@ -23,7 +23,11 @@ class IntentHandler:
     self.eyes.blink(confidenceScore)
 
   def say(self, text):
-    self.voice.say(text)
+    if self.openai.ttsEnabled:
+      self.openai.tts(text)
+    else:
+      self.voice.say(text)
+      
     self.eyes.wonder()
 
   def wakeup(self, text):

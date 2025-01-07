@@ -23,7 +23,7 @@ class IntentHandler:
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
-  def say(self, text):
+  def say(self):
     if self.openai.ttsEnabled:
       self.openai.tts(State.voiceQueue.pop(0))
     else:
@@ -35,7 +35,7 @@ class IntentHandler:
     self.eyes.wonder()
     self.intentsModel.train()
 
-  def wakeup(self, text):
+  def wakeup(self):
     self.eyes.open()
 
   def noIntent(self):

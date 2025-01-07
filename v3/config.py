@@ -5,6 +5,7 @@ from lib.Enum import Enum
 load_dotenv()
 
 ENV = Enum (
+  DEBUG                   = bool(int(getenv('DEBUG'))),
   INTENT_FPS              = int(getenv('INTENT_FPS')),
   EYES_FPS                = int(getenv('EYES_FPS')),
   NAME                    = getenv('NAME'),

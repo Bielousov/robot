@@ -25,13 +25,5 @@ def IntentsThread(intentsModel, intentHandler):
       intent, confidenceScore = intents.getIntent()
       intentHandler.handle(intent, confidenceScore)
       intents.doneProcessingIntent()
-  
-      # if State.voiceQueue:
-      #   intentHandler.say(State.voiceQueue.pop(0))
-      #   return
-
-      # if State.promptQueue:
-      #    intentHandler.ask(State.promptQueue.pop(0))
-         
       
   return Thread(threadInterval, runThread)

@@ -20,7 +20,7 @@ def setState(key, value):
 def getStateContext():
   context = deepcopy(State)
   context.cpuTemp = sensors.getCpuTemp()
-  # context.noiseLevel = sensors.getNoise()
+  context.noiseLevel = sensors.getNoise()
   sensors.update()
 
   result = array([
@@ -28,6 +28,7 @@ def getStateContext():
     len(context.promptQueue),
     len(context.voiceQueue),
     normalizeCpuTemp(context.cpuTemp),
+    context.noiseLevel,
     random(),
   ])
 

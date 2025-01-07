@@ -6,6 +6,7 @@ INPUT
 2: promptQueue state len()
 3. voiceQueue state len()
 4: cpu temp
+5: ambient noise
 5: random
 
 

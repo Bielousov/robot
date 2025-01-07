@@ -12,7 +12,7 @@ ENV = Enum (
 )
 
 MODEL = Enum (
-  INPUTS = 3,
+  INPUTS = 5,
   LAYERS = [30],
   OUTPUTS = 6,
   INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),

@@ -15,6 +15,9 @@ class IntentsModel:
         self.neuralNetworkNeurons = [config.INPUTS, *config.LAYERS, config.OUTPUTS]
         self.neuralNetworkOutputs = config.OUTPUTS
 
+        self.setup()
+        self.initializeModel()
+
     def __loadTrainingSet(self):
         try:
             print("Loading training data set")

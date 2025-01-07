@@ -1,19 +1,18 @@
-from config import ModelConfig
+from config import MODEL
+from copy import deepcopy
 from lib.Benchmark import Benchmark
-from lib.Decisions import Decisions
+from lib.IntentsModel import IntentsModel
 
 testTrainingPerformance = Benchmark()
 
-decisions = Decisions(
-    modelPath = ModelConfig.MODEL_PATH,
-    trainingSetPath = ModelConfig.MODEL_DATA_PATH,
-    validationSetPath = ModelConfig.MODEL_DATA_VALIDATION_PATH,
-    trainingEpochs = 1000,
-)
+modelConfig = deepcopy(MODEL)
+modelConfig.trainingEpochs = 1000
 
-decisions.setup()
+intentsModel = IntentsModel(modelConfig)
+
+intentsModel.setup()
 
 while True:
     testTrainingPerformance.start()
-    decisions.train()
+    intentsModel.train()
     testTrainingPerformance.end()

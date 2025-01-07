@@ -17,8 +17,8 @@ def setState(key, value):
 
 def getStateContext():
   context = deepcopy(State)
-  context.cpuTemp = sensors.getCpuTemp()
-  context.noiseLevel = sensors.getNoise()
+  context.cpuTemp = 1 - sensors.getCpuTemp()
+  # context.noiseLevel = sensors.getNoise()
   sensors.update()
 
   return array([

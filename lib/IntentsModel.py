@@ -1,4 +1,4 @@
-from numpy import array, loadtxt
+from numpy import array, loadtxt, round
 
 from .NeuralNetwork import NeuralNetwork
 
@@ -76,4 +76,4 @@ class IntentsModel:
             self.__validationSet = loadtxt(self.validationSetPath, delimiter=',')
         print("Validating model with data:\n", self.__validationSet)
         validationResults = self.run(self.__validationSet)
-        print("Validating results:\n", validationResults)
+        print("Validating results:\n", round(validationResults,5))

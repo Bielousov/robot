@@ -7,10 +7,10 @@ from config import ModelConfig, ENV
 from intents import IntentHandler
 from threads import DecisionThread, EyesThread, IntentsThread
 from state import cleanupState
-from lib.Decisions import Decisions
 from lib.Eyes import Eyes
 from lib.Intents import Intents
 from lib.Threads import Threads
+from v2.lib.Decisions import Decisions
 
 np.set_printoptions(suppress=True)
 

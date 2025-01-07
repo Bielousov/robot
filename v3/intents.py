@@ -2,8 +2,9 @@ from datetime import datetime
 from state import setState, State
 
 class IntentHandler:
-  def __init__(self, eyes, openai, voice):
+  def __init__(self, eyes, intentsModel, openai, voice):
     self.eyes = eyes
+    self.intentsModel = intentsModel
     self.openai = openai
     self.voice = voice
 
@@ -32,7 +33,7 @@ class IntentHandler:
   
   def train(self):
     self.eyes.wonder()
-    self.decisions.train()
+    self.intentsModel.train()
 
   def wakeup(self, text):
     self.eyes.open()

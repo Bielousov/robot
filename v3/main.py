@@ -18,8 +18,8 @@ from lib.Voice import Voice
 eyes = Eyes()
 openAi = OpenAiClient(config = OPEN_AI)
 voice = Voice(ENV.VOICE)
-intentHandler = IntentHandler(eyes, openAi, voice)
 intentsModel = IntentsModel(MODEL)
+intentHandler = IntentHandler(eyes, intentsModel, openAi, voice)
 
 threads = Threads()
 

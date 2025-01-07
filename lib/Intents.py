@@ -31,9 +31,9 @@ class Intents:
     if handled == False:
       self.__queue.put(['noIntent', intents[0][1]])
 
-  def classify(self, decision):
+  def classify(self, result):
     intents = {}
-    for idx, score in enumerate(decision):
+    for idx, score in enumerate(result):
       if idx < len(self.__intentsMap):
         intents[self.__intentsMap[idx]] = score
     intents = sorted(intents.items(), key=lambda x: x[1], reverse=True)

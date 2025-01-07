@@ -19,9 +19,9 @@ MODEL = Enum (
   TRAINING_EPOCHS     = int(getenv('TRAINING_EPOCHS')),
   TRAINING_THRESHOLD     = float(getenv('TRAINING_THRESHOLD')),
 
-  DATA_PATH = path.join(path.dirname(__file__), 'models/data/decisions-training.csv'),
-  DATA_VALIDATION_PATH = path.join(path.dirname(__file__), 'models/data/decisions-validation.csv'),
-  PATH = path.join(path.dirname(__file__), 'models/build/decisions.model.npy'),
+  DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-training.csv'),
+  DATA_VALIDATION_PATH = path.join(path.dirname(__file__), 'models/data/intents-validation.csv'),
+  PATH = path.join(path.dirname(__file__), 'models/build/intents.model.npy'),
 
   OUTPUT_ANNOTATION = [
     'wakeup',

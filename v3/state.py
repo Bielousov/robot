@@ -21,13 +21,17 @@ def getStateContext():
   # context.noiseLevel = sensors.getNoise()
   sensors.update()
 
-  return array([
+  result = array([
     random(),
     context.awake,
     len(context.promptQueue),
     len(context.voiceQueue),
     context.cpuTemp,
   ])
+
+  print(result)
+
+  return result
 
 def clearState():
   sensors.cleanup()

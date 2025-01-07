@@ -53,8 +53,8 @@ def normalizeCpuTemp(temp):
     # Apply a logarithmic transformation
     transformed = log10(x + 1e-10)  # Logarithmic scaling
 
-    # Normalize: Map 0.2 -> 0.1 and 0.4 -> 0.9
-    minLog, maxLog = log10(0.2), log10(0.4)
+    # Normalize: Map 0.2 -> 0.1 and 0.3 -> 0.9
+    minLog, maxLog = log10(0.2), log10(0.3)
     normalized = (transformed - minLog) / (maxLog - minLog)  # Rescale to [0, 1]
     scaled = normalized * (0.9 - 0.1) + 0.1  # Map [0, 1] to [0.1, 0.9]
 

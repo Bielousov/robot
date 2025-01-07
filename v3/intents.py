@@ -1,5 +1,5 @@
 from datetime import datetime
-from state import State
+from state import setState, State
 
 class IntentHandler:
   def __init__(self, eyes, intentsModel, openai, voice):
@@ -36,7 +36,9 @@ class IntentHandler:
     self.intentsModel.train()
 
   def wakeup(self):
+    setState('awake', 1)
     self.eyes.open()
+    print('Waking up!')
 
   def noIntent(self):
     return

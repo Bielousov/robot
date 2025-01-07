@@ -23,7 +23,7 @@ class Intents:
     # print('Intents:', intents);
     for intent in intents:
       intentId, value = intent
-      if value > self.__treshold * random.uniform(0.75, 1.25):
+      if value > self.__treshold * random.uniform(0.9, 1.1):
         self.__addDeduped(intentId, value)
         handled = True
       break

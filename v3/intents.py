@@ -14,22 +14,24 @@ class IntentHandler:
     return getattr(self, intentId, lambda: self.noIntent)(confidenceScore)
   
   def ask(self, confidenceScore):
-    response = self.openai.ask(State.promptQueue.pop(0))
     self.eyes.wonder()
+    if State.promptQueue:
+      response = self.openai.ask(State.promptQueue.pop(0))
 
-    if response:
-      State.voiceQueue.append(response)
+      if response:
+        State.voiceQueue.append(response)
 
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
   def say(self, confidenceScore):
-    if self.openai.ttsEnabled:
-      self.openai.tts(State.voiceQueue.pop(0))
-    else:
-      self.voice.say(State.voiceQueue.pop(0))
-
     self.eyes.wonder()
+    if State.voiceQueue:
+      if self.openai.ttsEnabled:
+        self.openai.tts(State.voiceQueue.pop(0))
+      else:
+        self.voice.say(State.voiceQueue.pop(0))
+
   
   def train(self, confidenceScore):
     self.eyes.wonder()

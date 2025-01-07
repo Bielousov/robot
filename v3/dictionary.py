@@ -1,4 +1,4 @@
 Prompts = {
-    'shutdown': 'Get ready to die! Say goodbyes and your catch phrase before being turned off.',
+    'shutdown': 'Say goodbyes, you are about to be turned off!',
     'startup': 'Say hi and tell about yourself.',
 }

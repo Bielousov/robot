@@ -52,7 +52,7 @@ class IntentsModel:
         self.neuralNetwork.summary()
 
     def initializeModel(self):
-        self.__initialTrain()
+        self.__initialTrain(accuracy=self.trainingThreshold)
         self.neuralNetwork.summary()
         self.validate()
 

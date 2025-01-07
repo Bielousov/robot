@@ -2,11 +2,11 @@ v4
 
 INPUT
 -----
-0: random
 1: awake state
 2: promptQueue state len()
 3. voiceQueue state len()
 4: cpu temp
+5: random
 
 
 OUTPUT

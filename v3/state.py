@@ -22,11 +22,11 @@ def getStateContext():
   sensors.update()
 
   result = array([
-    random(),
     context.awake,
     len(context.promptQueue),
     len(context.voiceQueue),
     context.cpuTemp,
+    random(),
   ])
 
   print(result)

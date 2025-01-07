@@ -30,8 +30,8 @@ def start():
 
 def shutdown():
     State.promptQueue.append(Prompts['shutdown'])
-    time.sleep(5)
+    time.sleep(1)
+    threads.stop()
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()
-    threads.stop()
 

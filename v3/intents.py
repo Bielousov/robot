@@ -27,8 +27,12 @@ class IntentHandler:
       self.openai.tts(text)
     else:
       self.voice.say(text)
-      
+
     self.eyes.wonder()
+  
+  def train(self):
+    self.eyes.wonder()
+    self.decisions.train()
 
   def wakeup(self, text):
     self.eyes.open()

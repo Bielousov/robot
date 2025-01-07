@@ -11,20 +11,25 @@ ENV = Enum (
   VOICE                   = getenv('VOICE'),
 )
 
-DecisionModelConfig = Enum (
+MODEL = Enum (
   INPUTS = 3,
   LAYERS = [30],
   OUTPUTS = 6,
-  TRAIN_THRESHOLD = 0.6,
+  INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),
+  TRAINING_EPOCHS     = int(getenv('TRAINING_EPOCHS')),
+  TRAINING_THRESHOLD     = float(getenv('TRAINING_THRESHOLD')),
 
-  MODEL_DATA_PATH = path.join(path.dirname(__file__), 'models/data/decisions-training.csv'),
-  MODEL_DATA_VALIDATION_PATH = path.join(path.dirname(__file__), 'models/data/decisions-validation.csv'),
-  MODEL_PATH = path.join(path.dirname(__file__), 'models/build/decisions.model.npy'),
+  DATA_PATH = path.join(path.dirname(__file__), 'models/data/decisions-training.csv'),
+  DATA_VALIDATION_PATH = path.join(path.dirname(__file__), 'models/data/decisions-validation.csv'),
+  PATH = path.join(path.dirname(__file__), 'models/build/decisions.model.npy'),
 
-  MODEL_OUTPUT_ANNOTATION = [
+  OUTPUT_ANNOTATION = [
     'wakeup',
-    'train',
+    'ask',
     'blink',
+    'say',
+    'train',
+    'wonder'
   ]
 )
 

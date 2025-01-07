@@ -22,7 +22,10 @@ decisions = Decisions(
     trainingEpochs = ENV.TRAINING_EPOCHS,
 )
 intentHandler = IntentHandler(decisions, eyes)
-intents = Intents()
+intents = Intents(
+    annotations=ModelConfig.MODEL_OUTPUT_ANNOTATION,
+    threshold=ENV.INTENTS_THRESHOLD,
+)
 threads = Threads()
 
 def start():

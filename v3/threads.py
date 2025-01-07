@@ -1,4 +1,5 @@
-from config import ENV
+from config import ENV, MODEL
+from lib.Intents import Intents
 from lib.Threads import Thread
 from state import State, getStateContext
 
@@ -10,16 +11,27 @@ def EyesThread(eyes):
     
     return Thread(threadInterval, runThread)
 
-def IntentThread(intentHandler):
+def IntentsThread(intentsModel, intentHandler):
+  intents = Intents(
+    annotations=MODEL.OUTPUT_ANNOTATION,
+    threshold=MODEL.INTENT_THRESHOLD,
+  )
+
   threadInterval = 1 / int(ENV.INTENT_FPS)
 
   def runThread():
-      if State.voiceQueue:
-        intentHandler.say(State.voiceQueue.pop(0))
-        return
+      context = getStateContext()
+      intents.classify(intentsModel.run(context)[0])
+      intent, confidenceScore = intents.getIntent()
+      intentHandler.handle(intent, confidenceScore)
+      intents.doneProcessingIntent()
+  
+      # if State.voiceQueue:
+      #   intentHandler.say(State.voiceQueue.pop(0))
+      #   return
 
-      if State.promptQueue:
-         intentHandler.ask(State.promptQueue.pop(0))
+      # if State.promptQueue:
+      #    intentHandler.ask(State.promptQueue.pop(0))
          
       
   return Thread(threadInterval, runThread)

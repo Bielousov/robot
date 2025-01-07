@@ -1,12 +1,10 @@
 import random
 from queue import Queue
-from config import ENV, ModelConfig
-from .Enum import Enum
 
 class Intents:
-  def __init__(self):
-    self.__intentsMap = ModelConfig.MODEL_OUTPUT_ANNOTATION
-    self.__treshold = float(ENV.INTENTS_THRESHOLD)
+  def __init__(self, annotations, threshold=0.51):
+    self.__intentsMap = annotations
+    self.__treshold = threshold
     self.__queue = Queue()
 
   def __addDeduped(self, intentId, value):

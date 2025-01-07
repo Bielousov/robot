@@ -13,7 +13,7 @@ class IntentHandler:
       print(datetime.now().strftime('%H:%M:%S.%f')[:-3], 'Handling intent', intentId, 'with confidence', confidenceScore)
     return getattr(self, intentId, lambda: self.noIntent)(confidenceScore)
   
-  def ask(self):
+  def ask(self, confidenceScore):
     response = self.openai.ask(State.promptQueue.pop(0))
     self.eyes.wonder()
 

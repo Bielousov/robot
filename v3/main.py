@@ -6,7 +6,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import ENV, OPEN_AI
 from dictionary import Prompts
 from intents import IntentHandler
-from threads import ChatThread, EyesThread, IntentThread, VoiceThread
+from state import State
+from threads import EyesThread, IntentThread
 from lib.Eyes import Eyes
 from lib.OpenAiClient import OpenAiClient
 from lib.Threads import Threads
@@ -21,17 +22,15 @@ threads = Threads()
 def start():
     threads.start(IntentThread(intentHandler))
     threads.start(EyesThread(eyes))
-    threads.start(VoiceThread(voice))
 
-    eyes.open()
-    chatGPT.setPrompt(Prompts['startup'])
+    eyes.open();
+
+    State.promptQueue.append(Prompts['startup'])
 
 def shutdown():
-    chatGPT.setPrompt(Prompts['shutdown'])
-    chatGPT.runQuery()
+    State.promptQueue.append(Prompts['shutdown'])
     time.sleep(5)
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()
-    voice.clear()
     threads.stop()
 

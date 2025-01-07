@@ -1,5 +1,5 @@
 from openai import OpenAI
-
+from .Audio import Audio
 
 class OpenAiClient:
     def __init__(self, config):
@@ -8,9 +8,19 @@ class OpenAiClient:
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
-        # self.ttsFormat = config.TTS_FORMAT
-        # self.ttsModel = config.TTS_MODEL
-        # self.ttsVoice=config.TTS_VOICE
+        self.ttsEnabled = config.TTS_ENABBLED
+        
+        if self.ttsEnabled:
+            self.ttsFormat = config.TTS_FORMAT
+            self.ttsFramesPerBuffer = config.TTS_FRAMES_PER_BUFFER
+            self.ttsModel = config.TTS_MODEL
+            self.ttsSampleRate=config.TTS_SAMPLE_RATE
+            self.ttsVoice=config.TTS_VOICE
+            
+            self.ttsAudio = Audio(
+                bufferSize = self.ttsFramesPerBuffer,
+                sampleRate= self.ttsSampleRate,
+            )
     
         self.__reset__()
 
@@ -35,8 +45,6 @@ class OpenAiClient:
         print(">> OpenAI: ", response)
 
         return response
-
-        # self.generateSpeech(response)
     
     def query(self, messages):
         response = self.client.chat.completions.create(
@@ -46,21 +54,21 @@ class OpenAiClient:
 
         return response.choices[0].message.content;
 
+    def tts(self, text):
+        if not self.ttsEnabled or not text:
+            return
 
-    # def generateSpeech(self, text):
-    #     if not text:
-    #         return
+        try:
 
-    #     try:
-    #         # Request text-to-speech from OpenAI API
-    #         with self.client.audio.speech.with_streaming_response.create(
-    #             input=text,
-    #             model=self.ttsModel,
-    #             response_format=self.ttsFormat,
-    #             voice=self.ttsVoice,
-    #         ) as response:
-    #             for chunk in response.iter_bytes(self.audio.frames_per_buffer):
-    #                 self.audio.append(chunk)
+            # Request text-to-speech from OpenAI API
+            with self.client.audio.speech.with_streaming_response.create(
+                input=text,
+                model=self.ttsModel,
+                response_format=self.ttsFormat,
+                voice=self.ttsVoice,
+            ) as response:
+                for chunk in response.iter_bytes(self.ttsFramesPerBuffer):
+                    self.ttsAudio.output(chunk)
 
-    #     except:
-    #         print("generateSpeech: an exception occurred")
+        finally:
+            self.ttsAudio.stream.stop_stream()

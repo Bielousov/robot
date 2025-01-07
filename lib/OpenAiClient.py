@@ -2,10 +2,10 @@ import openai
 from .Audio import Audio
 
 class OpenAiClient:
-    def __init__(self, config, errorHandler):
+    def __init__(self, config, onError):
 
         self.client = openai.OpenAI()
-        self.errorHandler = errorHandler
+        self.onError = onError
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
@@ -46,17 +46,16 @@ class OpenAiClient:
             print(">> OpenAI: ", response)
             return response
         
-        except openai.APIConnectionError as e:
-            self.errorHandler('openai.APIConnectionError');
+        except (
+            openai.APIConnectionError,
+            openai.APIError,
+            openai.AuthenticationError,
+            openai.RateLimitError,
+        ) as e:
+            self.onError(f"openai.{e.__name__}");
         
-        except openai.APIError as e:
-            self.errorHandler('openai.APIError');
-    
-        except openai.AuthenticationError as e:
-            self.errorHandler('openai.AuthenticationError');
-
-        except openai.RateLimitError as e:
-            self.errorHandler('openai.RateLimitError');
+        except:
+            self.onError('Unhandled OpenAI error');
     
     def query(self, messages):
         response = self.client.chat.completions.create(

@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import ENV, MODEL, OPEN_AI
 from dictionary import Prompts
 from intents import IntentHandler
-from state import State
+from state import State, handleError
 from threads import EyesThread, IntentsThread
 
 from lib.Eyes import Eyes
@@ -16,7 +16,10 @@ from lib.Threads import Threads
 from lib.Voice import Voice
 
 eyes = Eyes()
-openAi = OpenAiClient(config = OPEN_AI)
+openAi = OpenAiClient(
+    config = OPEN_AI,
+    onError = handleError
+)
 voice = Voice(ENV.VOICE)
 intentsModel = IntentsModel(MODEL)
 intentHandler = IntentHandler(eyes, intentsModel, openAi, voice)

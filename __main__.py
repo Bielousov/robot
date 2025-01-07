@@ -3,9 +3,8 @@ import os, signal, sys
 # Add the 'lib' directory to sys.path to ensure Lib1 and Lib2 can be imported in both v1 and v2 scripts
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 
-# Set the path for the v2 directory (ensure that v2/main.py can be run)
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v2'))
-# sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v3'))
+# Set the path for the v3 directory
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v3'))
 
 import v2.main
 

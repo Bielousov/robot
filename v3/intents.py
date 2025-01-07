@@ -1,5 +1,5 @@
 from datetime import datetime
-from state import setState, State
+from state import State
 
 class IntentHandler:
   def __init__(self, eyes, intentsModel, openai, voice):
@@ -13,8 +13,8 @@ class IntentHandler:
       print(datetime.now().strftime('%H:%M:%S.%f')[:-3], 'Handling intent', intentId, 'with confidence', confidenceScore)
     return getattr(self, intentId, lambda: self.noIntent)()
   
-  def ask(self, prompt,):
-    response = self.openai.ask(prompt)
+  def ask(self):
+    response = self.openai.ask(State.promptQueue.pop(0))
     self.eyes.wonder()
 
     if response:
@@ -25,9 +25,9 @@ class IntentHandler:
 
   def say(self, text):
     if self.openai.ttsEnabled:
-      self.openai.tts(text)
+      self.openai.tts(State.voiceQueue.pop(0))
     else:
-      self.voice.say(text)
+      self.voice.say(State.voiceQueue.pop(0))
 
     self.eyes.wonder()
   

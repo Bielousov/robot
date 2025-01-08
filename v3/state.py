@@ -11,18 +11,18 @@ sensors = Sensors(debug = ENV.DEBUG)
 
 class StateClass():
   def __init__(self):
-    self.awake = False,
-    self.speaking = False,
+    self.awake = False
+    self.speaking = False
 
     # queues
-    self.prompts = [],
-    self.utterances = [],
+    self.prompts = []
+    self.utterances = []
 
     # sensors
-    self.ambientNoise = 0,
-    self.cpuTemp = 0,
+    self.ambientNoise = 0
+    self.cpuTemp = 0
 
-  def get(self, key, value):
+  def get(self, key):
     if hasattr(self, key):
       getattr(self, key)
     else:

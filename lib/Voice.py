@@ -23,6 +23,9 @@ class Voice:
         except subprocess.CalledProcessError as e:
             print("Error while running Flite:", e)
 
+        finally:
+            self.thread.start()
+
     def _thread_target(self):
         # This function runs in the background thread
         while True:

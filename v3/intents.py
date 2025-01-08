@@ -32,7 +32,6 @@ class IntentHandler:
       else:
         self.voice.say(State.voiceQueue.pop(0))
 
-  
   def train(self, confidenceScore):
     self.eyes.wonder()
     self.intentsModel.train()

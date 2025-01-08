@@ -1,11 +1,9 @@
 import subprocess, time
-from threading import Thread
+from Threads import Process
 
 class Voice:
     def __init__(self, voice):
-        self.text_to_say = None
-        self.thread = Thread(target=self._thread_target)
-        self.thread.daemon = True  # Daemonize the thread to exit when the main program ends
+        self._process = None
         self.voice = voice
 
     def _say(self, text):
@@ -24,18 +22,8 @@ class Voice:
             print("Error while running Flite:", e)
 
         finally:
-            self.thread.start()
+            self._process.stop()
 
-    def _thread_target(self):
-        # This function runs in the background thread
-        while True:
-            if self.text_to_say:
-                self._say(self.text_to_say)
-                self.text_to_say = None
-            else:
-                time.sleep(0.1)
-
+        
     def say(self, text):
-        self.text_to_say = text
-        if not self.thread.is_alive():
-            self.thread.start()
+        self._process = Process(self._say, (text), True)

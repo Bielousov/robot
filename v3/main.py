@@ -14,7 +14,6 @@ from dictionary import Prompts
 from intents import IntentHandler
 from state import State
 from threads import EyesThread, IntentsThread
-from utils import handelVerboseError
 
 eyes = Eyes()
 openAi = OpenAiClient(OPEN_AI)

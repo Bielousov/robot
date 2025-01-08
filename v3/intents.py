@@ -1,6 +1,6 @@
 from datetime import datetime
 from state import State
-from utils import handelVerboseError
+from errors import handelVerboseError
 
 class IntentHandler:
   def __init__(self, eyes, intentsModel, openai, voice):

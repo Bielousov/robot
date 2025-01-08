@@ -2,10 +2,8 @@ import openai
 from .Audio import Audio
 
 class OpenAiClient:
-    def __init__(self, config, onError):
-
+    def __init__(self, config):
         self.client = openai.OpenAI()
-        self.onError = onError
 
         self.model = config.MODEL
         self.personality = config.PERSONALITY
@@ -31,10 +29,9 @@ class OpenAiClient:
             "content": self.personality,
         }]
 
-    def ask(self, prompt):
+    def ask(self, prompt, onError=None):
         if not prompt:
             return
-        
 
         try:
             self.chatLog.append({
@@ -46,16 +43,9 @@ class OpenAiClient:
             print(">> OpenAI: ", response)
             return response
         
-        except (
-            openai.APIConnectionError,
-            openai.APIError,
-            openai.AuthenticationError,
-            openai.RateLimitError,
-        ) as e:
-            self.onError(f"openai.{e.__name__}");
-        
-        except:
-            self.onError('Unhandled OpenAI error');
+        except Exception as e:
+            if onError:
+                onError(f"openai.{type(e).__name__}");
     
     def query(self, messages):
         response = self.client.chat.completions.create(
@@ -65,7 +55,7 @@ class OpenAiClient:
 
         return response.choices[0].message.content;
 
-    def tts(self, text):
+    def tts(self, text, onError=None):
         if not self.ttsEnabled or not text:
             return
 
@@ -81,6 +71,10 @@ class OpenAiClient:
             ) as response:
                 for chunk in response.iter_bytes(self.ttsFramesPerBuffer):
                     self.ttsAudio.output(chunk)
+
+        except Exception as e:
+            if onError:
+                onError(f"openai.{type(e).__name__}");
 
         finally:
             self.ttsAudio.stream.stop_stream()

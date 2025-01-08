@@ -1,5 +1,6 @@
 from datetime import datetime
-from state import appendState, popState, setState, State
+from state import State
+from utils import handelVerboseError
 
 class IntentHandler:
   def __init__(self, eyes, intentsModel, openai, voice):
@@ -16,30 +17,30 @@ class IntentHandler:
   def ask(self, confidenceScore):
     self.eyes.wonder()
     if State.prompts:
-      response = self.openai.ask(popState('prompts'))
+      response = self.openai.ask(State.pop('prompts'), onError=handelVerboseError)
 
       if response:
-        appendState('utterances', response)
+        State.appen('utterances', response)
 
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
   def say(self, confidenceScore):
     self.eyes.wonder()
-    setState('speaking', True)
+    State.set('speaking', True)
     if State.utterances:
       if self.openai.ttsEnabled:
-        self.openai.tts(popState('utterances'))
+        self.openai.tts(State.pop('utterances'), onError=handelVerboseError)
       else:
-        self.voice.say(popState('utterances'))
-    setState('speaking', False)
+        self.voice.say(State.pop('utterances'))
+    State.set('speaking', False)
 
   def train(self, confidenceScore):
     self.eyes.wonder()
     self.intentsModel.train()
 
   def wakeup(self, confidenceScore):
-    setState('awake', True)
+    State.set('awake', True)
     self.eyes.open(confidenceScore)
     print('Waking up!')
 

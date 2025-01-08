@@ -1,7 +1,7 @@
 from config import ENV, MODEL
 from lib.Intents import Intents
 from lib.Threads import Thread
-from state import State, getStateContext
+from state import getStateContext
 
 def EyesThread(eyes):
     threadInterval = 1 / int(ENV.EYES_FPS)

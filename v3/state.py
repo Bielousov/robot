@@ -9,37 +9,55 @@ from utils import debug
 
 sensors = Sensors(debug = ENV.DEBUG)
 
-State = Enum (
-  awake = False,
-  speaking = False,
+class StateClass():
+  def __init__(self):
+    self.awake = False,
+    self.speaking = False,
 
-  # queues
-  prompts = [],
-  utterances = [],
+    # queues
+    self.prompts = [],
+    self.utterances = [],
 
-  # sensors
-  ambientNoise = 0,
-  cpuTemp = 0,
-)
+    # sensors
+    self.ambientNoise = 0,
+    self.cpuTemp = 0,
 
-def updateSensors():
-  sensors.update()
-  State.ambientNoise = sensors.getNoise()
-  State.cpuTemp = sensors.getCpuTemp()
+  def get(self, key, value):
+    if hasattr(self, key):
+      getattr(self, key)
+    else:
+      raise AttributeError(f"'{key}' is not a valid property of {self.__class__.__name__}")
 
-def appendState(key, value):
-  State[key].append(value)
+  def set(self, key, value):
+    if hasattr(self, key):
+      setattr(self, key, value)
+    else:
+      raise AttributeError(f"'{key}' is not a valid property of {self.__class__.__name__}")
 
-def popState(key):
-  return State[key].pop(0)
+  def append(self, key, value):
+    if hasattr(self, key):
+      getattr(self, key).append(value)
+    else:
+      raise AttributeError(f"{key} is not a valid attribute of {self.__class__.__name__}.")
 
-def setState(key, value):
-  State.set(key, value)
+  def pop(self, key):
+    if hasattr(self, key):
+      return getattr(self, key).pop(0)
+    else:
+      raise AttributeError(f"{key} is not a valid attribute of State.")
+
+# Singleton State instance
+State = StateClass()
 
 def getStateContext():
-  updateSensors()
+  try:
+    sensors.update()
+    State.set('ambientNoise', sensors.getNoise())
+    State.set('cpuTemp', sensors.getCpuTemp())
+  except:
+    print("Failed to update sensors data")
 
-  result = array([
+  context = array([
     1 if State.awake else 0,
     len(State.prompts),
     len(State.utterances),
@@ -48,19 +66,8 @@ def getStateContext():
     random(),
   ])
 
-  debug(result, 'State')
-  return result
-
-def clearState():
-  sensors.cleanup()
-
-def handleError(error):  
-  try:
-    print(f"{error}: {Responses['errors'][error]}")
-    appendState('utterances', Responses['errors'][error])
-  except:
-    print(f"{error}: Unhandled error")
-    appendState('utterances', Responses['errors']['generic'])
+  debug(context, 'State context')
+  return context
 
 def normalizeCpuTemp(temp, minValue=0.2, maxValue=0.4):
     # Clip values to avoid errors (e.g., log(0))

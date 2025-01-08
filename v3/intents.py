@@ -20,7 +20,7 @@ class IntentHandler:
       response = self.openai.ask(State.pop('prompts'), onError=handelVerboseError)
 
       if response:
-        State.appen('utterances', response)
+        State.append('utterances', response)
 
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)

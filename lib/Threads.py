@@ -25,21 +25,21 @@ class Threads():
       self.collection.remove(t)
 
 class Process():
-  def __init__(self, target, args = (), autostart=False):
+  def __init__(self, target, args = ()):
+    self.args=args
     self.target = target
 
     self.event = threading.Event()
-    self.thread = threading.Thread(target=self._process, args=args)
+    self.thread = threading.Thread(target=self._process)
     # Daemonize the thread to exit when the main program ends
     self.thread.daemon = True 
+
+    self.start()
     
-    if autostart:
-      self.start()
-  
-  def _process(self, args):
+  def _process(self):
     while True:
       self.event.wait()  # Will pause if the event is not set
-      self.target(args)
+      self.target(self.args)
 
   def pause(self):
     self.event.clear()

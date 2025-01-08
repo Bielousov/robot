@@ -26,4 +26,4 @@ class Voice:
 
         
     def say(self, text):
-        self._process = Process(self._say, (text), True)
+        self._process = Process(self._say, (text))

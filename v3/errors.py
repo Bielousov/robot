@@ -1,7 +1,7 @@
 from dictionary import  Responses
-from state import State
+from state import appendState
 
 def handleError(error):
     match error:
         case 'openai.APIConnectionError':
-            State.voiceQueue.append(Responses[error])
+            appendState('utterances', Responses[error])

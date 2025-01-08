@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import ENV, MODEL, OPEN_AI
 from dictionary import Prompts
 from intents import IntentHandler
-from state import State, handleError
+from state import State, appendState, handleError
 from threads import EyesThread, IntentsThread
 
 from lib.Eyes import Eyes
@@ -29,10 +29,10 @@ threads = Threads()
 def start():
     threads.start(IntentsThread(intentsModel, intentHandler))
     threads.start(EyesThread(eyes))
-    State.promptQueue.append(Prompts['startup'])
+    appendState('prompts', Prompts['startup'])
 
 def shutdown():
-    State.promptQueue.append(Prompts['shutdown'])
+    appendState('prompts', Prompts['shutdown'])
     time.sleep(1)
     threads.stop()
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")

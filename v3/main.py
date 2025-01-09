@@ -30,7 +30,7 @@ def start():
 
 def shutdown():
     State.append('prompts', Prompts['shutdown'])
-    time.sleep(1)
+    time.sleep(5 if OPEN_AI.TTS_ENABBLED else 0)
     threads.stop()
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")
     eyes.clear()

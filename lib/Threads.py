@@ -1,4 +1,4 @@
-import threading
+import threading, time
 
 ThreadsRunEvent = threading.Event()
 
@@ -28,23 +28,22 @@ class Process():
   def __init__(self, target, args = ()):
     self.args=args
     self.target = target
-
-    self.runningEvent = threading.Event()
-    self.thread = threading.Thread(target=self._process)
+    
+    self._stop_event = threading.Event()
+    self._thread = threading.Thread(target=self._process)
     # Daemonize the thread to exit when the main program ends
-    self.thread.daemon = True 
-    self.thread.start()
-
-    self.start()
+    self._thread.daemon = True 
+    self._thread.start()
     
   def _process(self):
-    while True:
-      self.runningEvent.wait()  # Will pause if the event is not set
-      self.target(self.args)
-
-  def start(self):
-    if not self.thread.is_alive():
-      self.runningEvent.set()
-  
-  def stop(self):
-      self.runningEvent.clear()
+    while not self._stop_event.is_set():
+      try:
+        self.target(self.args)
+      
+      except Exception as e:
+          print("Process error:", e)
+      
+      finally:
+        self._stop_event.set()
+      
+      time.sleep(1)

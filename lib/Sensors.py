@@ -2,7 +2,6 @@ import OPi.GPIO as GPIO
 
 CPU_TEMP_API = '/sys/class/thermal/thermal_zone0/temp'
 MIC_CHANNEL = 'PA15'
-NOISE_PEAK = 2
 
 def handler():
   print('--- handle noise ---')
@@ -19,13 +18,13 @@ class Sensors():
     GPIO.setmode(GPIO.SUNXI)
     GPIO.setwarnings(False)
     GPIO.setup(MIC_CHANNEL, GPIO.IN)
-    GPIO.add_event_detect(MIC_CHANNEL, GPIO.RISING, callback=self.handleNoise)
+    GPIO.add_event_detect(MIC_CHANNEL, GPIO.RISING, callback=self._handleNoise)
 
   def cleanup(self):
     GPIO.cleanup()
 
   def update(self):
-    thermalApiData = open('/sys/class/thermal/thermal_zone0/temp', 'r').read()
+    thermalApiData = open(CPU_TEMP_API, 'r').read()
     self.cpuTemp = int(thermalApiData) / 100000
     self.noise = 0
 
@@ -39,9 +38,7 @@ class Sensors():
       print ("[Sensors] Noise level: ", self.noise)
     return self.noise
   
-  def handleNoise(self, pin):
+  def _handleNoise(self, pin):
     if self.debug == True:
-      print('>> noise >>', pin)
-    self.noise = min(self.noise + 0.1, NOISE_PEAK);
-  
-  
+      print('[Sensors] Noise detected', pin)
+    self.noise = min(self.noise + 0.1, 1);  

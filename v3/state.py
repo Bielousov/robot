@@ -49,7 +49,6 @@ State = StateClass()
 
 def getStateContext():
   try:
-    sensors.update()
     State.set('ambientNoise', sensors.getNoise())
     State.set('cpuTemp', sensors.getCpuTemp())
   except:
@@ -63,8 +62,10 @@ def getStateContext():
     State.ambientNoise,
     random(),
   ])
-
+  
   debug(context, 'State context')
+  
+  sensors.update()
   return context
 
 def normalizeCpuTemp(temp, minValue=0.2, maxValue=0.4):

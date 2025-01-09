@@ -1,10 +1,8 @@
 from random import random
 from copy import deepcopy
 from numpy import array, clip, log10
-from lib.Enum import Enum
 from lib.Sensors import Sensors
 from config import ENV
-from dictionary import Responses
 from utils import debug
 
 sensors = Sensors(debug = ENV.DEBUG)

@@ -20,30 +20,41 @@ class Threads():
   def stop(self):
     ThreadsRunEvent.clear()
     for t in self.collection:
-      t.join(1)
-      t.cancel()
-      self.collection.remove(t)
+        t.join(1)
+        t.cancel()
+        self.collection.remove(t)
 
 class Process():
-  def __init__(self, target, args = ()):
-    self.args=args
+  def __init__(self, target = None, args=()):
+    self.args = target
     self.target = target
     
-    self._stop_event = threading.Event()
+    self._run_event = threading.Event()
     self._thread = threading.Thread(target=self._process)
     # Daemonize the thread to exit when the main program ends
     self._thread.daemon = True 
     self._thread.start()
     
   def _process(self):
-    while not self._stop_event.is_set():
-      try:
-        self.target(self.args)
+    while True:
+        self._run_event.wait()
+
+        if not self.target:
+            continue
       
-      except Exception as e:
-          print("Process error:", e)
+        try:
+            self.target(*self.args)
       
-      finally:
-        self._stop_event.set()
+        except Exception as e:
+            print("Process error:", e)
       
-      time.sleep(1)
+        finally:
+            self._run_event.clear()
+
+  def run(self, target=None, *args):
+    if target:
+        self.target = target
+    if args:
+        self.args = args
+
+    self._run_event.set()

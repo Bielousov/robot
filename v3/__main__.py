@@ -7,6 +7,9 @@ def exitSignal(signal, frame):
     try:
         main.shutdown()
         sys.exit(0)
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Exiting.")
+        sys.exit(1)
     except SystemExit as e:
         print(f"Exiting program with status: {e.code}")
         raise  # Re-raise SystemExit to terminate the program

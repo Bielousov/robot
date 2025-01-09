@@ -10,8 +10,11 @@ import v3.main
 
 def exitSignal(signal, frame):
     print("Handling exit signal:", signal)
-    v3.main.shutdown()
-    sys.exit(0)
+    try:
+        v3.main.shutdown()
+        sys.exit(0)
+    except SystemExit as e:
+        print(f"Exiting program with status: {e.code}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exitSignal)

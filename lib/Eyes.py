@@ -122,4 +122,8 @@ class Eyes:
       self.__generateFrame(random.uniform(0.1, 3))
 
   def wonder(self):
+    # prevent long eye wonder queues
+    if len(self.animation) >= MAX_ANIMATION_LENGTH:
+      return
+    
     self.focus(int(random.uniform(-3, 2)), int(random.uniform(-2, 3)))

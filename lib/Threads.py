@@ -14,7 +14,7 @@ class Threads():
     ThreadsRunEvent.set()
 
   def __del__(self):
-    self.close()
+    self.stop()
 
   def start(self, thread: Thread):
     self.collection.append(thread)

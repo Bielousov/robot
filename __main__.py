@@ -13,8 +13,12 @@ def exitSignal(signal, frame):
     try:
         v3.main.shutdown()
         sys.exit(0)
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Exiting.")
+        sys.exit(1)
     except SystemExit as e:
         print(f"Exiting program with status: {e.code}")
+        raise  # Re-raise SystemExit to terminate the program
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exitSignal)

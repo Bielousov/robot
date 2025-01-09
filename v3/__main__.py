@@ -9,6 +9,7 @@ def exitSignal(signal, frame):
         sys.exit(0)
     except SystemExit as e:
         print(f"Exiting program with status: {e.code}")
+        raise  # Re-raise SystemExit to terminate the program
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exitSignal)

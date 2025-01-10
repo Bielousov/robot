@@ -21,6 +21,5 @@ class Voice:
         except subprocess.CalledProcessError as e:
             print("Error while running Flite:", e)
 
-
     def say(self, text):
         self._process.run(self._say, text)

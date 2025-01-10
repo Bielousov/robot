@@ -1,13 +1,16 @@
 from numpy import array, loadtxt
 
-from .NeuralNetwork import NeuralNetwork
+from NeuralNetwork import NeuralNetwork
+from Threads import Process
 
 class IntentsModel:
     def __init__(self, config):
+        self._process = Process()
         self.modelPath = config.PATH
         self.trainingSetPath = config.TRAINING_DATA_PATH
         self.validationSetPath = config.VALIDATION_DATA_PATH
 
+        self.training = False
         self.trainingEpochs = config.TRAINING_EPOCHS
         self.trainingThreshold = config.TRAINING_THRESHOLD
 
@@ -57,7 +60,8 @@ class IntentsModel:
         self.neuralNetwork.summary()
         self.validate()
 
-    def train(self, forceSave=False):
+    def _train(self, forceSave):
+        self.isTraining = True
         self.neuralNetwork.train(
             self.__trainingSetInputs,
             self.__trainingSetOutputs,
@@ -65,11 +69,19 @@ class IntentsModel:
         )
         self.neuralNetwork.summary()
 
-        if self.neuralNetwork.accuracy > self.trainingThreshold and (self.neuralNetwork.accuracy > self.neuralNetwork.baseAccuracy or forceSave):
+        if self.neuralNetwork.accuracy > self.trainingThreshold and (round(self.neuralNetwork.accuracy, 4) > round(self.neuralNetwork.baseAccuracy, 4) or forceSave):
             self.__saveModel()
+            self.isTraining = True
             return True
-        else:
-            return False
+        
+        self.isTraining = True
+        return False
+
+    def train(self, forceSave=False):
+        if self.training:
+            return
+        
+        self._process.run(self._train, forceSave)
 
     def validate(self):
         if not hasattr(self, '__validationSet'):

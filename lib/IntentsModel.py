@@ -1,7 +1,7 @@
 from numpy import array, loadtxt
 
-from NeuralNetwork import NeuralNetwork
-from Threads import Process
+from .NeuralNetwork import NeuralNetwork
+from .Threads import Process
 
 class IntentsModel:
     def __init__(self, config):

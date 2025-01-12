@@ -8,7 +8,7 @@ class Audio:
         self.frames_per_buffer=bufferSize
         self.sample_rate=sampleRate
 
-        self.__stream = self.audio.open(
+        self.stream = self.audio.open(
             format=self.format,
             channels=self.channels,
             output=True,
@@ -20,10 +20,10 @@ class Audio:
         if not audioData:
             return
     
-        self.__stream.write(audioData)
+        self.stream.write(audioData)
 
 
     def clear(self):
-        self.__stream.stop_stream()
-        self.__stream.close()
+        self.stream.stop_stream()
+        self.stream.close()
         self.audio.terminate()

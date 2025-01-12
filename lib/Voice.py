@@ -3,10 +3,10 @@ from Threads import Process
 
 class Voice:
     def __init__(self, voice):
-        self._process = Process()
+        self.__process = Process()
         self.voice = voice
 
-    def _say(self, text):
+    def say(self, text):
         # Build the Flite command
         command = [
             "flite",
@@ -21,5 +21,5 @@ class Voice:
         except subprocess.CalledProcessError as e:
             print("Error while running Flite:", e)
 
-    def say(self, text):
-        self._process.run(self._say, text)
+    def sayAsync(self, text):
+        self.__process.run(self._say, text)

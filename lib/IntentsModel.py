@@ -5,7 +5,7 @@ from .Threads import Process
 
 class IntentsModel:
     def __init__(self, config):
-        self._process = Process()
+        self.__process = Process()
         self.modelPath = config.PATH
         self.trainingSetPath = config.TRAINING_DATA_PATH
         self.validationSetPath = config.VALIDATION_DATA_PATH
@@ -60,7 +60,7 @@ class IntentsModel:
         self.neuralNetwork.summary()
         self.validate()
 
-    def _train(self, forceSave):
+    def train(self, forceSave):
         self.isTraining = True
         self.neuralNetwork.train(
             self.__trainingSetInputs,
@@ -77,11 +77,11 @@ class IntentsModel:
         self.isTraining = True
         return False
 
-    def train(self, forceSave=False):
+    def trainAsync(self, forceSave=False):
         if self.training:
             return
         
-        self._process.run(self._train, forceSave)
+        self.__process.run(self._train, forceSave)
 
     def validate(self):
         if not hasattr(self, '__validationSet'):

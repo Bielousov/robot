@@ -37,7 +37,7 @@ class IntentHandler:
 
   def train(self, confidenceScore):
     self.eyes.wonder()
-    self.intentsModel.train()
+    self.intentsModel.trainAsync()
 
   def wakeup(self, confidenceScore):
     State.set('awake', True)

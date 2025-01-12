@@ -32,4 +32,5 @@ def shutdown():
     State.append('prompts', Prompts['shutdown'])
     time.sleep(5)
     threads.stop()
+    time.sleep(1)
     print(f"Fine, you killed {ENV.NAME}, hope you are happy!")

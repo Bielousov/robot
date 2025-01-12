@@ -81,7 +81,7 @@ class IntentsModel:
         if self.training:
             return
         
-        self.__process.run(self._train, forceSave)
+        self.__process.run(self.__train, forceSave)
 
     def validate(self):
         if not hasattr(self, '__validationSet'):

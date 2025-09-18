@@ -4,7 +4,7 @@ import random
 class LocalDictionary:
     def __init__(self, db_path="responses.db"):
         """Initialize the database connection and create table if missing."""
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.conn = sqlite3.connect(db_path)
         self.c = self.conn.cursor()
         self.c.execute("""
             CREATE TABLE IF NOT EXISTS responses (

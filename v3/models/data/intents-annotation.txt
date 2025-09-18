@@ -2,11 +2,11 @@ v4
 
 INPUT
 -----
-1: awake state
-2: prompts state len()
-3. utterances state len()
-4: cpu temp
-5: ambient noise
+0: awake state
+1: prompts state len()
+2. utterances state len()
+3: cpu temp
+4: ambient noise
 5: random
 
 

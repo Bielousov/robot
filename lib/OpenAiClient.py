@@ -5,6 +5,7 @@ class OpenAiClient:
     def __init__(self, config):
         self.client = openai.OpenAI()
 
+        self.cacheLimit = config.CACHE_LIMIT
         self.model = config.MODEL
         self.personality = config.PERSONALITY
         self.ttsEnabled = config.TTS_ENABBLED

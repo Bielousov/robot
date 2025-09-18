@@ -1,4 +1,5 @@
 from datetime import datetime
+from lib.LocalDictionary import LocalDictionary
 from state import State
 from errors import handelVerboseError
 
@@ -9,18 +10,39 @@ class IntentHandler:
     self.openai = openai
     self.voice = voice
 
+  def __cache(self):
+    return LocalDictionary("responses.db");
+
   def handle(self, intentId, confidenceScore):
     if intentId != 'noIntent':
       print(datetime.now().strftime('%H:%M:%S.%f')[:-3], 'Handling intent', intentId, 'with confidence', confidenceScore)
     return getattr(self, intentId, lambda: self.noIntent)(confidenceScore)
-  
+
   def ask(self, confidenceScore):
     self.eyes.wonder()
     if State.prompts:
-      response = self.openai.ask(State.pop('prompts'), onError=handelVerboseError)
+      prompt = State.pop('prompts')
+      cache = self.__cache()
+      promptCacheSize = cache.count(prompt)
+      localResponse = cache.getSome(prompt)
 
-      if response:
-        State.append('utterances', response)
+      # Check responses in local dictionary
+      if (promptCacheSize >= self.openai.cacheLimit):
+        State.append('utterances', localResponse)
+        return
+      
+      # Prompt openai
+      else:
+        aiResponse = self.openai.ask(
+          prompt,
+          onError=lambda: State.append('utterances', localResponse) if localResponse else handelVerboseError()
+        )
+        if aiResponse:
+          State.append('utterances', aiResponse)
+
+          # save response to local dictionary
+          if (not cache.exists(prompt, aiResponse)):
+            cache.set(prompt, aiResponse)
 
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)

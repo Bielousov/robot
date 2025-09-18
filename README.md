@@ -24,6 +24,7 @@ The eyes now would only rely on the state to indicate:
 1. `sudo apt install python3-pip python3-dev`
 1. `sudo apt install libjpeg-dev zlib1g-dev`
 1. `sudo apt install rpi.gpio-common`
+1. `sudo apt install sqlite3`
 1. `pip install --upgrade pip setuptools`
 1. `pip install python-dotenv`
 1. `pip install numpy`

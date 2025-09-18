@@ -35,7 +35,7 @@ MODEL = Enum (
 )
 
 OPEN_AI = Enum (
-  CACHE_LIMIT = getenv('OPEN_AI_CACHE_LIMIT'),
+  CACHE_LIMIT = int(getenv('OPEN_AI_CACHE_LIMIT')),
   MODEL = getenv('OPEN_AI_MODEL'),
   PERSONALITY = f"You are a robot called {ENV.NAME}. You are sarcastic and impersonate Bender from Futurama, use his catchphrases occasionally and swear a lot. If asked about yourself, you include your name in your response, but keep it under 30 words.",
   TTS_ENABBLED=bool(int(getenv('OPEN_AI_TTS'))),

@@ -11,7 +11,7 @@ class IntentHandler:
     self.voice = voice
 
   def __cache(self):
-    return LocalDictionary("~/.prompts.db");
+    return LocalDictionary("prompts.db")
 
   def handle(self, intentId, confidenceScore):
     if intentId != 'noIntent':

@@ -35,7 +35,7 @@ class IntentHandler:
       else:
         aiResponse = self.openai.ask(
           prompt,
-          onError=lambda: State.append('utterances', localResponse) if localResponse else handelVerboseError()
+          onError=lambda err: State.append('utterances', localResponse) if localResponse else handelVerboseError(err)
         )
         if aiResponse:
           State.append('utterances', aiResponse)

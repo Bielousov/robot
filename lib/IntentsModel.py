@@ -58,7 +58,7 @@ class IntentsModel:
     def initializeModel(self):
         self.__initialTrain(accuracy=self.trainingThreshold)
         self.neuralNetwork.summary()
-        self.validate()
+        # self.validate()
 
     def train(self, forceSave):
         self.isTraining = True

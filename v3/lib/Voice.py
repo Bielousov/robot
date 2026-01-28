@@ -1,5 +1,5 @@
 import subprocess
-from Threads import Process
+from .Threads import Process
 
 class Voice:
     def __init__(self, voice):

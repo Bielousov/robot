@@ -2,6 +2,7 @@ import os, signal, sys
 
 # Set the path for the v3 directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v3'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v3.lib'))
 
 import v3.main
 

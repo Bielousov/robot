@@ -29,7 +29,6 @@ def start():
 
 def shutdown():
     State.set('on', False)
-    
     time.sleep(5)
     threads.stop()
     time.sleep(1)

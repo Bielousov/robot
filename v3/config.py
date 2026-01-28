@@ -19,6 +19,7 @@ MODEL = Enum (
   OUTPUTS                 = int(getenv('INTENT_MODEL_OUTPUTS')),
   LAYERS                  = int(getenv('INTENT_MODEL_LAYERS')),
   TRAINING_EPOCHS         = int(getenv('TRAINING_EPOCHS')),
+  TRAINING_EPOCHS_INITIAL = int(getenv('TRAINING_EPOCHS_INITIAL')),
   TRAINING_THRESHOLD      = float(getenv('TRAINING_THRESHOLD')),
 
   TRAINING_DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-training.csv'),

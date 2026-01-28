@@ -12,8 +12,9 @@ class IntentsModel:
         self.validationSetPath = config.VALIDATION_DATA_PATH
 
         self.training = False
-        self.trainingEpochs = config.TRAINING_EPOCHS
-        self.trainingThreshold = config.TRAINING_THRESHOLD
+        self.trainingEpochs = getattr(config, "TRAINING_EPOCHS", 1000).value
+        self.trainingEpochsInitial = getattr(config, "TRAINING_EPOCHS_INITIAL", 1000).value
+        self.trainingThreshold = getattr(config, "TRAINING_THRESHOLD", 0.9).value
 
         self.neuralNetworkInputs = config.INPUTS
         self.neuralNetworkNeurons = [config.INPUTS, config.LAYERS, config.OUTPUTS]

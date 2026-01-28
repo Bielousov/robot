@@ -79,8 +79,8 @@ class IntentHandler:
         State.append('prompts', Prompts['catchphrase'])
 
     def sleep(self, confidenceScore):
-        State.append('prompts', Prompts['shutdown'])
         State.set('awake', False)
+        State.append('prompts', Prompts['shutdown'])
 
 
     def train(self, confidenceScore):

@@ -1,12 +1,12 @@
 import subprocess
-from .Threads import Process
+from .Threads import Process, Thread
 
 class Voice:
     def __init__(self, voice):
         self.__process = Process()
         self.voice = voice
 
-    def say(self, text):
+    def say(self, text, callback=None):
         # Build the Flite command
         command = [
             "flite",
@@ -14,12 +14,20 @@ class Voice:
             "-voice", self.voice,
         ]
         
-        # Execute the command
-        try:
-            subprocess.run(command, check=True)
-    
-        except subprocess.CalledProcessError as e:
-            print("Error while running Flite:", e)
+        def _run():
+            try:
+                thread = subprocess.Popen(command)
+                return_code = thread.wait()
 
-    def sayAsync(self, text):
-        self.__process.run(self._say, text)
+                if callback:
+                    callback(
+                        success=(return_code == 0)
+                    )
+
+            except Exception as e:
+                if callback:
+                    callback(success=False, error=e)
+
+
+        # Run asynchronously via your thread wrapper
+        self.__process.run(_run)

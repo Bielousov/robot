@@ -68,9 +68,12 @@ class IntentHandler:
         if State.utterances:
             if self.openai.ttsEnabled:
                 self.openai.tts(State.pop('utterances'), onError=handelVerboseError)
+                State.set('speaking', False)
             else:
-                self.voice.say(State.pop('utterances'))
-        State.set('speaking', False)
+                self.voice.say(
+                    State.pop('utterances'),
+                    callback=lambda **_: State.set('speaking', False)
+                )
 
     def scared(self, confidenceScore):
         State.append('prompts', Prompts['catchphrase'])

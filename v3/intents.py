@@ -63,9 +63,6 @@ class IntentHandler:
     def bored(self, confidenceScore):
         State.append('prompts', Prompts['random fact'])
 
-    def goodbye(self, confidenceScore):
-        State.append('prompts', Prompts['shutdown'])
-
     def say(self, confidenceScore):
         State.set('speaking', True)
         if State.utterances:
@@ -80,6 +77,11 @@ class IntentHandler:
 
     def scared(self, confidenceScore):
         State.append('prompts', Prompts['catchphrase'])
+
+    def sleep(self, confidenceScore):
+        State.append('prompts', Prompts['shutdown'])
+        State.set('awake', False)
+
 
     def train(self, confidenceScore):
         self.eyes.wonder()

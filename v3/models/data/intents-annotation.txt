@@ -15,7 +15,7 @@ INPUT
 OUTPUT
 ------
 1. wakeup
-2. goodbye
+2. sleep (die)
 3. ask (think, ask gpt api)
 4. blink
 5. say

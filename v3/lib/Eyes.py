@@ -4,7 +4,7 @@ from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from luma.core.interface.serial import spi, noop
 
-MAX_ANIMATION_LENGTH = 64
+MAX_ANIMATION_LENGTH = 32
 
 EyeBitmap = np.array([
   [0, 0, 1, 1, 1, 1, 0, 0],

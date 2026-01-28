@@ -64,7 +64,6 @@ class IntentHandler:
         State.append('prompts', Prompts['random fact'])
 
     def say(self, confidenceScore):
-        self.eyes.wonder()
         State.set('speaking', True)
         if State.utterances:
             if self.openai.ttsEnabled:

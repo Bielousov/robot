@@ -13,7 +13,6 @@ class IntentsModel:
 
         self.training = False
         self.trainingEpochs = getattr(config, "TRAINING_EPOCHS", 1000)
-        self.trainingEpochsInitial = getattr(config, "TRAINING_EPOCHS_INITIAL", 1000)
         self.trainingThreshold = getattr(config, "TRAINING_THRESHOLD", 0.9)
 
         self.neuralNetworkInputs = config.INPUTS

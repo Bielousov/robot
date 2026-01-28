@@ -10,6 +10,7 @@ sensors = Sensors(debug = ENV.DEBUG)
 class StateClass():
   def __init__(self):
     self.awake = False
+    self.awake = True
     self.speaking = False
 
     # queues
@@ -57,6 +58,7 @@ def getStateContext():
   # The intent inputs state
   context = array([
     1 if State.awake else 0,
+    State.on,
     len(State.prompts),
     len(State.utterances),
     State.speaking,

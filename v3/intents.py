@@ -63,6 +63,9 @@ class IntentHandler:
     def bored(self, confidenceScore):
         State.append('prompts', Prompts['random fact'])
 
+    def goodbye(self, confidenceScore):
+        State.append('prompts', Prompts['shutdown'])
+
     def say(self, confidenceScore):
         State.set('speaking', True)
         if State.utterances:

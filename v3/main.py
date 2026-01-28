@@ -29,7 +29,8 @@ def start():
     State.append('prompts', Prompts['startup'])
 
 def shutdown():
-    State.append('prompts', Prompts['shutdown'])
+    State.on = False
+    
     time.sleep(5)
     threads.stop()
     time.sleep(1)

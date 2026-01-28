@@ -2,22 +2,24 @@ v4
 
 INPUT
 -----
-0. awake state
-1. prompts state len()
-2. utterances state len()
-3. speaking
-4. cpu temp
-5. ambient noise
-6. random
+1. on state
+2. awake state
+3. prompts state len()
+4. utterances state len()
+5. speaking
+6. cpu temp
+7. ambient noise
+8. random
 
 
 OUTPUT
 ------
-0. wakeup
-1. ask (think, ask gpt api)
-2. blink
-3. say
-4. scared (say something)
-5. bored (say random fact)
-6. train
-7. wonder
+1. wakeup
+2. goodbye
+3. ask (think, ask gpt api)
+4. blink
+5. say
+6. scared (say something)
+7. bored (say random fact)
+8. train
+9. wonder

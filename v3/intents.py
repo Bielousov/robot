@@ -31,7 +31,6 @@ class IntentHandler:
     # Intent methods
     # -----------------------------
     def ask(self, confidenceScore):
-        self.eyes.wonder()
         if State.prompts:
             prompt = State.pop('prompts')
             cache = self.__cache()
@@ -85,7 +84,6 @@ class IntentHandler:
 
 
     def train(self, confidenceScore):
-        self.eyes.wonder()
         self.intentsModel.trainAsync()
 
     def wakeup(self, confidenceScore):

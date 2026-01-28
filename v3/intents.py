@@ -80,7 +80,7 @@ class IntentHandler:
     def sleep(self, confidenceScore):
         State.set('awake', False)
         State.append('prompts', Prompts['shutdown'])
-        self.eyes.close()
+        self.eyes.close(1-confidenceScore)
 
 
     def train(self, confidenceScore):

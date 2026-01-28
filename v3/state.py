@@ -57,11 +57,11 @@ def getStateContext():
 
   # The intent inputs state
   context = array([
-    State.on,
+    1 if State.on else 0,
     1 if State.awake else 0,
     len(State.prompts),
     len(State.utterances),
-    State.speaking,
+    1 if State.speaking else 0,
     normalizeCpuTemp(State.cpuTemp),
     State.ambientNoise,
     random(),

@@ -17,7 +17,14 @@ class NeuralNetwork:
         self.outputs = outputs
 
     def __setAccuracy(self, errors):
-        self.accuracy = 1 - max(absolute(array(errors).flatten()))
+        # self.accuracy = 1 - max(absolute(array(errors).flatten()))
+        """
+        Compute smooth accuracy from all errors.
+        - errors: numpy array of shape (samples, outputs)
+        """
+        errors = array(errors)
+        # 1 - mean absolute error across all outputs
+        self.accuracy = 1 - absolute(errors).mean()
 
     # The Sigmoid function, which describes an S shaped curve.
     # We pass the weighted sum of the inputs through this function to

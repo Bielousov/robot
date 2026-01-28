@@ -5,7 +5,7 @@ from config import MODEL
 from lib.Benchmark import Benchmark
 from lib.IntentsModel import IntentsModel
 
-TRAINING_EPOCHS = 100_000
+TRAINING_EPOCHS = 10_000
 
 # --- internal stop flag ---
 _stop_event = threading.Event()

@@ -5,7 +5,6 @@ class Voice:
     def __init__(self, voice):
         self.__process = Process()
         self.voice = voice
-        self.voice.set_float("duration_stretch", 0.9) 
 
     def say(self, text):
         # Build the Flite command

@@ -28,9 +28,10 @@ def run():
 
     modelConfig = deepcopy(MODEL)
     modelConfig.TRAINING_EPOCHS = TRAINING_EPOCHS
+    print(f"Starting model v{modelConfig.VERSION}.{modelConfig.INPUTS}-{modelConfig.LAYERS}-{modelConfig.OUTPUTS} training")
+    
     intentsModel = IntentsModel(modelConfig)
 
-    print(f"Startin traingin model v{modelConfig.VERSION}.{modelConfig.INPUTS}-{modelConfig.LAYERS}-{modelConfig.OUTPUTS}")
 
     try:
         while not _stop_event.is_set():

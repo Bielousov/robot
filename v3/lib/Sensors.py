@@ -39,6 +39,6 @@ class Sensors():
     return self.noise
   
   def _handleNoise(self, pin):
-    if self.debug == True:
-      print('[Sensors] Noise detected', pin)
+    # if self.debug == True:
+    #   print('[Sensors] Noise detected', pin)
     self.noise = min(self.noise + 0.1, 1);  

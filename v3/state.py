@@ -10,7 +10,7 @@ sensors = Sensors(debug = ENV.DEBUG)
 class StateClass():
   def __init__(self):
     self.awake = False
-    self.awake = True
+    self.on = True
     self.speaking = False
 
     # queues

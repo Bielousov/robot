@@ -27,7 +27,7 @@ MODEL = Enum (
   INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),
   INTENT_ANNOTATION = [
     'wakeup',
-    'goodbye',
+    'sleep',
     'ask',
     'blink',
     'say',

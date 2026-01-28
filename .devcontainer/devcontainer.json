@@ -3,9 +3,7 @@
   "build": {
     "dockerfile": "../Dockerfile"
   },
-  "workspaceFolder": "/app",
-
-  "runArgs": ["-it"],
+  "workspaceFolder": "/workspaces/robot",
 
   "customizations": {
     "vscode": {

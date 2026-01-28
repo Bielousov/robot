@@ -1,7 +1,7 @@
 import threading, time
 from copy import deepcopy
 
-from ..config import MODEL
+from config import MODEL
 from lib.Benchmark import Benchmark
 from lib.IntentsModel import IntentsModel
 
@@ -28,10 +28,9 @@ def run():
 
     modelConfig = deepcopy(MODEL)
     modelConfig.TRAINING_EPOCHS = TRAINING_EPOCHS
-
     intentsModel = IntentsModel(modelConfig)
 
-    print("[train] Started training loop")
+    print(f"Startin traingin model v{modelConfig.VERSION}.{modelConfig.INPUTS}-{modelConfig.LAYERS}-{modelConfig.OUTPUTS}")
 
     try:
         while not _stop_event.is_set():
@@ -44,11 +43,7 @@ def run():
             time.sleep(0)
 
     finally:
-        print("[train] Cleaning up…")
-        if hasattr(intentsModel, "stop"):
-            intentsModel.isTraining = False
-            intentsModel.saveModel()
-            intentsModel.info()
-            intentsModel.validate()
-            time.sleep(1)
+        intentsModel.isTraining = False
+        intentsModel.saveModel()
+        intentsModel.info()
 

@@ -1,7 +1,8 @@
 from datetime import datetime
 from lib.LocalDictionary import LocalDictionary
-from state import State
+from dictionary import Prompts
 from errors import handelVerboseError
+from state import State
 
 class IntentHandler:
   def __init__(self, eyes, intentsModel, openai, voice):

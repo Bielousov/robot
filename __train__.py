@@ -1,6 +1,9 @@
-import signal, sys, time
+import os, signal, sys
 
-from v3.models import train
+# Set the path for the v3 directory
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "v3"))
+
+from v3.models import train 
 
 def _graceful_shutdown(signum, frame):
     print(f"\n[__train__] Received signal {signum}, stopping training…")

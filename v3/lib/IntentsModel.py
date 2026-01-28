@@ -1,3 +1,4 @@
+from os import path
 from numpy import array, loadtxt
 
 from .NeuralNetwork import NeuralNetwork
@@ -6,7 +7,7 @@ from .Threads import Process
 class IntentsModel:
     def __init__(self, config):
         self.__process = Process()
-        self.modelPath = config.PATH
+        self.modelPath = self.__getModelPath(config)
         self.trainingSetPath = config.TRAINING_DATA_PATH
         self.validationSetPath = config.VALIDATION_DATA_PATH
 
@@ -15,11 +16,15 @@ class IntentsModel:
         self.trainingThreshold = config.TRAINING_THRESHOLD
 
         self.neuralNetworkInputs = config.INPUTS
-        self.neuralNetworkNeurons = [config.INPUTS, *config.LAYERS, config.OUTPUTS]
+        self.neuralNetworkNeurons = [config.INPUTS, config.LAYERS, config.OUTPUTS]
         self.neuralNetworkOutputs = config.OUTPUTS
 
         self.setup()
         self.initializeModel()
+
+    def __getModelPath(self, config):
+        fileName = f"intents.model-v{config.VERSION}.{config.INPUTS}-{config.LAYERS}-{config.OUTPUTS}.npy"
+        return path.join( path.dirname(__file__), f"../models/build/{fileName}" )
 
     def __loadTrainingSet(self):
         try:
@@ -74,7 +79,7 @@ class IntentsModel:
         self.isTraining = True
         self.neuralNetwork.summary()
 
-        if self.neuralNetwork.accuracy > self.trainingThreshold and (round(self.neuralNetwork.accuracy, 4) > round(self.neuralNetwork.baseAccuracy, 4) or forceSave):
+        if self.neuralNetwork.accuracy > self.trainingThreshold and (round(self.neuralNetwork.accuracy, 5) > round(self.neuralNetwork.baseAccuracy, 5) or forceSave):
             self.saveModel()
             return True
         

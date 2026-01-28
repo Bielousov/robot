@@ -12,16 +12,17 @@ ENV = Enum (
   VOICE                   = getenv('VOICE'),
 )
 
+
 MODEL = Enum (
-  INPUTS = 6,
-  LAYERS = [12],
-  OUTPUTS = 6,
-  TRAINING_EPOCHS     = int(getenv('TRAINING_EPOCHS')),
-  TRAINING_THRESHOLD     = float(getenv('TRAINING_THRESHOLD')),
+  TRAINING_EPOCHS         = int(getenv('TRAINING_EPOCHS')),
+  INPUTS                  = int(getenv('INTENT_MODEL_INPUTS')),
+  OUTPUTS                 = int(getenv('INTENT_MODEL_OUTPUTS')),
+  LAYERS                  = int(getenv('INTENT_MODEL_LAYERS')),
+  VERSION                 = int(getenv('INTENT_MODEL_VERSION')),
+  TRAINING_THRESHOLD      = float(getenv('TRAINING_THRESHOLD')),
 
   TRAINING_DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-training.csv'),
   VALIDATION_DATA_PATH = path.join(path.dirname(__file__), 'models/data/intents-validation.csv'),
-  PATH = path.join(path.dirname(__file__), 'models/build/intents.model.npy'),
 
   INTENT_THRESHOLD   = float(getenv('INTENT_THRESHOLD')),
   INTENT_ANNOTATION = [

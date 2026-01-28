@@ -73,6 +73,9 @@ class IntentHandler:
     self.eyes.open(confidenceScore)
     print('Waking up!')
 
+  def wonder(self, confidenceScore):
+    self.eyes.wonder()
+
   def noIntent(self, confidenceScore):
     return
   

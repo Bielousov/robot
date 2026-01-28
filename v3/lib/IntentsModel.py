@@ -34,15 +34,14 @@ class IntentsModel:
         if (self.modelPath):
             self.neuralNetwork.load(self.modelPath)
     
-    def __saveModel(self):
-        if (self.modelPath):
-            self.neuralNetwork.save(self.modelPath)
-
     def __initialTrain(self, accuracy = 0.6, maxEpochs = 100000):
         initialTraining=True
         while initialTraining or (self.neuralNetwork.epoch < maxEpochs and self.neuralNetwork.accuracy < accuracy):
             self.train(initialTraining)
             initialTraining=False
+
+    def info(self):
+        self.neuralNetwork.summary()
 
     def run(self, context):
         return self.neuralNetwork.run([context])
@@ -54,6 +53,10 @@ class IntentsModel:
 
         self.__loadTrainingSet()
         self.__loadModel()
+
+    def saveModel(self):
+        if (self.modelPath):
+            self.neuralNetwork.save(self.modelPath)
 
     def initializeModel(self):
         self.__initialTrain(accuracy=self.trainingThreshold)
@@ -67,14 +70,14 @@ class IntentsModel:
             self.__trainingSetOutputs,
             self.trainingEpochs
         )
+        
+        self.isTraining = True
         self.neuralNetwork.summary()
 
         if self.neuralNetwork.accuracy > self.trainingThreshold and (round(self.neuralNetwork.accuracy, 4) > round(self.neuralNetwork.baseAccuracy, 4) or forceSave):
-            self.__saveModel()
-            self.isTraining = True
+            self.saveModel()
             return True
         
-        self.isTraining = True
         return False
 
     def trainAsync(self, forceSave=False):

@@ -1,5 +1,6 @@
 Prompts = {
     'catchphrase': 'Something unexpected just happend. Say one of your cathphrases. Keep it under 15 words',
+    'randomfact': 'Say some random fact, from futurama or science fiction in general keep it under 30 words',
     'shutdown': 'You are about to be turned off. Say goodbyes in 10 words or less.',
     'startup': 'You were just turned on. Say hi and tell about yourself in less than 20 words.',
 }

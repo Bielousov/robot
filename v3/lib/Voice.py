@@ -1,22 +1,25 @@
+import flite
 import subprocess
 from Threads import Process
 
 class Voice:
     def __init__(self, voice):
         self.__process = Process()
-        self.voice = voice
+        self.voice = flite.voice_select(voice)
+        self.voice.set_float("duration_stretch", 0.9) 
 
     def say(self, text):
         # Build the Flite command
-        command = [
-            "flite",
-            "-t", text, 
-            "-voice", self.voice,
-        ]
+        # command = [
+        #     "flite",
+        #     "-t", text, 
+        #     "-voice", self.voice,
+        # ]
         
         # Execute the command
         try:
-            subprocess.run(command, check=True)
+            # subprocess.run(command, check=True)
+            flite.say_text(text, self.voice)
     
         except subprocess.CalledProcessError as e:
             print("Error while running Flite:", e)

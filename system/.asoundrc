@@ -1,0 +1,48 @@
+# ~/.asoundrc
+
+# -----------------------------
+# USB Microphone (Input) with automatic resampling
+# -----------------------------
+# pcm.usbmic {
+#     type plug
+#     slave {
+#         pcm "hw:0,0"       # Replace with your mic's card/device
+#         rate 44100         # Target sample rate for your app
+#         channels 1         # Mono input
+#     }
+# }
+
+# ctl.usbmic {
+#     type hw
+#     card 0                # Same as mic card
+# }
+
+# -----------------------------
+# USB / Onboard Speaker (Output)
+# -----------------------------
+pcm.usbspeaker {
+    type plug
+    slave {
+        pcm "hw:0,0"       # Replace with your output device
+        rate 44100         # Standard playback rate
+        channels 2         # Stereo output
+    }
+}
+
+ctl.usbspeaker {
+    type hw
+    card 0
+}
+
+# -----------------------------
+# Default Playback (optional)
+# -----------------------------
+pcm.!default {
+    type plug
+    slave.pcm "usbspeaker"
+}
+
+ctl.!default {
+    type hw
+    card 0
+}

@@ -13,8 +13,10 @@ INPUT
 OUTPUT
 ------
 0: wakeup
-1: ask
+1: ask (think, ask gpt api)
 2: blink
 3. say
-4. train
-5. wonder
+4. scared (say something)
+5. bored (say random fact)
+6. train
+7. wonder

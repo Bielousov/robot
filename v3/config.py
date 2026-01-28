@@ -29,6 +29,8 @@ MODEL = Enum (
     'ask',
     'blink',
     'say',
+    'scared',
+    'bored',
     'train',
     'wonder'
   ]

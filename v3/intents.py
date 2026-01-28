@@ -47,6 +47,9 @@ class IntentHandler:
   def blink(self, confidenceScore):
     self.eyes.blink(confidenceScore)
 
+  def bored():
+    State.append('prompts', Prompts['random fact']);
+
   def say(self, confidenceScore):
     self.eyes.wonder()
     State.set('speaking', True)
@@ -56,6 +59,9 @@ class IntentHandler:
       else:
         self.voice.say(State.pop('utterances'))
     State.set('speaking', False)
+
+  def scared():
+    State.append('prompts', Prompts['catchphrase']);
 
   def train(self, confidenceScore):
     self.eyes.wonder()

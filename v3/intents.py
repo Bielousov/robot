@@ -86,10 +86,10 @@ class IntentHandler:
     def train(self, confidenceScore):
         self.eyes.wonder()
         self.intentsModel.trainAsync()
-        State.append('prompts', Prompts['startup'])
 
     def wakeup(self, confidenceScore):
         State.set('awake', True)
+        State.append('prompts', Prompts['startup'])
         self.eyes.open(confidenceScore)
         print('Waking up!')
 

@@ -21,7 +21,6 @@ pip install --upgrade openai
 
 sudo apt install alsa-utils alsa-oss
 sudo apt install python3-pyaudio
-pip3 install flite
 
 sudo apt install libasound2-dev
 pip install pocketsphinx

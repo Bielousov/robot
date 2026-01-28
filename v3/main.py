@@ -26,10 +26,9 @@ threads = Threads()
 def start():
     threads.start(IntentsThread(intentsModel, intentHandler))
     threads.start(EyesThread(eyes))
-    State.append('prompts', Prompts['startup'])
 
 def shutdown():
-    State.on = False
+    State.set('on', False)
     
     time.sleep(5)
     threads.stop()

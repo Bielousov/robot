@@ -74,6 +74,8 @@ class Eyes:
             self.animation.append(frame)
 
     def render(self):
+        print(f"rendering animation {len(self.animation)} frames left")
+        
         """Draw one frame from animation queue."""
         if self.animation:
             self.frame = self.animation.pop(0)

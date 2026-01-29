@@ -12,7 +12,6 @@ ENV = Enum (
   VOICE                   = getenv('VOICE'),
 )
 
-
 MODEL = Enum (
   VERSION                 = getenv('INTENT_MODEL_VERSION'),
   INPUTS                  = int(getenv('INTENT_MODEL_INPUTS')),

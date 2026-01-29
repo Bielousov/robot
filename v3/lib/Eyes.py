@@ -53,34 +53,29 @@ class Eyes:
         self.close()
 
     def __generateFrame(self, openness, focus=None):
-      """Generate a single frame based on current openness and focus."""
+      """Generate a single frame based on current openness and focus with rounded pupils."""
       frame = EyeBitmap.copy()
       fx, fy = focus if focus else self.focusPoint
 
-      # Compute pupil bounding box, centered around eye center + focus
-      pupil_half = (self.pupilSize - 1) / 2
-      x_start = int(round(self.width / 2 + fx - pupil_half))
-      x_end   = int(round(self.width / 2 + fx + pupil_half + 1))
-      y_start = int(round(self.height / 2 + fy - pupil_half))
-      y_end   = int(round(self.height / 2 + fy + pupil_half + 1))
-
-      # Clamp to matrix bounds
-      x_start = max(0, x_start)
-      x_end   = min(self.width, x_end)
-      y_start = max(0, y_start)
-      y_end   = min(self.height, y_end)
+      # Compute pupil radius
+      radius = self.pupilSize / 2
+      center_x = self.width / 2 + fx
+      center_y = self.height / 2 + fy
 
       for y in range(self.height):
           for x in range(self.width):
-              # Draw pupil (black pixels)
-              if frame[y][x] > 0 and x_start <= x < x_end and y_start <= y < y_end:
-                  frame[y][x] = 0
-
-              # Draw eyelid (mask top rows depending on openness)
-              # Openness: 1.0 = fully open, 0.0 = fully closed
+              # Eyelid: mask top rows depending on openness
               eyelid_threshold = int(round((1.0 - openness) * self.height))
               if frame[y][x] > 0 and y < eyelid_threshold:
                   frame[y][x] = 0
+                  continue
+
+              # Draw rounded pupil: only within circular-ish mask
+              if frame[y][x] > 0:
+                  dx = x - center_x + 0.5  # center pixel correction
+                  dy = y - center_y + 0.5
+                  if dx*dx + dy*dy <= radius*radius:
+                      frame[y][x] = 0  # pupil pixel
 
       # Add frame to animation queue without exceeding max length
       if len(self.animation) < MAX_ANIMATION_LENGTH:

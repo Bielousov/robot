@@ -59,6 +59,7 @@ class Thread(threading.Thread):
 class Threads:
     def __init__(self):
         self.collection = []
+        print(f"init ThreadsRunEvent")
         ThreadsRunEvent.set()
 
     def start(self, thread: Thread):

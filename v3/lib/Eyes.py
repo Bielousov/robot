@@ -117,8 +117,9 @@ class Eyes:
             self.__generateFrame(self.openness, self.focusPoint)
 
     def wonder(self, steps=10):
-        """Random eye movement."""
-        for _ in range(steps):
-            fx = random.randint(-3, 2)
-            fy = random.randint(-2, 3)
-            self.focus(fx, fy, steps=1)
+        """Random eye movement: move pupil smoothly to one random point."""
+        # pick a single random target
+        fx = random.randint(-3, 2)
+        fy = random.randint(-2, 3)
+        # move pupil smoothly to that focus
+        self.focus(fx, fy, steps=steps)

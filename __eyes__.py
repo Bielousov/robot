@@ -16,17 +16,19 @@ eyes = Eyes()
 threads = Threads()
 
 # Event to stop all threads
-stop_event = threading.Event()
+# stop_event = threading.Event()
 
 def periodic_blink():
-    while not stop_event.is_set():
+    while True:
+    # while not stop_event.is_set():
         print("Blink")
         eyes.blink()  # generate multiple frames for smooth blink
         time.sleep(random.uniform(1, 8))
 
 
 def periodic_wonder():
-    while not stop_event.is_set():
+    while True:
+    # while not stop_event.is_set():
         print("Wonder")
         eyes.wonder()  # generate multiple frames for smooth movement
         time.sleep(random.uniform(5, 10))
@@ -44,7 +46,7 @@ def start():
 
 def _graceful_shutdown(signum, frame):
     print("Shutting down…")
-    stop_event.set()
+    # stop_event.set()
     eyes.close()
     time.sleep(1)
 
@@ -65,12 +67,13 @@ def main():
 
     try:
         # Keep main thread alive
-        while not stop_event.is_set():
+        while True:
+        # while not stop_event.is_set():
             time.sleep(0.5)
     except KeyboardInterrupt:
         _graceful_shutdown(None, None)
     finally:
-        stop_event.set()
+        # stop_event.set()
         blink_thread.join(1)
         wonder_thread.join(1)
         threads.stop()

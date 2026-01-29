@@ -45,8 +45,10 @@ def start():
 def _graceful_shutdown(signum, frame):
     print("Shutting down…")
     stop_event.set()
+
+    time.sleep(.5)
     eyes.close()
-    time.sleep(1)
+    time.sleep(.5)
 
 
 def main():

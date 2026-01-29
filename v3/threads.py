@@ -4,12 +4,14 @@ from lib.Threads import Thread
 from state import getStateContext
 
 def EyesThread(eyes, threads):
-    threadInterval = 1 / int(ENV.EYES_FPS)
+  threadInterval = 1 / int(ENV.EYES_FPS)
 
-    def runThread():
-      eyes.render()
+  def runThread():
+    print("running eyes thread")
+    eyes.render()
     
-    return Thread(threadInterval, runThread, threads.run_event)
+  print(f"setting up eyes thread {threadInterval}")
+  return Thread(threadInterval, runThread, threads.run_event)
 
 def IntentsThread(intentsModel, intentHandler, threads):
   intents = Intents(
@@ -20,10 +22,12 @@ def IntentsThread(intentsModel, intentHandler, threads):
   threadInterval = 1 / int(ENV.INTENT_FPS)
 
   def runThread():
-      context = getStateContext()
-      intents.classify(intentsModel.run(context)[0])
-      intent, confidenceScore = intents.getIntent()
-      intentHandler.handle(intent, confidenceScore)
-      intents.doneProcessingIntent()
+    print("running intents thread")
+    context = getStateContext()
+    intents.classify(intentsModel.run(context)[0])
+    intent, confidenceScore = intents.getIntent()
+    intentHandler.handle(intent, confidenceScore)
+    intents.doneProcessingIntent()
       
+  print(f"setting up intents thread {threadInterval}")
   return Thread(threadInterval, runThread, threads.run_event)

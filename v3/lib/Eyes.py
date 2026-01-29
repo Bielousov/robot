@@ -1,129 +1,124 @@
 import math, numpy as np, random
-
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from luma.core.interface.serial import spi, noop
+from time import sleep
 
-MAX_ANIMATION_LENGTH = 64
+MAX_ANIMATION_LENGTH = 32
 
 EyeBitmap = np.array([
-  [0, 0, 1, 1, 1, 1, 0, 0],
-  [0, 1, 1, 1, 1, 1, 1, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 1, 1, 1, 1, 1, 1, 0],
-  [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
 ], np.int8)
 EyeBitmap.flags.writeable = False
 
 class Eyes:
-  def __init__(self):
-    self.device = 0
-    self.gpio = noop()
-    self.port = 0
+    def __init__(self, width=8, height=8, cascaded=2):
+        self.width = width
+        self.height = height
+        self.cascaded = cascaded
+        self.rotate = 0
+        self.orientation = 0
+        self.contrast = 64
 
-    self.contrast = 64
-    self.orientation = 0
-    self.rotate = 0
-    self.height = 8
-    self.width = 8
+        self.focusPoint = [0, 0]  # [x, y]
+        self.openness = 0.0       # 0.0 = closed, 1.0 = open
+        self.pupilSize = 3
 
-    self.focusPoint = [0, 0]
-    self.openness = 0
-    self.pupilSize = 3
+        # Serial and device
+        self.serial = spi(port=0, device=0, gpio=noop())
+        self.device = max7219(
+            self.serial,
+            cascaded=self.cascaded,
+            width=self.width,
+            height=self.height,
+            rotate=self.rotate,
+            block_orientation=self.orientation
+        )
 
-    # create matrix device
-    self.serial = spi(port=self.port, device=self.device, gpio=self.gpio)
-    self.device = max7219(
-      self.serial,
-      cascaded=2,
-      width=self.width,
-      height=self.height,
-      rotate=self.rotate,
-      block_orientation=self.orientation
-    )
+        # Animation queue
+        self.animation = []
+        self.frame = EyeBitmap.copy()
 
-    self.animation = []
-    self.__generateFrame()
+        # Initialize with closed eyes
+        self.__generateFrame(self.openness)
 
-  def __del__(self):
-    self.close()
+    def __del__(self):
+        self.close()
 
-  def __generateFrame(self, weight = 0):
-    frame = EyeBitmap.copy()
-    framesMultiplier = max(1, math.ceil((weight - 0.5) * 2))
+    def __generateFrame(self, openness, focus=None):
+        """Generate a single frame based on current openness and focus."""
+        frame = EyeBitmap.copy()
+        fx, fy = focus if focus else self.focusPoint
 
-    for y in range(self.height):
-      for x in range(self.width):
-        # Generate pupils
-        if (
-          frame[y][x] > 0
-          and self.width / 2 + self.focusPoint[0] - self.pupilSize / 2 <= x < self.width / 2 + self.focusPoint[0] + self.pupilSize / 2
-          and self.height / 2 + self.focusPoint[1] - self.pupilSize / 2 <= y < self.height / 2 + self.focusPoint[1] + self.pupilSize / 2
-        ):
-          frame[y][x] = 0
+        for y in range(self.height):
+            for x in range(self.width):
+                # pupil
+                if (frame[y][x] > 0 and
+                    self.width//2 + fx - self.pupilSize//2 <= x < self.width//2 + fx + self.pupilSize//2 and
+                    self.height//2 + fy - self.pupilSize//2 <= y < self.height//2 + fy + self.pupilSize//2):
+                    frame[y][x] = 0
 
-        # Generate eye lids
-        if frame[y][x] > 0 and self.height - y > self.openness * self.height:
-          frame[y][x] = 0
+                # eyelid
+                if frame[y][x] > 0 and y < (1.0 - openness) * self.height:
+                    frame[y][x] = 0
 
-    for i in range(framesMultiplier):
-      self.animation.append(frame)
+        # Add to animation queue
+        if len(self.animation) < MAX_ANIMATION_LENGTH:
+            self.animation.append(frame)
 
-  def render(self):
-    if len(self.animation) > 0:
-      self.frame = self.animation.pop(0)
+    def render(self):
+        """Draw one frame from animation queue."""
+        if self.animation:
+            self.frame = self.animation.pop(0)
 
-    with canvas(self.device) as draw:
-      self.device.contrast(self.contrast)
+        with canvas(self.device) as draw:
+            self.device.contrast(self.contrast)
+            for y in range(self.height):
+                for x in range(self.width):
+                    fill = int(self.frame[y][x])
+                    # draw both eyes side by side
+                    draw.point((x, y), fill)
+                    draw.point((x + self.width, y), fill)
 
-      for y in range(self.height):
-        for x in range (self.width):
-          fill = int(self.frame[y][x])
-          draw.point((x + self.width, y), fill)
-          draw.point((x, y), fill)
+    def set_openness(self, target, steps=8):
+        """Smoothly open/close eyes to target openness (0..1)."""
+        target = max(0.0, min(1.0, target))
+        step_size = (target - self.openness) / steps
+        for i in range(steps):
+            self.openness += step_size
+            self.__generateFrame(self.openness)
 
-  def blink(self, weight = 0):
-    # prevent long blinking queues
-    if len(self.animation) >= MAX_ANIMATION_LENGTH:
-      return
-    
-    self.close(weight)
-    self.open(weight)
+    def open(self):
+        self.set_openness(1.0)
 
-  def close(self, weight = 0):
-    for i in range(self.height + 1):
-      nextOpenness = (self.height - i)/self.height
-      if self.openness > nextOpenness:
-        self.openness = (self.height - i)/self.height
-        self.__generateFrame(weight)
+    def close(self):
+        self.set_openness(0.0)
 
-  def open(self, weight = 0):
-    for i in range(self.height + 1):
-      nextOpenness = i/self.height
-      if self.openness < nextOpenness:
-        self.openness = nextOpenness
-        self.__generateFrame(weight)
+    def blink(self):
+        if (self.openness > 0.0):
+          """Close then open smoothly."""
+          self.close()
+          self.open()
 
-  def focus(self, x, y):
-    while True:
-      if x == self.focusPoint[0] and y == self.focusPoint[1]:
-        break
-      if x < self.focusPoint[0]:
-        self.focusPoint[0] = self.focusPoint[0] - 1
-      elif x > self.focusPoint[0]:
-        self.focusPoint[0] = self.focusPoint[0] + 1
-      if y < self.focusPoint[1]:
-        self.focusPoint[1] = self.focusPoint[1] - 1
-      elif y > self.focusPoint[1]:
-        self.focusPoint[1] = self.focusPoint[1] + 1
-      self.__generateFrame(random.uniform(0.1, 3))
+    def focus(self, x, y, steps=5):
+        """Move pupils gradually to (x,y)."""
+        dx = (x - self.focusPoint[0]) / steps
+        dy = (y - self.focusPoint[1]) / steps
+        for i in range(steps):
+            self.focusPoint[0] += dx
+            self.focusPoint[1] += dy
+            self.__generateFrame(self.openness, self.focusPoint)
 
-  def wonder(self):
-    # prevent long eye wonder queues
-    if len(self.animation) >= MAX_ANIMATION_LENGTH:
-      return
-    
-    self.focus(int(random.uniform(-3, 2)), int(random.uniform(-2, 3)))
+    def wonder(self, steps=10):
+        """Random eye movement."""
+        for _ in range(steps):
+            fx = random.randint(-3, 2)
+            fy = random.randint(-2, 3)
+            self.focus(fx, fy, steps=1)

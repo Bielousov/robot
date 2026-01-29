@@ -74,6 +74,7 @@ def main():
         blink_thread.join(1)
         wonder_thread.join(1)
         threads.stop()
+        time.sleep(1)
         sys.exit(0)
 
 

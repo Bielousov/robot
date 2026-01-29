@@ -50,6 +50,7 @@ class Thread(threading.Thread):
         self.kwargs = kwargs
 
     def run(self):
+        print(f"Threads run {ThreadsRunEvent.is_set()}")
         while ThreadsRunEvent.is_set():
             self.function(*self.args, **self.kwargs)
             time.sleep(self.interval)

@@ -24,8 +24,8 @@ intentHandler = IntentHandler(eyes, intentsModel, openAi, voice)
 threads = Threads()
 
 def start():
-    threads.start(IntentsThread(intentsModel, intentHandler))
-    threads.start(EyesThread(eyes))
+    threads.start(IntentsThread(intentsModel, intentHandler, threads))
+    threads.start(EyesThread(eyes, threads))
 
 def shutdown():
     State.set('on', False)

@@ -3,15 +3,15 @@ from lib.Intents import Intents
 from lib.Threads import Thread
 from state import getStateContext
 
-def EyesThread(eyes):
+def EyesThread(eyes, threads):
     threadInterval = 1 / int(ENV.EYES_FPS)
 
     def runThread():
       eyes.render()
     
-    return Thread(threadInterval, runThread)
+    return Thread(threadInterval, runThread, threads.run_event)
 
-def IntentsThread(intentsModel, intentHandler):
+def IntentsThread(intentsModel, intentHandler, threads):
   intents = Intents(
     annotations=MODEL.INTENT_ANNOTATION,
     threshold=MODEL.INTENT_THRESHOLD,
@@ -26,4 +26,4 @@ def IntentsThread(intentsModel, intentHandler):
       intentHandler.handle(intent, confidenceScore)
       intents.doneProcessingIntent()
       
-  return Thread(threadInterval, runThread)
+  return Thread(threadInterval, runThread, threads.run_event)

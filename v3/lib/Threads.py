@@ -1,8 +1,5 @@
 import threading, time
 
-# Private module-level event (singleton for this Threads library only)
-_ThreadsRunEvent = threading.Event()
-
 class Process:
     def __init__(self, target=None, args=()):
         self.target = target
@@ -41,16 +38,16 @@ class Process:
         self.__runEvent.set()
 
 class Thread(threading.Thread):
-    """Periodic thread similar to your old implementation."""
-    def __init__(self, interval, function, *args, **kwargs):
+    def __init__(self, interval, function, run_event, *args, **kwargs):
         super().__init__(daemon=True)
         self.interval = interval
         self.function = function
+        self.run_event = run_event
         self.args = args
         self.kwargs = kwargs
 
     def run(self):
-        while _ThreadsRunEvent.is_set():
+        while self.run_event.is_set():
             self.function(*self.args, **self.kwargs)
             time.sleep(self.interval)
 
@@ -58,14 +55,15 @@ class Thread(threading.Thread):
 class Threads:
     def __init__(self):
         self.collection = []
-        _ThreadsRunEvent.set()
+        self.run_event = threading.Event()
+        self.run_event.set()
 
     def start(self, thread: Thread):
         self.collection.append(thread)
         thread.start()
 
     def stop(self):
-        _ThreadsRunEvent.clear()
+        self.run_event.clear()
         for t in list(self.collection):
             t.join(1)
             self.collection.remove(t)

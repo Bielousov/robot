@@ -35,7 +35,7 @@ def periodic_wonder():
 def start():
     print("Starting eyes test…")
 
-    threads.start(EyesThread(eyes))
+    threads.start(EyesThread(eyes, threads))
     
     # Open eyes after a short delay
     time.sleep(1)

@@ -67,17 +67,18 @@ def main():
     # Start periodic blink and wonder threads
     blink_thread = threading.Thread(target=periodic_blink, daemon=True)
     wonder_thread = threading.Thread(target=periodic_wonder, daemon=True)
-
     blink_thread.start()
     wonder_thread.start()
 
     # Open eyes
     start()
 
-    # Keep main thread alive
     try:
+        # Keep main thread alive
         while not stop_event.is_set():
             time.sleep(0.5)
+    except KeyboardInterrupt:
+        _graceful_shutdown(None, None)
     finally:
         stop_event.set()
         render_thread.join(1)

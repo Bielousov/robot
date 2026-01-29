@@ -15,12 +15,14 @@ stop_event = threading.Event()
 
 def periodic_blink():
     while not stop_event.is_set():
+        print("Blink")
         eyes.blink()
         # Wait a random time between 1 and 8 seconds
         time.sleep(random.uniform(1, 8))
 
 def periodic_wonder():
     while not stop_event.is_set():
+        print("Wonder")
         eyes.wonder()
         # Wait a random time between 5 and 10 seconds
         time.sleep(random.uniform(3, 10))

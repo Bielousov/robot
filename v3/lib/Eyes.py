@@ -53,25 +53,38 @@ class Eyes:
         self.close()
 
     def __generateFrame(self, openness, focus=None):
-        """Generate a single frame based on current openness and focus."""
-        frame = EyeBitmap.copy()
-        fx, fy = focus if focus else self.focusPoint
+      """Generate a single frame based on current openness and focus."""
+      frame = EyeBitmap.copy()
+      fx, fy = focus if focus else self.focusPoint
 
-        for y in range(self.height):
-            for x in range(self.width):
-                # pupil
-                if (frame[y][x] > 0 and
-                    self.width//2 + fx - self.pupilSize//2 <= x < self.width//2 + fx + self.pupilSize//2 and
-                    self.height//2 + fy - self.pupilSize//2 <= y < self.height//2 + fy + self.pupilSize//2):
-                    frame[y][x] = 0
+      # Compute pupil bounding box, centered around eye center + focus
+      pupil_half = (self.pupilSize - 1) / 2
+      x_start = int(round(self.width / 2 + fx - pupil_half))
+      x_end   = int(round(self.width / 2 + fx + pupil_half + 1))
+      y_start = int(round(self.height / 2 + fy - pupil_half))
+      y_end   = int(round(self.height / 2 + fy + pupil_half + 1))
 
-                # eyelid
-                if frame[y][x] > 0 and y < (1.0 - openness) * self.height:
-                    frame[y][x] = 0
+      # Clamp to matrix bounds
+      x_start = max(0, x_start)
+      x_end   = min(self.width, x_end)
+      y_start = max(0, y_start)
+      y_end   = min(self.height, y_end)
 
-        # Add to animation queue
-        if len(self.animation) < MAX_ANIMATION_LENGTH:
-            self.animation.append(frame)
+      for y in range(self.height):
+          for x in range(self.width):
+              # Draw pupil (black pixels)
+              if frame[y][x] > 0 and x_start <= x < x_end and y_start <= y < y_end:
+                  frame[y][x] = 0
+
+              # Draw eyelid (mask top rows depending on openness)
+              # Openness: 1.0 = fully open, 0.0 = fully closed
+              eyelid_threshold = int(round((1.0 - openness) * self.height))
+              if frame[y][x] > 0 and y < eyelid_threshold:
+                  frame[y][x] = 0
+
+      # Add frame to animation queue without exceeding max length
+      if len(self.animation) < MAX_ANIMATION_LENGTH:
+          self.animation.append(frame)
 
     def render(self):
         """Draw one frame from animation queue."""

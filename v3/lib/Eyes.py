@@ -66,7 +66,7 @@ class Eyes:
                     frame[y][x] = 0
 
                 # eyelid
-                if frame[y][x] > 0 and y >= openness * self.height:
+                if frame[y][x] > 0 and y < (1.0 - openness) * self.height:
                     frame[y][x] = 0
 
         # Add to animation queue

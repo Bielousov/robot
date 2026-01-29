@@ -5,7 +5,6 @@ from luma.core.interface.serial import spi, noop
 from time import sleep
 
 MAX_ANIMATION_LENGTH = 32
-FRAME_DELAY = 0.05  # seconds per frame
 
 EyeBitmap = np.array([
     [0, 0, 1, 1, 1, 1, 0, 0],
@@ -51,7 +50,7 @@ class Eyes:
         self.__generateFrame(self.openness)
 
     def __del__(self):
-        self.close(instant=True)
+        self.close()
 
     def __generateFrame(self, openness, focus=None):
         """Generate a single frame based on current openness and focus."""
@@ -88,8 +87,6 @@ class Eyes:
                     draw.point((x, y), fill)
                     draw.point((x + self.width, y), fill)
 
-        sleep(FRAME_DELAY)
-
     def set_openness(self, target, steps=8):
         """Smoothly open/close eyes to target openness (0..1)."""
         target = max(0.0, min(1.0, target))
@@ -98,20 +95,17 @@ class Eyes:
             self.openness += step_size
             self.__generateFrame(self.openness)
 
-    def open(self, weight=1.0):
+    def open(self):
         self.set_openness(1.0)
 
-    def close(self, weight=0.0, instant=False):
-        if instant:
-            self.openness = 0.0
-            self.__generateFrame(self.openness, weight)
-        else:
-            self.set_openness(0.0)
+    def close(self):
+        self.set_openness(0.0)
 
     def blink(self):
-        """Close then open smoothly."""
-        self.close()
-        self.open()
+        if (self.openness > 0.0):
+          """Close then open smoothly."""
+          self.close()
+          self.open()
 
     def focus(self, x, y, steps=5):
         """Move pupils gradually to (x,y)."""

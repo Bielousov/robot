@@ -37,7 +37,6 @@ def periodic_wonder():
 def eyes_render_loop():
     """Render eyes at fixed FPS."""
     while not stop_event.is_set():
-
         eyes.render()
         time.sleep(FRAME_INTERVAL)
 

@@ -23,20 +23,21 @@ FRAME_INTERVAL = 1.0 / FPS  # seconds per frame
 def periodic_blink():
     while not stop_event.is_set():
         print("Blink")
-        eyes.blink(steps=4)  # generate multiple frames for smooth blink
+        eyes.blink()  # generate multiple frames for smooth blink
         time.sleep(random.uniform(1, 8))
 
 
 def periodic_wonder():
     while not stop_event.is_set():
         print("Wonder")
-        eyes.wonder(steps=5)  # generate multiple frames for smooth movement
+        eyes.wonder()  # generate multiple frames for smooth movement
         time.sleep(random.uniform(5, 10))
 
 
 def eyes_render_loop():
     """Render eyes at fixed FPS."""
     while not stop_event.is_set():
+
         eyes.render()
         time.sleep(FRAME_INTERVAL)
 
@@ -45,13 +46,13 @@ def start():
     print("Starting eyes test…")
     # Open eyes after a short delay
     time.sleep(1)
-    eyes.open(steps=5)
+    eyes.open()
 
 
 def _graceful_shutdown(signum, frame):
     print("Shutting down…")
     stop_event.set()
-    eyes.close(steps=5)
+    eyes.close()
     time.sleep(1)
 
 

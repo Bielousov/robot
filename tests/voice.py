@@ -9,6 +9,7 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../v3"))
 
 from v3.config import ENV
+from v3.dictionary import Responses
 from v3.lib.Voice import Voice
 
 voice = Voice(ENV.VOICE)
@@ -16,10 +17,33 @@ voice = Voice(ENV.VOICE)
 # Event to stop all threads
 stop_event = threading.Event()
 
+def _dictionary(d):
+    values = []
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            for v in obj.values():
+                walk(v)
+        elif isinstance(obj, (list, tuple, set)):
+            for v in obj:
+                walk(v)
+        else:
+            values.append(obj)
+
+    walk(d)
+    return values
+
+samples = _dictionary(Responses)
+
+def _random_record():
+    return random.choice(samples) if samples else None
+
+
 def periodic_say():
     while not stop_event.is_set():
-        print("Say")
-        voice.say("Test")
+        text = _random_record()
+        print(f"Saying: “{text}”")
+        voice.say(text)
         time.sleep(random.uniform(5, 10))
 
 def start():

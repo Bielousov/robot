@@ -51,7 +51,6 @@ class Thread(threading.Thread):
         self.kwargs = kwargs
 
     def run(self):
-        print(f"Threads run {_ThreadsRunEvent.is_set()}")
         while _ThreadsRunEvent.is_set():
             self.function(*self.args, **self.kwargs)
             time.sleep(self.interval)
@@ -60,15 +59,12 @@ class Thread(threading.Thread):
 class Threads:
     def __init__(self):
         self.collection = []
-        print("[Threads] init ThreadsRunEvent")
 
     def start(self, thread: Thread):
-        print("[Threads] start")
         self.collection.append(thread)
         thread.start()
 
     def stop(self):
-        print("[Threads] stop")
         _ThreadsRunEvent.clear()
         for t in list(self.collection):
             t.join(1)

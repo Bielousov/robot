@@ -25,7 +25,14 @@ def periodic_wonder():
         # Wait a random time between 5 and 10 seconds
         time.sleep(random.uniform(3, 10))
 
+def start():
+    print("Starting eyes test…")
+    time.sleep(1)
+    eyes.open()
+
 def _graceful_shutdown(signum, frame):
+    eyes.close()
+    time.sleep(1)
     stop_event.set()  # Stop the periodic threads
     threads.stop()
 
@@ -36,6 +43,8 @@ def main():
     try:
         # Start the EyesThread
         threads.start(EyesThread(eyes))
+
+        start()
 
         # Start periodic functions in background threads
         blink_thread = threading.Thread(target=periodic_blink, daemon=True)

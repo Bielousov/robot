@@ -8,7 +8,8 @@ import threading
 # Set the path for the v3 directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "v3"))
 
-from v3.lib import Eyes, Threads
+from v3.lib.Eyes import Eyes
+from v3.lib.Threads import Threads
 from v3.threads import EyesThread
 
 eyes = Eyes()

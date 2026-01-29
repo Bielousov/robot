@@ -9,16 +9,14 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "v3"))
 
 from v3.lib.Eyes import Eyes
+from v3.lib.Threads import Threads
+from v3.threads import EyesThread
 
-# Create Eyes instance
 eyes = Eyes()
+threads = Threads()
 
 # Event to stop all threads
 stop_event = threading.Event()
-
-FPS = 30
-FRAME_INTERVAL = 1.0 / FPS  # seconds per frame
-
 
 def periodic_blink():
     while not stop_event.is_set():
@@ -34,15 +32,11 @@ def periodic_wonder():
         time.sleep(random.uniform(5, 10))
 
 
-def eyes_render_loop():
-    """Render eyes at fixed FPS."""
-    while not stop_event.is_set():
-        eyes.render()
-        time.sleep(FRAME_INTERVAL)
-
-
 def start():
     print("Starting eyes test…")
+
+    threads.start(EyesThread(eyes))
+    
     # Open eyes after a short delay
     time.sleep(1)
     eyes.open()
@@ -59,10 +53,6 @@ def main():
     # Register signals
     signal.signal(signal.SIGINT, _graceful_shutdown)
     signal.signal(signal.SIGTERM, _graceful_shutdown)
-
-    # Start the render thread (30 FPS)
-    render_thread = threading.Thread(target=eyes_render_loop, daemon=True)
-    render_thread.start()
 
     # Start periodic blink and wonder threads
     blink_thread = threading.Thread(target=periodic_blink, daemon=True)
@@ -81,9 +71,9 @@ def main():
         _graceful_shutdown(None, None)
     finally:
         stop_event.set()
-        render_thread.join(1)
         blink_thread.join(1)
         wonder_thread.join(1)
+        threads.stop()
         sys.exit(0)
 
 

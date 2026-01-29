@@ -40,11 +40,20 @@ class Process:
         self.__runEvent.set()
 
 
-class Thread(threading.Timer):
+class Thread(threading.Thread):
+    """Periodic thread similar to your old implementation."""
+    def __init__(self, interval, function, *args, **kwargs):
+        super().__init__(daemon=True)
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
     def run(self):
         while ThreadsRunEvent.is_set():
-            while not self.finished.wait(self.interval):
-                self.function(*self.args, **self.kwargs)
+            self.function(*self.args, **self.kwargs)
+            time.sleep(self.interval)
+
 
 class Threads:
     def __init__(self):
@@ -59,5 +68,4 @@ class Threads:
         ThreadsRunEvent.clear()
         for t in list(self.collection):
             t.join(1)
-            t.cancel()
             self.collection.remove(t)

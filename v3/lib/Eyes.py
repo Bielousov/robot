@@ -53,49 +53,38 @@ class Eyes:
         self.close()
 
     def __generateFrame(self, openness, focus=None):
-        """Generate a single frame with rounded pupils."""
-        frame = EyeBitmap.copy()
-        fx, fy = focus if focus else self.focusPoint
+      """Generate a single frame based on current openness and focus."""
+      frame = EyeBitmap.copy()
+      fx, fy = focus if focus else self.focusPoint
 
-        cx = self.width // 2 + fx
-        cy = self.height // 2 + fy
-        ps = self.pupilSize
+      # Compute pupil bounding box, centered around eye center + focus
+      pupil_half = (self.pupilSize - 1) / 2
+      x_start = int(round(self.width / 2 + fx - pupil_half))
+      x_end   = int(round(self.width / 2 + fx + pupil_half + 1))
+      y_start = int(round(self.height / 2 + fy - pupil_half))
+      y_end   = int(round(self.height / 2 + fy + pupil_half + 1))
 
-        # Precompute pupil mask
-        mask = []
-        if ps == 1:
-            mask = [(0, 0)]
-        elif ps == 2:
-            mask = [(-1, -1), (-1, 0), (0, -1), (0, 0)]
-        elif ps == 3:
-            # cross pattern: 3x3 with round shape
-            mask = [(-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)]
-        else:
-            # general circular mask for larger sizes
-            radius = ps / 2
-            for dy in range(-ps//2, ps//2 + 1):
-                for dx in range(-ps//2, ps//2 + 1):
-                    if dx*dx + dy*dy <= radius*radius:
-                        mask.append((dx, dy))
+      # Clamp to matrix bounds
+      x_start = max(0, x_start)
+      x_end   = min(self.width, x_end)
+      y_start = max(0, y_start)
+      y_end   = min(self.height, y_end)
 
-        for y in range(self.height):
-            for x in range(self.width):
-                # eyelid
-                if frame[y][x] > 0 and y < int((1.0 - openness) * self.height):
-                    frame[y][x] = 0
-                    continue
+      for y in range(self.height):
+          for x in range(self.width):
+              # Draw pupil (black pixels)
+              if frame[y][x] > 0 and x_start <= x < x_end and y_start <= y < y_end:
+                  frame[y][x] = 0
 
-                # pupil
-                for dx, dy in mask:
-                    px = cx + dx
-                    py = cy + dy
-                    if px == x and py == y:
-                        frame[y][x] = 0
+              # Draw eyelid (mask top rows depending on openness)
+              # Openness: 1.0 = fully open, 0.0 = fully closed
+              eyelid_threshold = int(round((1.0 - openness) * self.height))
+              if frame[y][x] > 0 and y < eyelid_threshold:
+                  frame[y][x] = 0
 
-        # Add frame to animation queue
-        if len(self.animation) < MAX_ANIMATION_LENGTH:
-            self.animation.append(frame)
-
+      # Add frame to animation queue without exceeding max length
+      if len(self.animation) < MAX_ANIMATION_LENGTH:
+          self.animation.append(frame)
 
     def render(self):
         """Draw one frame from animation queue."""

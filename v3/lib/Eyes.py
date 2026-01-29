@@ -104,7 +104,7 @@ class Eyes:
     def close(self, weight=0.0, instant=False):
         if instant:
             self.openness = 0.0
-            self.__generateFrame(self.openness)
+            self.__generateFrame(self.openness, weight)
         else:
             self.set_openness(0.0)
 

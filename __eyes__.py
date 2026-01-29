@@ -29,6 +29,11 @@ def periodic_wonder():
 
 def start():
     print("Starting eyes test…")
+    
+    # Start the EyesThread
+    threads.start(EyesThread(eyes))
+    
+    # Open the eyes
     time.sleep(1)
     eyes.open()
 
@@ -43,9 +48,6 @@ signal.signal(signal.SIGTERM, _graceful_shutdown)
 
 def main():
     try:
-        # Start the EyesThread
-        threads.start(EyesThread(eyes))
-
         start()
 
         # Start periodic functions in background threads

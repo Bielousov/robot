@@ -2,6 +2,7 @@ import threading, time
 
 # Private module-level event (singleton for this Threads library only)
 _ThreadsRunEvent = threading.Event()
+_ThreadsRunEvent.set()
 
 class Process:
     def __init__(self, target=None, args=()):
@@ -58,7 +59,6 @@ class Thread(threading.Thread):
 class Threads:
     def __init__(self):
         self.collection = []
-        _ThreadsRunEvent.set()
 
     def start(self, thread: Thread):
         self.collection.append(thread)

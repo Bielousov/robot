@@ -1,70 +1,90 @@
-import os, random, signal, sys, time, threading
+import os
+import random
+import signal
+import sys
+import time
+import threading
 
 # Set the path for the v3 directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "v3"))
 
 from v3.lib.Eyes import Eyes
-from v3.lib.Threads import Threads
-from v3.threads import EyesThread
 
+# Create Eyes instance
 eyes = Eyes()
-threads = Threads()
 
-# Flag to stop periodic functions
+# Event to stop all threads
 stop_event = threading.Event()
+
+FPS = 30
+FRAME_INTERVAL = 1.0 / FPS  # seconds per frame
+
 
 def periodic_blink():
     while not stop_event.is_set():
         print("Blink")
-        eyes.blink()
-        # Wait a random time between 1 and 8 seconds
+        eyes.blink(steps=4)  # generate multiple frames for smooth blink
         time.sleep(random.uniform(1, 8))
+
 
 def periodic_wonder():
     while not stop_event.is_set():
         print("Wonder")
-        eyes.wonder()
-        # Wait a random time between 5 and 10 seconds
-        time.sleep(random.uniform(3, 10))
+        eyes.wonder(steps=5)  # generate multiple frames for smooth movement
+        time.sleep(random.uniform(5, 10))
+
+
+def eyes_render_loop():
+    """Render eyes at fixed FPS."""
+    while not stop_event.is_set():
+        eyes.render()
+        time.sleep(FRAME_INTERVAL)
+
 
 def start():
     print("Starting eyes test…")
-    
-    # Start the EyesThread
-    threads.start(EyesThread(eyes))
-    
-    # Open the eyes
+    # Open eyes after a short delay
     time.sleep(1)
-    eyes.open()
+    eyes.open(steps=5)
+
 
 def _graceful_shutdown(signum, frame):
-    eyes.close()
+    print("Shutting down…")
+    stop_event.set()
+    eyes.close(steps=5)
     time.sleep(1)
-    stop_event.set()  # Stop the periodic threads
-    threads.stop()
 
-signal.signal(signal.SIGINT, _graceful_shutdown)
-signal.signal(signal.SIGTERM, _graceful_shutdown)
 
 def main():
+    # Register signals
+    signal.signal(signal.SIGINT, _graceful_shutdown)
+    signal.signal(signal.SIGTERM, _graceful_shutdown)
+
+    # Start the render thread (30 FPS)
+    render_thread = threading.Thread(target=eyes_render_loop, daemon=True)
+    render_thread.start()
+
+    # Start periodic blink and wonder threads
+    blink_thread = threading.Thread(target=periodic_blink, daemon=True)
+    wonder_thread = threading.Thread(target=periodic_wonder, daemon=True)
+
+    blink_thread.start()
+    wonder_thread.start()
+
+    # Open eyes
+    start()
+
+    # Keep main thread alive
     try:
-        start()
-
-        # Start periodic functions in background threads
-        blink_thread = threading.Thread(target=periodic_blink, daemon=True)
-        wonder_thread = threading.Thread(target=periodic_wonder, daemon=True)
-
-        blink_thread.start()
-        wonder_thread.start()
-
-        # Keep the main thread alive
         while not stop_event.is_set():
             time.sleep(0.5)
-
-    except KeyboardInterrupt:
-        _graceful_shutdown(None, None)
     finally:
+        stop_event.set()
+        render_thread.join(1)
+        blink_thread.join(1)
+        wonder_thread.join(1)
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

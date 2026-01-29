@@ -40,19 +40,11 @@ class Process:
         self.__runEvent.set()
 
 
-class Thread(threading.Thread):
-    def __init__(self, interval, function, *args, **kwargs):
-        super().__init__(daemon=True)
-        self.interval = interval
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-
+class Thread(threading.Timer):
     def run(self):
         while ThreadsRunEvent.is_set():
-            self.function(*self.args, **self.kwargs)
-            time.sleep(self.interval)  # simple periodic loop
-
+            while not self.finished.wait(self.interval):
+                self.function(*self.args, **self.kwargs)
 
 class Threads:
     def __init__(self):

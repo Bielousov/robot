@@ -43,6 +43,7 @@ def periodic_say():
     while not stop_event.is_set():
         text = _random_record()
         print(f"Saying: “{text}”")
+        voice.say('Test, test ,test')
         voice.say(text)
         time.sleep(random.uniform(5, 10))
 

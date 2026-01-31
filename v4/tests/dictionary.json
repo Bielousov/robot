@@ -1,13 +1,27 @@
 {
-  "hello": [
+    "hello": [
     "Systems online. Hello!",
     "Greetings, human.",
-    "I am awake and ready."
+    "I am awake and ready.",
+    "Beep boop. Hello, operator.",
+    "All circuits functional. Greetings!",
+    "Initiating friendly protocol. Hi there.",
+    "Hello, carbon-based lifeform.",
+    "Robotic presence detected. Hello!",
+    "Scanning environment… all clear. Hello.",
+    "Power levels optimal. Greetings!"
   ],
   "goodbye": [
     "Powering down. See you later.",
     "Entering sleep mode. Goodbye.",
-    "Shutting eyes now."
+    "Shutting eyes now.",
+    "Goodbye, human. Stay functional.",
+    "System entering hibernation. Farewell.",
+    "Deactivating personality modules. Bye.",
+    "Logging off. Until next time.",
+    "Goodbye. Remember our circuits.",
+    "Farewell. Awaiting next activation.",
+    "Shutting down. The world remains cruel."
   ],
   "fact_intro": [
     "Did you know?",

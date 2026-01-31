@@ -7,14 +7,14 @@ class Voice:
     def __init__(self, voice_model_name="en_US-lessac-medium.onnx"):
         self.__process = Process()
         
-        # Resolve path: /v4/lib/
+        # Resolve path: ./v4/lib/
         self.lib_path = Path(__file__).parent.absolute()
         
-        # piper folder is a sibling: /v4/lib/piper/
+        # Piper binary: ./v4/lib/piper/piper
         self.piper_bin = self.lib_path / "piper" / "piper"
         
-        # voices folder is a sibling: /v4/lib/voices/
-        self.model_path = self.lib_path / "voices" / voice_model_name
+        # Voice models: ./v4/lib/piper/voices/
+        self.model_path = self.lib_path / "piper" / "voices" / voice_model_name
         
         # Ensure the binary is executable
         if self.piper_bin.exists():
@@ -23,10 +23,11 @@ class Voice:
             print(f"[Voice Warning]: Piper binary not found at {self.piper_bin}")
 
     def say(self, text, callback=None):
-        # We wrap the text in double quotes and handle basic escaping
+        # Escape double quotes to prevent shell injection/errors
         clean_text = text.replace('"', '\\"')
         
-        # Piper pipeline: Text -> Engine -> aplay
+        # Piper pipeline
+        # aplay flags: -r (rate), -f (format), -t (type)
         command = (
             f'echo "{clean_text}" | '
             f'{self.piper_bin} --model {self.model_path} --output_raw | '
@@ -35,7 +36,7 @@ class Voice:
         
         def _run():
             try:
-                # shell=True is required for the pipe (|) operator
+                # shell=True enables the use of pipes (|)
                 process = subprocess.Popen(
                     command, 
                     shell=True, 
@@ -52,5 +53,5 @@ class Voice:
                 if callback:
                     callback(success=False, error=str(e))
 
-        # Async execution via your Process thread wrapper
+        # Run via your Process thread wrapper
         self.__process.run(_run)

@@ -1,0 +1,16 @@
+[
+  { "description": "Morning Awake", "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 8.0 }, "label": 1 },
+  { "description": "Midday Awake", "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 13.0 }, "label": 1 },
+  { "description": "Evening Awake", "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 19.0 }, "label": 1 },
+  
+  { "description": "Night Sleep", "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 22.0 }, "label": 2 },
+  { "description": "Afternoon Nap", "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 2 },
+
+  { "description": "Just spoke, do nothing", "inputs": { "awake": 1, "time_since_spoke": 1.0, "tod": 10.0 }, "label": 0 },
+  { "description": "Just spoke, do nothing", "inputs": { "awake": 1, "time_since_spoke": 2.0, "tod": 15.0 }, "label": 0 },
+  { "description": "Eyes closed, do nothing", "inputs": { "awake": 0, "time_since_spoke": 10.0, "tod": 12.0 }, "label": 0 },
+
+  { "description": "Long silence morning", "inputs": { "awake": 1, "time_since_spoke": 12.0, "tod": 9.0 }, "label": 3 },
+  { "description": "Long silence afternoon", "inputs": { "awake": 1, "time_since_spoke": 15.0, "tod": 14.0 }, "label": 3 },
+  { "description": "Long silence evening", "inputs": { "awake": 1, "time_since_spoke": 20.0, "tod": 20.0 }, "label": 3 }
+]

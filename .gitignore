@@ -3,3 +3,4 @@
 **/build/*.npy
 **/*.db
 **/.env
+**/lib/piper

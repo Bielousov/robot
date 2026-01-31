@@ -6,10 +6,7 @@ import time
 import threading
 
 # Set the path for the v3 directory
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../v3"))
 
 from v3.config import ENV
 from v3.dictionary import Responses

@@ -1,6 +1,6 @@
 from config import ENV, MODEL
-from lib.Intents import Intents
-from lib.Threads import Thread
+from v3.lib.Intents import Intents
+from v3.lib.Threads import Thread
 from state import getStateContext
 
 def EyesThread(eyes, threads):

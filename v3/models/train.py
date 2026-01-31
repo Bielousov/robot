@@ -2,8 +2,8 @@ import threading, time
 from copy import deepcopy
 
 from config import MODEL
-from lib.Benchmark import Benchmark
-from lib.IntentsModel import IntentsModel
+from v3.lib.Benchmark import Benchmark
+from v3.lib.IntentsModel import IntentsModel
 
 TRAINING_EPOCHS = 10_000
 

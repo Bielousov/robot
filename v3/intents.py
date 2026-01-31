@@ -1,5 +1,5 @@
 from datetime import datetime
-from lib.LocalDictionary import LocalDictionary
+from v3.lib.LocalDictionary import LocalDictionary
 from dictionary import Prompts
 from errors import handelVerboseError
 from state import State

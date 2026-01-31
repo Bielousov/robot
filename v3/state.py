@@ -1,7 +1,7 @@
 from random import random
 from copy import deepcopy
 from numpy import array, clip, log10
-from lib.Sensors import Sensors
+from v3.lib.Sensors import Sensors
 from config import ENV
 from utils import debug
 

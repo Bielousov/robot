@@ -1,7 +1,7 @@
 import threading, time
 from copy import deepcopy
 
-from config import MODEL
+from ..config import MODEL
 from v3.lib.Benchmark import Benchmark
 from v3.lib.IntentsModel import IntentsModel
 

@@ -1,0 +1,29 @@
+[
+  { "description": "Hello: Night-time wakeup", "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 2.0 }, "label": 1 },
+  { "description": "Hello: Morning wakeup",    "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 10.0 }, "label": 1 },
+  { "description": "Hello: Afternoon wakeup",  "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 1 },
+  { "description": "Hello: Evening wakeup",    "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 20.0 }, "label": 1 },
+  { "description": "Hello: Late-night wakeup", "inputs": { "awake": 1, "time_since_spoke": 0.1, "tod": 23.0 }, "label": 1 },
+
+  { "description": "Goodbye: Early sleep",     "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 4.0 }, "label": 2 },
+  { "description": "Goodbye: Midday nap",      "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 2 },
+  { "description": "Goodbye: Evening rest",    "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 18.0 }, "label": 2 },
+  { "description": "Goodbye: Nightly sleep",   "inputs": { "awake": 0, "time_since_spoke": 0.1, "tod": 22.0 }, "label": 2 },
+
+  { "description": "Fact: Morning chatter",    "inputs": { "awake": 1, "time_since_spoke": 5.0, "tod": 9.0 }, "label": 3 },
+  { "description": "Fact: Afternoon chatter",  "inputs": { "awake": 1, "time_since_spoke": 8.0, "tod": 13.0 }, "label": 3 },
+  { "description": "Fact: Afternoon chatter",  "inputs": { "awake": 1, "time_since_spoke": 10.0, "tod": 16.0 }, "label": 3 },
+  { "description": "Fact: Evening chatter",    "inputs": { "awake": 1, "time_since_spoke": 4.0, "tod": 20.0 }, "label": 3 },
+  { "description": "Fact: 8:59 PM (Just before curfew)", "inputs": { "awake": 1, "time_since_spoke": 5.0, "tod": 20.9 }, "label": 3 },
+  { "description": "Fact: 8:01 AM (Just after morning curfew)", "inputs": { "awake": 1, "time_since_spoke": 5.0, "tod": 8.1 }, "label": 3 },
+
+  { "description": "Nothing: Late Night Curfew", "inputs": { "awake": 1, "time_since_spoke": 15.0, "tod": 22.0 }, "label": 0 },
+  { "description": "Nothing: Early AM Curfew",   "inputs": { "awake": 1, "time_since_spoke": 30.0, "tod": 2.0 }, "label": 0 },
+  { "description": "Nothing: Morning Curfew",    "inputs": { "awake": 1, "time_since_spoke": 10.0, "tod": 7.0 }, "label": 0 },
+  { "description": "Nothing: Awake but idle",    "inputs": { "awake": 1, "time_since_spoke": 1.5, "tod": 14.0 }, "label": 0 },
+  { "description": "Nothing: Idle Eyes closed",  "inputs": { "awake": 0, "time_since_spoke": 10.0, "tod": 10.0 }, "label": 0 },
+  { "description": "Nothing: Idle Eyes closed",  "inputs": { "awake": 0, "time_since_spoke": 5.0, "tod": 21.0 }, "label": 0 },
+  { "description": "Nothing: Just said Hello",   "inputs": { "awake": 1, "time_since_spoke": 0.8, "tod": 12.0 }, "label": 0 },
+  { "description": "Nothing: 9:01 PM (Just after curfew)", "inputs": { "awake": 1, "time_since_spoke": 5.0, "tod": 21.1 }, "label": 0 },
+  { "description": "Nothing: 7:59 AM (Just before morning curfew)", "inputs": { "awake": 1, "time_since_spoke": 5.0, "tod": 7.9 }, "label": 0 }
+]

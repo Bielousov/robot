@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import config_loader 
 
@@ -22,54 +21,63 @@ for entry in raw_data:
 X = np.array(X)
 y = np.array(y)
 
-# 2. Split data: 80% for training, 20% for testing
-# random_state ensures you get the same results every time you run it
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-# 3. Scale the data
+# 2. Scale the data (Full Set)
+# With tiny data, we want the scaler to see everything to establish true bounds
 scaler = StandardScaler()
-# Important: Fit the scaler ONLY on the training data
-X_train_scaled = scaler.fit_transform(X_train)
-# Just transform the test data (don't let the scaler "see" the answers)
-X_test_scaled = scaler.transform(X_test)
+X_scaled = scaler.fit_transform(X)
 
-# 4. Define and Train the Model
-print("Training the brain...")
+# 3. Define and Train the Model
+print("Training the brain on all rules...")
 model = MLPClassifier(
-    hidden_layer_sizes=(6, 4),      # Fewer neurons = better for tiny data
-    max_iter=10_000,                  # Give it more time to converge
-    activation='relu',              # Industry standard for hidden layers
-    solver='adam',                  # Robust optimizer
-    learning_rate_init=0.01,        # Faster learning
-    random_state=42                 # Keeps results consistent
+    hidden_layer_sizes=(16, 16), # Capacity to 'memorize' the specific curfew hours
+    max_iter=20_000,
+    activation='relu',           
+    solver='lbfgs',              # Optimal for datasets < 200 samples
+    alpha=0,                     # Zero regularization forces strict rule adherence
+    random_state=42
 )
-model.fit(X_train_scaled, y_train)
 
-# 5. Calculate Accuracy
-y_pred = model.predict(X_test_scaled)
-accuracy = accuracy_score(y_test, y_pred)
+# We fit on the ENTIRE dataset
+model.fit(X_scaled, y)
+
+# 4. Diagnostic: Check if the brain learned the rules perfectly
+y_pred = model.predict(X_scaled)
+accuracy = accuracy_score(y, y_pred)
 
 print("-" * 30)
 print(f"TRAINING COMPLETE")
-print(f"Model Accuracy: {accuracy * 100:.2f}%")
+print(f"Rule Adherence: {accuracy * 100:.2f}%")
 print("-" * 30)
 
-# Optional: Print a detailed report if you have enough data
-if len(X) > 0:
-    print("Detailed Performance Report:")
-    target_names = ['Nothing', 'Hello', 'Goodbye', 'Fact']
-    
-    # Adding zero_division=0 removes the messy traceback warnings
-    report = classification_report(
-        y_test, 
-        y_pred, 
-        labels=[0, 1, 2, 3], 
-        target_names=target_names,
-        zero_division=0 
-    )
-    print(report)
+# 5. Detailed Report on Rule Adherence
+print("Rule Consistency Report:")
+target_names = ['Nothing', 'Hello', 'Goodbye', 'Fact']
+report = classification_report(
+    y, 
+    y_pred, 
+    labels=[0, 1, 2, 3], 
+    target_names=target_names,
+    zero_division=0 
+)
+print(report)
 
-# 6. Save the results
-config_loader.save_brain(model, scaler)
+# 6. Safety Check: Verify Curfew logic manually
+# Test: Awake, 10 mins silent, 2:00 PM (Should be Fact/3)
+# Test: Awake, 10 mins silent, 11:00 PM (Should be Nothing/0)
+test_points = np.array([
+    [1, 10.0, 14.0], 
+    [1, 10.0, 23.0]
+])
+test_scaled = scaler.transform(test_points)
+test_preds = model.predict(test_scaled)
+
+print("Curfew Verification:")
+print(f" - 2:00 PM + 10m silence: {'PASS' if test_preds[0] == 3 else 'FAIL'} (Predicted {target_names[test_preds[0]]})")
+print(f" - 11:00 PM + 10m silence: {'PASS' if test_preds[1] == 0 else 'FAIL'} (Predicted {target_names[test_preds[1]]})")
+
+# 7. Save the results
+if accuracy > 0.9:
+    config_loader.save_brain(model, scaler)
+    print("\n[SUCCESS] Brain saved with high rule adherence.")
+else:
+    print("\n[WARNING] Brain not saved. Accuracy too low to ensure reliable behavior.")

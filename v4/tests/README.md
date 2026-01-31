@@ -1,5 +1,5 @@
 
 ## Install dependencies
 ```
-pip install scikit-learn joblib pandas numpy
+pip install dotenv scikit-learn joblib pandas numpy
 ```

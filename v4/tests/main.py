@@ -77,32 +77,31 @@ class AnimatronicRobot:
 
     def run(self):
         self.brain_thread.start()
-        print("Main control loop active. Press Ctrl+C to exit.")
+        print("Main control loop active. (Invoked via __main__)")
 
-        try:
-            while True:
-                simulated_awake_switch = 1 
+        # In this version, we don't catch KeyboardInterrupt here; 
+        # we let it bubble up to __main__.py
+        while self.running:
+            # Simulate your switch (e.g., a physical toggle)
+            simulated_awake_switch = 1 
 
-                # 1. State Change Logic
-                if simulated_awake_switch == 1 and self.is_currently_awake == 0:
-                    self.speak("hello")
-                    self.is_currently_awake = 1
-                
-                elif simulated_awake_switch == 0 and self.is_currently_awake == 1:
-                    self.speak("goodbye")
-                    self.is_currently_awake = 0
+            # State Change Logic (Transitional)
+            if simulated_awake_switch == 1 and self.is_currently_awake == 0:
+                self.speak("hello")
+                self.is_currently_awake = 1
+            
+            # Note: The Goodbye logic is now handled in __main__.py 
+            # or triggered by the switch turning to 0 here.
+            elif simulated_awake_switch == 0 and self.is_currently_awake == 1:
+                self.speak("goodbye")
+                self.is_currently_awake = 0
 
-                # 2. Behavior Logic
-                if self.is_currently_awake and self.current_action == 3:
-                    # Fact Cooldown (30 seconds)
-                    if (time.time() - self.last_spoke_time) > 30:
-                        self.speak("facts")
+            # Behavior Logic (Neural Net Decision)
+            if self.is_currently_awake and self.current_action == 3:
+                if (time.time() - self.last_spoke_time) > 30:
+                    self.speak("facts")
 
-                time.sleep(0.1)
-
-        except KeyboardInterrupt:
-            print("\nShutting down...")
-            self.running = False
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     robot = AnimatronicRobot()

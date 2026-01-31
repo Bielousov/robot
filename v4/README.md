@@ -23,3 +23,9 @@ hdmi_ignore_edid_audio=1
 defaults.pcm.card 0
 defaults.ctl.card 0
 ```
+
+## Piper dependency install:
+Run:
+```
+setup.sh
+```

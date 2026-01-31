@@ -1,3 +1,4 @@
+dotenv
 joblib
 numpy
 pandas

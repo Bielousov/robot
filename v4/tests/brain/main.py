@@ -3,14 +3,14 @@ from datetime import datetime
 import numpy as np
 
 # Set the path for the v4 directory
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 
 from v4.lib.Voice import Voice
 
-from config import ENV
+from v4.config import ENV
 import config_loader
 
 class AnimatronicRobot:

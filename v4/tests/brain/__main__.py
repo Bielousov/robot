@@ -24,6 +24,11 @@ def start_app():
                     print("[User] Action: PROMPTED (Fact/Wake request)")
                     robot.is_prompted = 1
                 
+                elif line == "s":
+                    # 's' + Enter pressed
+                    print("[User] Action: FORCE SLEEP")
+                    robot.is_currently_awake = 0
+                
                 elif line == "esc":
                     # Typing 'esc' + Enter (since we can't capture raw Esc key easily)
                     print("[User] Action: FORCE SLEEP")

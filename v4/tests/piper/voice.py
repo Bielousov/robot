@@ -1,4 +1,4 @@
-import subprocess, sys
+import subprocess, sys, threading
 from pathlib import Path
 
 # Anchor to project root (v4)
@@ -13,6 +13,18 @@ from lib.Voice import Voice
 
 from config import ENV
 
+# 1. Create a "Stoplight" event
+speech_done = threading.Event()
+
+def on_speech_finished(success, error=None):
+    if success:
+        print("\n[Callback]: Speech finished successfully!")
+    else:
+        print(f"\n[Callback]: Speech failed: {error}")
+    
+    # Signal the main thread to continue
+    speech_done.set()
+
 def test_speech(text):
     print(f"--- Piper Diagnostic ---")
     print(f"Project Root: {v4_path}")
@@ -20,11 +32,13 @@ def test_speech(text):
 
     voice = Voice(ENV.VOICE)
 
-    # Escape quotes for shell safety
-    clean_text = text.replace('"', '\\"')
-
     try:
-        voice.say(clean_text)
+        print(f"Talking: '{text}'")
+
+        voice.say(text, callback=on_speech_finished)
+
+        print("Main thread is waiting for callback...")
+        speech_done.wait() 
         print("--- Test Complete ---")
     except subprocess.CalledProcessError as e:
         print(f"Error: Playback failed. {e}")

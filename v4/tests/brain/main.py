@@ -11,7 +11,6 @@ v4_path = Path(__file__).parent.parent.parent.resolve()
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
-# Now you can import Voice normally
 from lib.Voice import Voice
 
 from config import ENV

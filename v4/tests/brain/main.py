@@ -14,7 +14,7 @@ if str(v4_path) not in sys.path:
 # Now you can import Voice normally
 from lib.Voice import Voice
 
-from v4.config import ENV
+from config import ENV
 import config_loader
 
 class AnimatronicRobot:

@@ -29,8 +29,9 @@ class AnimatronicRobot:
         # State Variables
         self.last_spoke_time = time.time()
         self.is_currently_awake = 0
-        self.is_prompted = 0  # NEW: Triggered by user button/keypress
-        self.current_action = 0  
+        self.last_awake_state = 0  # <--- ADD THIS LINE
+        self.is_prompted = 0
+        self.current_action = 0
         self.running = True
         
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)
@@ -78,23 +79,32 @@ class AnimatronicRobot:
         print("Main control loop active.")
 
         while self.running:
-            # logic for "Hello" and "Goodbye" based on awake status
+            # 1. State Change Logic (Transitional)
+            # Check if we JUST woke up
             if self.is_currently_awake == 1 and self.last_awake_state == 0:
+                print("[State] Transitioning to AWAKE")
                 self.speak("hello")
                 self.last_awake_state = 1
+            
+            # Check if we JUST fell asleep
             elif self.is_currently_awake == 0 and self.last_awake_state == 1:
+                print("[State] Transitioning to SLEEP")
                 self.speak("goodbye")
                 self.last_awake_state = 0
 
-            # Behavior Logic
-            if self.current_action == 3: # Fact triggered
-                self.speak("facts")
-                self.is_prompted = 0 # Reset the flag after responding
-            
-            elif self.current_action == 1 and self.is_currently_awake == 0:
-                # If NN decides label 1 (Hello) because of a prompt while asleep
+            # 2. Behavior Logic (Neural Net Decision)
+            # Logic for prompted wake-up (Label 1)
+            if self.current_action == 1 and self.is_currently_awake == 0:
                 self.is_currently_awake = 1
                 self.is_prompted = 0
+            
+            # Logic for facts (Label 3)
+            elif self.current_action == 3:
+                # If it's a natural fact (not prompted), check the 30m timer
+                # If it IS prompted, skip the timer.
+                if self.is_prompted or (time.time() - self.last_spoke_time > 1800):
+                    self.speak("facts")
+                    self.is_prompted = 0 # Clear the flag
 
             time.sleep(0.1)
             

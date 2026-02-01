@@ -6,14 +6,18 @@ from main import AnimatronicRobot
 def start_app():
     robot = AnimatronicRobot()
     
-    # Simple listener for manual toggles (optional helper)
+    # Simple listener for manual toggles
     def check_input():
         while robot.running:
-            # Example: hit Enter to toggle state
-            input() 
-            new_state = 0 if robot.is_currently_awake else 1
-            print(f"\n[User] Toggling state to: {'AWAKE' if new_state else 'SLEEP'}")
-            robot.is_currently_awake = new_state
+            input() # Wait for Enter key
+            
+            # Toggle logic
+            if robot.is_currently_awake == 1:
+                print("\n[User] Signaling SLEEP...")
+                robot.is_currently_awake = 0
+            else:
+                print("\n[User] Signaling AWAKE...")
+                robot.is_currently_awake = 1
 
     # Run the keypress listener in a background thread
     input_thread = threading.Thread(target=check_input, daemon=True)
@@ -23,25 +27,22 @@ def start_app():
         # Launch the robot's main loop
         robot.run()
     except KeyboardInterrupt:
-        print("\n[System] Shutdown requested. Signaling Neural Network...")
+        print("\n[System] Shutdown initiated...")
         
-        # 1. Signal the state change
-        robot.is_currently_awake = 0
+        # 1. Signal sleep state
+        if robot.is_currently_awake == 1:
+            print("[System] Finalizing Neural Network goodbye routine...")
+            robot.is_currently_awake = 0
             
-        # 2. Wait for the Neural Network to transition and speak
-        # We loop while the robot is still "running" (the NN will set this to False when done)
-        # or we wait for a specific flag that the goodbye is finished.
-        print("[System] Waiting for robot to finalize sleep routine...")
+            # 2. WAIT for the NN to process the change and speak
+            # We wait as long as the robot is "running". 
+            # Your NN/Main loop should set robot.running = False AFTER goodbye is done.
+            max_wait = 10 
+            start_wait = time.time()
+            while robot.running and (time.time() - start_wait < max_wait):
+                time.sleep(0.1)
         
-        timeout = 5  # Max seconds to wait for goodbye speech
-        start_wait = time.time()
-        
-        while robot.running and (time.time() - start_wait < timeout):
-            # If your robot.run() logic sets robot.running=False 
-            # after the goodbye, this loop will exit perfectly.
-            time.sleep(0.1)
-        
-        # 3. Final cleanup
+        # 3. Final hardware release
         robot.running = False
         print("[System] Robot offline.")
         sys.exit(0)

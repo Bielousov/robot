@@ -5,6 +5,7 @@ from lib.Enum import Enum
 
 load_dotenv()
 
-ENV = Enum (
-  VOICE = getenv('VOICE'),
+Env = Enum (
+  Voice             = getenv('VOICE'),
+  VoiceSampleRate = int(getenv('VOICE_SAMPLE_RATE')),
 )

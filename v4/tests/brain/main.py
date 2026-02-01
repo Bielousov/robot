@@ -12,7 +12,7 @@ if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
 from lib.Voice import Voice
-from config import ENV
+from config import Env
 import config_loader
 
 class AnimatronicRobot:
@@ -35,7 +35,7 @@ class AnimatronicRobot:
         self.last_spoke_time = 0 # Initialize at 0 to allow immediate first speech
 
         # 3. Hardware/Voice Setup
-        self.voice = Voice(ENV.VOICE)
+        self.voice = Voice(Env.Voice, Env.VoiceSampleRate)
 
         # 4. Threading Handles
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)

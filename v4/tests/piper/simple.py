@@ -9,13 +9,14 @@ v4_path = Path(__file__).parent.parent.parent.resolve()
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
-from config import ENV
+from config import Env
 
 # 3. Define the actual assets location
 LIB_PIPER_DIR = v4_path / "lib" / "piper"
 PIPER_BIN = LIB_PIPER_DIR / "piper"
 
-VOICE_FILE = f"{ENV.VOICE}.onnx" if ENV.VOICE else "en_US-lessac-medium.onnx"
+VOICE_FILE = f"{Env.Voice}.onnx" if Env.Voice else "en_US-danny-low.onnx"
+VOICE_SAMPLE_RATE = Env.VoiceSampleRate or 16_000
 MODEL_PATH = LIB_PIPER_DIR / "voices" / VOICE_FILE
 
 def test_speech(text):
@@ -34,7 +35,7 @@ def test_speech(text):
     command = (
         f'echo "{clean_text}" | '
         f'"{PIPER_BIN}" --model "{MODEL_PATH}" --output_raw | '
-        f'aplay -r 22050 -f S16_LE -t raw'
+        f'aplay -r {VOICE_SAMPLE_RATE} -f S16_LE -t raw'
     )
 
     try:

@@ -7,7 +7,7 @@ if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
 from lib.Voice import Voice
-from config import ENV
+from config import Env
 
 speech_done = threading.Event()
 
@@ -18,9 +18,9 @@ def on_speech_finished(success, error=None):
 
 def test_speech(text):
     print(f"--- Piper Diagnostic ---")
-    print(f"Voice Model: {ENV.VOICE}")
+    print(f"Voice Model: {Env.Voice}")
     
-    voice = Voice(ENV.VOICE)
+    voice = Voice(Env.Voice, Env.VoiceSampleRate)
     speech_done.clear()
 
     print(f"Talking: '{text}'")

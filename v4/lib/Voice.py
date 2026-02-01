@@ -15,12 +15,13 @@ PIPER_BIN = PIPER_DIR / "piper"
 
 
 class Voice:
-    def __init__(self, voice_model_name="en_US-ryan-high.onnx"):
+    def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=22050):
         self.__process = Process()
         
         # Specific voice model path
         voice_file = f"{voice_model_name}.onnx"
         self.model_path = VOICE_DIR / voice_file
+        self.sample_rate = voice_sample_rate
         print(f"Model path: {self.model_path}")
         
         # Ensure the binary is executable
@@ -39,7 +40,7 @@ class Voice:
         command = (
             f'echo "{clean_text}" | '
             f'"{PIPER_BIN}" --model "{self.model_path}" --output_raw | '
-            f'aplay -r 22050 -f S16_LE -t raw'
+            f'aplay -r {self.sample_rate} -f S16_LE -t raw'
         )
         
         def _run():

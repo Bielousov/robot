@@ -67,30 +67,49 @@ class AnimatronicRobot:
         while self.running:
             start_time = time.time()
 
-            # Prepare Inputs
+            # Inputs
             time_since = (time.time() - self.last_spoke_time) / 60.0
             tod = self.get_time_decimal()
             
-            # shape: [awake, prompted, time_since, tod]
+            # This array MUST match your training columns: [awake, prompted, time, tod]
             raw_input = np.array([[self.is_currently_awake, self.is_prompted, time_since, tod]])
             
-            try:
-                scaled_input = self.scaler.transform(raw_input)
-                self.current_action = self.model.predict(scaled_input)[0]
-            except Exception as e:
-                print(f"[Brain Error]: {e}")
+            # DEBUG: Uncomment this to see the "eyes" of the robot
+            # print(f"[Brain Vision] Input: {raw_input} -> Action: {self.current_action}", end='\r')
 
-            # Maintain 20Hz frequency
+            scaled_input = self.scaler.transform(raw_input)
+            self.current_action = self.model.predict(scaled_input)[0]
+
             elapsed = time.time() - start_time
             time.sleep(max(0, interval - elapsed))
 
     def _logic_loop(self):
         """Pure Neural Network driven logic"""
-        print("[System] Logic Loop Active (NN-Driven).")
-        
+        print("[System] Logic Loop Active.")
         while self.running:
-            # 1. ACTUAL STATE TRANSITIONS
-            # This handles the physical act of speaking when the status flips
+            # --- PHASE 1: APPLY BRAIN DECISIONS FIRST ---
+            # This updates the 'intent' before we check for speech transitions
+            
+            # Action 1: Brain wants to Wake Up
+            if self.current_action == 1 and self.is_currently_awake == 0:
+                print("\n[Brain] Decision: WAKE UP")
+                self.is_currently_awake = 1
+                self.is_prompted = 0 
+
+            # Action 2: Brain wants to Sleep
+            elif self.current_action == 2 and self.is_currently_awake == 1:
+                print("\n[Brain] Decision: GO TO SLEEP")
+                self.is_currently_awake = 0
+                self.is_prompted = 0
+
+            # Action 3: Brain wants to tell a Fact
+            elif self.current_action == 3 and self.is_currently_awake == 1:
+                print("\n[Brain] Decision: SPEAK FACT")
+                self.speak("facts")
+                self.is_prompted = 0 
+
+            # --- PHASE 2: SPEECH TRANSITIONS ---
+            # This triggers the 'Hello' or 'Goodbye' sounds based on the status
             if self.is_currently_awake == 1 and self.last_awake_state == 0:
                 self.speak("hello")
                 self.last_awake_state = 1
@@ -98,25 +117,6 @@ class AnimatronicRobot:
             elif self.is_currently_awake == 0 and self.last_awake_state == 1:
                 self.speak("goodbye")
                 self.last_awake_state = 0
-
-            # 2. APPLY BRAIN DECISIONS TO STATE
-            # If the brain wants to wake up (Label 1) and we are asleep
-            if self.current_action == 1 and self.is_currently_awake == 0:
-                print("[Brain] Decision: WAKE UP")
-                self.is_currently_awake = 1
-                self.is_prompted = 0 # Satisfaction reset
-
-            # If the brain wants a Fact (Label 3) and we are awake
-            elif self.current_action == 3 and self.is_currently_awake == 1:
-                print("[Brain] Decision: SPEAK FACT")
-                self.speak("facts")
-                self.is_prompted = 0 # Satisfaction reset
-
-            # If the brain wants to sleep (Label 2) and we are awake
-            elif self.current_action == 2 and self.is_currently_awake == 1:
-                print("[Brain] Decision: GO TO SLEEP")
-                self.is_currently_awake = 0
-                self.is_prompted = 0
 
             time.sleep(0.1)
 

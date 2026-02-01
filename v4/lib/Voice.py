@@ -3,24 +3,25 @@ import os
 from pathlib import Path
 from .Threads import Process
 
+# --- Path Constants ---
+# These are relative to the location of Voice.py (./v4/lib/)
+LIB_PATH = Path(__file__).parent.absolute()
+PIPER_DIR = LIB_PATH / "piper"
+VOICE_DIR = PIPER_DIR / "voices"
+PIPER_BIN = PIPER_DIR / "piper"
+
 class Voice:
     def __init__(self, voice_model_name="en_US-lessac-medium.onnx"):
         self.__process = Process()
         
-        # Resolve path: ./v4/lib/
-        self.lib_path = Path(__file__).parent.absolute()
-        
-        # Piper binary: ./v4/lib/piper/piper
-        self.piper_bin = self.lib_path / "piper" / "piper"
-        
-        # Voice models: ./v4/lib/piper/voices/
-        self.model_path = self.lib_path / "piper" / "voices" / voice_model_name
+        # Resolve the specific model path
+        self.model_path = VOICE_DIR / voice_model_name
         
         # Ensure the binary is executable
-        if self.piper_bin.exists():
-            os.chmod(self.piper_bin, 0o755)
+        if PIPER_BIN.exists():
+            os.chmod(PIPER_BIN, 0o755)
         else:
-            print(f"[Voice Warning]: Piper binary not found at {self.piper_bin}")
+            print(f"[Voice Warning]: Piper binary not found at {PIPER_BIN}")
 
     def say(self, text, callback=None):
         # Escape double quotes to prevent shell injection/errors
@@ -30,7 +31,7 @@ class Voice:
         # aplay flags: -r (rate), -f (format), -t (type)
         command = (
             f'echo "{clean_text}" | '
-            f'{self.piper_bin} --model {self.model_path} --output_raw | '
+            f'"{PIPER_BIN}" --model "{self.model_path}" --output_raw | '
             f'aplay -r 22050 -f S16_LE -t raw'
         )
         

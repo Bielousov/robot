@@ -85,36 +85,38 @@ class AnimatronicRobot:
             time.sleep(max(0, interval - elapsed))
 
     def _logic_loop(self):
-        """Pure Neural Network driven logic - no hardcoded timers"""
+        """Pure Neural Network driven logic"""
         print("[System] Logic Loop Active (NN-Driven).")
         
         while self.running:
-            # 1. State Transitions (Hello/Goodbye)
-            # These remain to ensure the robot 'wakes up' or 'shuts down' once
+            # 1. ACTUAL STATE TRANSITIONS
+            # This handles the physical act of speaking when the status flips
             if self.is_currently_awake == 1 and self.last_awake_state == 0:
                 self.speak("hello")
                 self.last_awake_state = 1
+            
             elif self.is_currently_awake == 0 and self.last_awake_state == 1:
                 self.speak("goodbye")
                 self.last_awake_state = 0
 
-            # 2. Neural Network Action Dispatcher
-            # We only act if the robot is awake (or if the brain wants to wake it up)
-            
-            # Action: Wake Up (Label 1)
+            # 2. APPLY BRAIN DECISIONS TO STATE
+            # If the brain wants to wake up (Label 1) and we are asleep
             if self.current_action == 1 and self.is_currently_awake == 0:
+                print("[Brain] Decision: WAKE UP")
                 self.is_currently_awake = 1
-                # Note: last_awake_state check above will catch this and trigger "hello"
+                self.is_prompted = 0 # Satisfaction reset
 
-            # Action: Fact (Label 3)
+            # If the brain wants a Fact (Label 3) and we are awake
             elif self.current_action == 3 and self.is_currently_awake == 1:
+                print("[Brain] Decision: SPEAK FACT")
                 self.speak("facts")
-                # We reset the prompt here because the 'urge' has been satisfied
-                self.is_prompted = 0 
+                self.is_prompted = 0 # Satisfaction reset
 
-            # Action: Goodbye (Label 2)
+            # If the brain wants to sleep (Label 2) and we are awake
             elif self.current_action == 2 and self.is_currently_awake == 1:
+                print("[Brain] Decision: GO TO SLEEP")
                 self.is_currently_awake = 0
+                self.is_prompted = 0
 
             time.sleep(0.1)
 

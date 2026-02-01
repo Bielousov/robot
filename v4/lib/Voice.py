@@ -3,9 +3,12 @@ import os
 from pathlib import Path
 from .Threads import Process
 
-# --- Path Constants ---
-# These are relative to the location of Voice.py (./v4/lib/)
-LIB_PATH = Path(__file__).parent.absolute()
+# --- Robust Path Resolution ---
+# Path(__file__) is /home/pip/projects/robot/v4/lib/Voice.py
+# .parent gets us to /home/pip/projects/robot/v4/lib/
+LIB_PATH = Path(__file__).parent.resolve()
+
+# Assets are anchored to this lib folder
 PIPER_DIR = LIB_PATH / "piper"
 VOICE_DIR = PIPER_DIR / "voices"
 PIPER_BIN = PIPER_DIR / "piper"
@@ -14,7 +17,7 @@ class Voice:
     def __init__(self, voice_model_name="en_US-lessac-medium.onnx"):
         self.__process = Process()
         
-        # Resolve the specific model path
+        # Specific model path
         self.model_path = VOICE_DIR / voice_model_name
         
         # Ensure the binary is executable
@@ -24,11 +27,12 @@ class Voice:
             print(f"[Voice Warning]: Piper binary not found at {PIPER_BIN}")
 
     def say(self, text, callback=None):
-        # Escape double quotes to prevent shell injection/errors
+        # Escape double quotes for shell safety
         clean_text = text.replace('"', '\\"')
         
         # Piper pipeline
-        # aplay flags: -r (rate), -f (format), -t (type)
+        # -r 22050: Sampling rate for 'medium' voices
+        # -f S16_LE: Signed 16-bit Little Endian raw audio
         command = (
             f'echo "{clean_text}" | '
             f'"{PIPER_BIN}" --model "{self.model_path}" --output_raw | '
@@ -37,7 +41,7 @@ class Voice:
         
         def _run():
             try:
-                # shell=True enables the use of pipes (|)
+                # shell=True handles the pipes (|) correctly
                 process = subprocess.Popen(
                     command, 
                     shell=True, 
@@ -54,5 +58,5 @@ class Voice:
                 if callback:
                     callback(success=False, error=str(e))
 
-        # Run via your Process thread wrapper
+        # Async execution via your Process thread wrapper
         self.__process.run(_run)

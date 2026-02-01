@@ -4,7 +4,7 @@
 # 1. Define Paths
 PIPER_DIR="./v4/lib/piper"
 VOICE_DIR="$PIPER_DIR/voices"
-TEMP_DIR="/tmp"
+TEMP_DIR="/tmp/piper"
 
 # Create nested structure
 mkdir -p "$VOICE_DIR"

@@ -14,7 +14,7 @@ VOICE_DIR = PIPER_DIR / "voices"
 PIPER_BIN = PIPER_DIR / "piper"
 
 class Voice:
-    def __init__(self, voice_model_name="en_US-lessac-medium.onnx"):
+    def __init__(self, voice_model_name="en_US-ryan-high.onnx"):
         self.__process = Process()
         
         # Specific model path

@@ -1,24 +1,26 @@
-import subprocess
-import os
+import subprocess, sys
 from pathlib import Path
 
-# --- Path Resolution ---
-# 1. Get the directory where THIS test script lives
-# Path(__file__) = /home/pip/projects/robot/v4/tests/piper/piper.py
-THIS_DIR = Path(__file__).parent.resolve()
+# Anchor to project root (v4)
+# __file__ is v4/tests/brain/main.py
+# .parent.parent.parent is /home/pip/projects/robot/v4/
+v4_path = Path(__file__).parent.parent.parent.resolve()
 
-# 2. Navigate to the project root (v4)
-# We go up 2 levels: piper/ -> tests/ -> v4/
-V4_ROOT = THIS_DIR.parent.parent
+if str(v4_path) not in sys.path:
+    sys.path.insert(0, str(v4_path))
+
+from config import ENV
 
 # 3. Define the actual assets location
-LIB_PIPER_DIR = V4_ROOT / "lib" / "piper"
+LIB_PIPER_DIR = v4_path / "lib" / "piper"
 PIPER_BIN = LIB_PIPER_DIR / "piper"
-MODEL_PATH = LIB_PIPER_DIR / "voices" / "en_US-lessac-medium.onnx"
+
+VOICE_FILE = f"{ENV.VOICE}.onnx" if ENV.VOICE else "en_US-lessac-medium.onnx"
+MODEL_PATH = LIB_PIPER_DIR / "voices" / VOICE_FILE
 
 def test_speech(text):
     print(f"--- Piper Diagnostic ---")
-    print(f"Project Root: {V4_ROOT}")
+    print(f"Project Root: {v4_path}")
     print(f"Binary:       {PIPER_BIN} ({'Found' if PIPER_BIN.exists() else 'MISSING'})")
     print(f"Model:        {MODEL_PATH} ({'Found' if MODEL_PATH.exists() else 'MISSING'})")
     

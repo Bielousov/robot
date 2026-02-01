@@ -2,5 +2,6 @@ dotenv
 joblib
 numpy
 pandas
+pynput
 python-dotenv
 scikit-learn

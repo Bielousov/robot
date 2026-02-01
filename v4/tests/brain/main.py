@@ -18,26 +18,22 @@ import config_loader
 
 class AnimatronicRobot:
     def __init__(self):
-        # 1. Load Brain & Vocabulary via config_loader
         try:
             self.model, self.scaler = config_loader.load_brain()
-            # Loading using the key "dictionary" as requested
             self.vocab = config_loader.load_json("dictionary")
             print("Brain and Vocabulary loaded successfully.")
         except Exception as e:
             print(f"Initialization Error: {e}")
             exit()
 
-        # 2. State Variables
+        # State Variables
         self.last_spoke_time = time.time()
         self.is_currently_awake = 0
-        self.current_action = 0  # 0: Nothing, 1: Hello, 2: Goodbye, 3: Fact
+        self.is_prompted = 0  # NEW: Triggered by user button/keypress
+        self.current_action = 0  
         self.running = True
         
-        # 3. Threading Setup
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)
-
-        # 4. Voice setup
         self.voice = Voice(ENV.VOICE)
 
     def get_time_decimal(self):
@@ -45,14 +41,11 @@ class AnimatronicRobot:
         return now.hour + (now.minute / 60.0)
 
     def speak(self, category):
-        """Picks phrases and handles concatenation for facts"""
         if category == "facts":
-            # Concatenate a random intro with a random fact
             intro = random.choice(self.vocab.get("fact_intro", [""]))
             fact = random.choice(self.vocab.get("facts", ["..."]))
             phrase = f"{intro} {fact}".strip()
         else:
-            # Standard behavior for hello, goodbye, etc.
             phrase = random.choice(self.vocab.get(category, ["..."]))
         
         print(f"\n[ROBOT]: {phrase}")
@@ -60,17 +53,19 @@ class AnimatronicRobot:
         self.last_spoke_time = time.time()
 
     def _brain_loop(self):
-        """ The Neural Network 'Think' Loop running at 20Hz """
+        """ The Neural Network 'Think' Loop with 4 Inputs """
         interval = 0.05 
         while self.running:
             start_time = time.time()
 
-            # Inputs: Awake=1, TimeSinceSpoke, TimeOfDay
-            awake_input = 1 
+            # Inputs: Awake, Prompted, TimeSinceSpoke, TimeOfDay
+            awake_in = self.is_currently_awake 
+            prompted_in = self.is_prompted
             time_since = (time.time() - self.last_spoke_time) / 60.0
             tod = self.get_time_decimal()
 
-            raw_input = np.array([[awake_input, time_since, tod]])
+            # Now using 4 features
+            raw_input = np.array([[awake_in, prompted_in, time_since, tod]])
             scaled_input = self.scaler.transform(raw_input)
             
             self.current_action = self.model.predict(scaled_input)[0]
@@ -80,32 +75,29 @@ class AnimatronicRobot:
 
     def run(self):
         self.brain_thread.start()
-        print("Main control loop active. (Invoked via __main__)")
+        print("Main control loop active.")
 
-        # In this version, we don't catch KeyboardInterrupt here; 
-        # we let it bubble up to __main__.py
         while self.running:
-            # Simulate your switch (e.g., a physical toggle)
-            simulated_awake_switch = 1 
-
-            # State Change Logic (Transitional)
-            if simulated_awake_switch == 1 and self.is_currently_awake == 0:
+            # logic for "Hello" and "Goodbye" based on awake status
+            if self.is_currently_awake == 1 and self.last_awake_state == 0:
                 self.speak("hello")
-                self.is_currently_awake = 1
-            
-            # Note: The Goodbye logic is now handled in __main__.py 
-            # or triggered by the switch turning to 0 here.
-            elif simulated_awake_switch == 0 and self.is_currently_awake == 1:
+                self.last_awake_state = 1
+            elif self.is_currently_awake == 0 and self.last_awake_state == 1:
                 self.speak("goodbye")
-                self.is_currently_awake = 0
+                self.last_awake_state = 0
 
-            # Behavior Logic (Neural Net Decision)
-            if self.is_currently_awake and self.current_action == 3:
-                if (time.time() - self.last_spoke_time) > 30:
-                    self.speak("facts")
+            # Behavior Logic
+            if self.current_action == 3: # Fact triggered
+                self.speak("facts")
+                self.is_prompted = 0 # Reset the flag after responding
+            
+            elif self.current_action == 1 and self.is_currently_awake == 0:
+                # If NN decides label 1 (Hello) because of a prompt while asleep
+                self.is_currently_awake = 1
+                self.is_prompted = 0
 
             time.sleep(0.1)
-
+            
 if __name__ == "__main__":
     robot = AnimatronicRobot()
     robot.run()

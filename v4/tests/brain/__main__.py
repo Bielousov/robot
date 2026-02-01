@@ -1,27 +1,30 @@
 import time
 import sys
-import threading
+from pynput import keyboard
 from main import AnimatronicRobot
 
 def start_app():
     robot = AnimatronicRobot()
     
-    # Simple listener for manual toggles
-    def check_input():
-        while robot.running:
-            input() # Wait for Enter key
-            
-            # Toggle logic
-            if robot.is_currently_awake == 1:
-                print("\n[User] Signaling SLEEP...")
+    # Define what happens when keys are pressed
+    def on_press(key):
+        try:
+            # Enter Key -> Trigger Prompt
+            if key == keyboard.Key.enter:
+                print("\n[User] Action: PROMPTED (Fact/Wake request)")
+                robot.is_prompted = 1
+                
+            # Esc Key -> Force Sleep
+            elif key == keyboard.Key.esc:
+                print("\n[User] Action: FORCE SLEEP")
                 robot.is_currently_awake = 0
-            else:
-                print("\n[User] Signaling AWAKE...")
-                robot.is_currently_awake = 1
+                
+        except AttributeError:
+            pass
 
-    # Run the keypress listener in a background thread
-    input_thread = threading.Thread(target=check_input, daemon=True)
-    input_thread.start()
+    # Start the non-blocking listener
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
 
     try:
         # Launch the robot's main loop
@@ -29,21 +32,20 @@ def start_app():
     except KeyboardInterrupt:
         print("\n[System] Shutdown initiated...")
         
-        # 1. Signal sleep state
+        # 1. Signal sleep state for graceful exit
         if robot.is_currently_awake == 1:
             print("[System] Finalizing Neural Network goodbye routine...")
             robot.is_currently_awake = 0
             
-            # 2. WAIT for the NN to process the change and speak
-            # We wait as long as the robot is "running". 
-            # Your NN/Main loop should set robot.running = False AFTER goodbye is done.
+            # 2. Wait for NN to handle the state change and finish speaking
             max_wait = 10 
             start_wait = time.time()
             while robot.running and (time.time() - start_wait < max_wait):
                 time.sleep(0.1)
         
-        # 3. Final hardware release
+        # 3. Cleanup
         robot.running = False
+        listener.stop()
         print("[System] Robot offline.")
         sys.exit(0)
 

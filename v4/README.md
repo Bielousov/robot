@@ -27,5 +27,5 @@ defaults.ctl.card 0
 ## Piper dependency install:
 Run:
 ```
-v4/setup.sh
+bash v4/setup.sh
 ```

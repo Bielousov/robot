@@ -9,8 +9,9 @@ TEMP_DIR="/tmp/piper"
 # 2. Define Voice Array [Name|URL]
 # Add as many as you like following the pattern "Name|URL"
 VOICES=(
-    "en_US-ryan-high|https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high"
+    "en_US-danny-low|https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/danny/low"
     "en_US-lessac-medium|https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium"
+    "en_US-ryan-high|https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high"
 )
 
 # Create nested structure

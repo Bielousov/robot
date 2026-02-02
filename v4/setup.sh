@@ -1,24 +1,28 @@
 #!/bin/bash
 
 # 1. Resolve Absolute Paths
-# Ensures script works from project root or /v4 folder
+# SCRIPT_DIR is /home/pip/projects/robot/v4/
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 PROJECT_ROOT="$SCRIPT_DIR"
+
+# ENV_FILE is now expected in the parent directory of v4/
+# i.e., /home/pip/projects/robot/.env
+ENV_FILE="$(dirname "$SCRIPT_DIR")/.env"
+
 PIPER_DIR="$PROJECT_ROOT/lib/piper"
 VOICE_DIR="$PIPER_DIR/voices"
-ENV_FILE="$PROJECT_ROOT/.env"
 TEMP_DIR="/tmp/piper_install"
 
-echo "[System] Project Root detected: $PROJECT_ROOT"
+echo "[System] Script Path: $SCRIPT_DIR"
+echo "[System] Searching for .env at: $ENV_FILE"
 
 # 2. Load and Clean Environment Variables
 if [ -f "$ENV_FILE" ]; then
-    echo "[System] Loading voices from .env..."
+    echo "[System] .env found. Loading voices..."
     # Export variables from .env while ignoring comments
     export $(grep -v '^#' "$ENV_FILE" | xargs -d '\n')
     
-    # Cleaning Logic: Convert multi-line PIPER_VOICES into a clean space-separated list
-    # tr -d '\r' handles Windows line endings; tr '\n' ' ' collapses lines into one string
+    # Cleaning: Handle multi-line PIPER_VOICES from .env
     PIPER_VOICES=$(echo "$PIPER_VOICES" | tr -d '\r' | tr '\n' ' ' | tr -s ' ')
 else
     echo "[Fatal] .env file not found at $ENV_FILE"
@@ -37,6 +41,7 @@ PIPER_BIN="$PIPER_DIR/piper"
 if [ ! -f "$PIPER_BIN" ]; then
     echo "------------------------------------------------"
     echo "[Engine] Piper binary not found. Downloading..."
+    # Use aarch64 for RPi 5
     wget -q --show-progress -L -O piper.tar.gz "https://sourceforge.net/projects/piper-tts.mirror/files/2023.11.14-2/piper_linux_aarch64.tar.gz/download"
     
     mkdir -p "$TEMP_DIR"
@@ -50,13 +55,10 @@ else
 fi
 
 # 4. Loop through Voice List
-# Because we cleaned the string, the 'for' loop now correctly sees spaces as delimiters
 for entry in $PIPER_VOICES; do
-    # Skip empty entries that might result from trailing backslashes
     [ -z "$entry" ] && continue
 
     IFS="|" read -r VOICE_NAME VOICE_BASE_URL <<< "$entry"
-    
     ONNX_FILE="$VOICE_DIR/$VOICE_NAME.onnx"
     
     echo "------------------------------------------------"
@@ -65,7 +67,6 @@ for entry in $PIPER_VOICES; do
         continue
     fi
 
-    # Branch Logic: ZIP vs Standard File
     if [[ "$VOICE_BASE_URL" == *.zip ]]; then
         echo "[Voice] Downloading ZIP: $VOICE_NAME"
         ZIP_PATH="/tmp/$VOICE_NAME.zip"
@@ -74,7 +75,6 @@ for entry in $PIPER_VOICES; do
         wget -q --show-progress -L -O "$ZIP_PATH" "$VOICE_BASE_URL"
         
         mkdir -p "$EXTRACT_DIR"
-        # -j (junk paths) flattens the internal folder structure
         unzip -q -j "$ZIP_PATH" -d "$EXTRACT_DIR"
         
         mv "$EXTRACT_DIR"/*.onnx "$VOICE_DIR/" 2>/dev/null
@@ -89,4 +89,4 @@ for entry in $PIPER_VOICES; do
 done
 
 echo "------------------------------------------------"
-echo "[Success] Piper setup is complete and stable."
+echo "[Success] Piper setup is complete."

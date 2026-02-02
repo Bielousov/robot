@@ -24,6 +24,11 @@ defaults.pcm.card 0
 defaults.ctl.card 0
 ```
 
+## Dependencies install
+```
+pip install -r requirements.txt
+```
+
 ## Piper dependency install:
 Run:
 ```

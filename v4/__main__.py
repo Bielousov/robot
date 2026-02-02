@@ -19,5 +19,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exitSignal)
     signal.signal(signal.SIGTERM, exitSignal)
 
-    # Run the entry point of v3 main.py when the root-level main.py is executed
-    main.start()  # Assuming v3/main.py has a `run()` function or the desired entry point
+    # Run the entry point of v4 main.py when the root-level main.py is executed
+    main.start()  # Assuming v4/main.py has a `run()` function or the desired entry point

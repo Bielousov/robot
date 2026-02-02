@@ -46,7 +46,7 @@ class AnimatronicRobot:
         return now.hour + (now.minute / 60.0)
 
     def speak(self, category):
-        """Fetches phrase and sends to Voice library"""
+        """Modified to be non-blocking for RPi stability"""
         if category == "facts":
             intro = random.choice(self.vocab.get("fact_intro", [""]))
             fact = random.choice(self.vocab.get("facts", ["..."]))
@@ -55,7 +55,9 @@ class AnimatronicRobot:
             phrase = random.choice(self.vocab.get(category, ["..."]))
         
         print(f"\n[ROBOT]: {phrase}")
-        self.voice.say(phrase)
+        
+        # Start speech in a background thread so the logic loop doesn't hang
+        threading.Thread(target=self.voice.say, args=(phrase,), daemon=True).start()
         self.last_spoke_time = time.time()
 
     def _brain_loop(self):
@@ -84,39 +86,37 @@ class AnimatronicRobot:
             time.sleep(max(0, interval - elapsed))
 
     def _logic_loop(self):
-        """Pure Neural Network driven logic"""
         print("[System] Logic Loop Active.")
         while self.running:
-            # --- PHASE 1: APPLY BRAIN DECISIONS FIRST ---
-            # This updates the 'intent' before we check for speech transitions
-            
-            # Action 1: Brain wants to Wake Up
-            if self.current_action == 1 and self.is_currently_awake == 0:
+            # Capture state to prevent mid-loop changes
+            action = self.current_action
+
+            # --- PHASE 1: APPLY BRAIN DECISIONS ---
+            if action == 1 and self.is_currently_awake == 0:
                 print("\n[Brain] Decision: WAKE UP")
                 self.is_currently_awake = 1
                 self.is_prompted = 0 
 
-            # Action 2: Brain wants to Sleep
-            elif self.current_action == 2 and self.is_currently_awake == 1:
+            elif action == 2 and self.is_currently_awake == 1:
                 print("\n[Brain] Decision: GO TO SLEEP")
                 self.is_currently_awake = 0
                 self.is_prompted = 0
 
-            # Action 3: Brain wants to tell a Fact
-            elif self.current_action == 3 and self.is_currently_awake == 1:
-                print("\n[Brain] Decision: SPEAK FACT")
-                self.speak("facts")
-                self.is_prompted = 0 
+            elif action == 3 and self.is_currently_awake == 1:
+                # Debounce: Only trigger if we aren't already mid-speech
+                if (time.time() - self.last_spoke_time) > 1.5:
+                    print(f"\n[Brain] {datetime.now().strftime('%H:%M:%S')} Decision: SPEAK FACT")
+                    self.speak("facts")
+                self.is_prompted = 0 # Always clear the prompt to satisfy the brain
 
             # --- PHASE 2: SPEECH TRANSITIONS ---
-            # This triggers the 'Hello' or 'Goodbye' sounds based on the status
             if self.is_currently_awake == 1 and self.last_awake_state == 0:
+                self.last_awake_state = 1 # Update BEFORE speaking
                 self.speak("hello")
-                self.last_awake_state = 1
             
             elif self.is_currently_awake == 0 and self.last_awake_state == 1:
+                self.last_awake_state = 0 # Update BEFORE speaking
                 self.speak("goodbye")
-                self.last_awake_state = 0
 
             time.sleep(0.1)
 

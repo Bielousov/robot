@@ -19,18 +19,17 @@ echo "[System] Searching for .env at: $ENV_FILE"
 # 2. Load and Clean Environment Variables
 if [ -f "$ENV_FILE" ]; then
     echo "[System] .env found. Loading voices..."
-    # Export variables from .env while ignoring comments
-    export $(grep -v '^#' "$ENV_FILE" | xargs -d '\n')
+    
+    # Securely source the .env file
+    # We use a subshell to avoid polluting the script's environment 
+    # but still capture the PIPER_VOICES variable.
+    source "$ENV_FILE"
     
     # Cleaning: Handle multi-line PIPER_VOICES from .env
-    PIPER_VOICES=$(echo "$PIPER_VOICES" | tr -d '\r' | tr '\n' ' ' | tr -s ' ')
+    # We use 'echo' to collapse the backslashed newlines into a single line
+    PIPER_VOICES=$(echo $PIPER_VOICES | tr -d '\r')
 else
     echo "[Fatal] .env file not found at $ENV_FILE"
-    exit 1
-fi
-
-if [ -z "$PIPER_VOICES" ]; then
-    echo "[Error] PIPER_VOICES is empty or not defined in .env"
     exit 1
 fi
 

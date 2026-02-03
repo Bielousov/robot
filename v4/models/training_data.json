@@ -26,5 +26,10 @@
   { "description": "Nothing: Awake but idle",  "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 2.0, "tod": 14.0 }, "label": 0 },
   { "description": "Nothing: Idle Asleep",     "inputs": { "awake": 0, "prompted": 0, "time_since_spoke": 20.0, "tod": 10.0 }, "label": 0 },
   { "description": "Nothing: Just said Hello", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 0.5, "tod": 12.0 }, "label": 0 },
-  { "description": "Nothing: Post-curfew",     "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 10.0, "tod": 21.2 }, "label": 0 }
+  { "description": "Nothing: Post-curfew",     "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 10.0, "tod": 21.2 }, "label": 0 },
+
+  { "description": "Nothing: Patient idle", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 8.0, "tod": 14.0 }, "label": 0 },
+  { "description": "Nothing: Quiet afternoon", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 12.0, "tod": 15.0 }, "label": 0 },
+  { "description": "Fact: Early chatty", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 3.0, "tod": 14.0 }, "label": 3 },
+  { "description": "Fact: Impatient", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 5.0, "tod": 10.0 }, "label": 3 }
 ]

@@ -6,12 +6,8 @@ from pathlib import Path
 # .parent.parent.parent is /home/pip/projects/robot/v4/
 v4_path = Path(__file__).parent.parent.parent.resolve()
 
-
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
-
-from v4.tests.brain.config import Env
-
 
 # Configuration - Update these to your actual paths
 LIB_PIPER_DIR = v4_path / "lib" / "piper"

@@ -17,6 +17,9 @@ PIPER_BIN = PIPER_DIR / "piper"
 class Voice:
     def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=22050):
         self.__process = Process()
+        self._format = "S16_LE"
+        self._niceness = 10
+        self._threads = 2
         
         # Specific voice model path
         voice_file = f"{voice_model_name}.onnx"
@@ -35,12 +38,14 @@ class Voice:
         clean_text = text.replace('"', '\\"')
         
         # Piper pipeline
-        # -r 22050: Sampling rate for 'medium' voices
         # -f S16_LE: Signed 16-bit Little Endian raw audio
         command = (
             f'echo "{clean_text}" | '
-            f'"nice -n 10 {PIPER_BIN}" --model "{self.model_path}" taskset -c 2,3 --output_raw | '
-            f'aplay -r {self.sample_rate} -f S16_LE -t raw'
+            f'nice -n {self._niceness} "{PIPER_BIN}" '
+            f'--model "{self.model_path}" '
+            f'--threads {self.threads} '
+            f'--output_raw | '
+            f'aplay -r {self.sample_rate} -f {self._format} -t raw'
         )
         
         def _run():

@@ -2,11 +2,13 @@ import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
+
+from config import Paths
 import config_loader 
 
 # 1. Load Data
 try:
-    raw_data = config_loader.load_json("training_data")
+    raw_data = config_loader.load_json(Paths.ModelTrainingData)
 except FileNotFoundError as e:
     print(e)
     exit()

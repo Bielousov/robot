@@ -12,15 +12,15 @@ if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
 from lib.Voice import Voice
-from config import Env
+from config import Env, Paths
 import config_loader
 
 class AnimatronicRobot:
     def __init__(self):
         # 1. Load Brain & Vocabulary
         try:
-            self.model, self.scaler = config_loader.load_brain()
-            self.vocab = config_loader.load_json("dictionary")
+            self.model, self.scaler = config_loader.load_brain(Paths)
+            self.vocab = config_loader.load_json(Paths.Dictionary)
             print("[System] Brain and Vocabulary loaded successfully.")
         except Exception as e:
             print(f"[Fatal Error] Initialization failed: {e}")

@@ -39,7 +39,7 @@ class Voice:
         # -f S16_LE: Signed 16-bit Little Endian raw audio
         command = (
             f'echo "{clean_text}" | '
-            f'"{PIPER_BIN}" --model "{self.model_path}" --output_raw | '
+            f'"nice -n 10 {PIPER_BIN}" --model "{self.model_path}" taskset -c 2,3 --output_raw | '
             f'aplay -r {self.sample_rate} -f S16_LE -t raw'
         )
         

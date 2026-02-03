@@ -1,5 +1,7 @@
+import sys
 from dotenv import load_dotenv
 from os import getenv, path
+from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 
 from lib.Enum import Enum
@@ -15,7 +17,7 @@ Env = Enum (
 BASE_DIR = path.dirname(path.abspath(__file__))
 
 Paths = Enum (
-  Dictionary = path.join(BASE_DIR, "dictionary.json"),
+  Dictionary = path.join(BASE_DIR, "dictionary/en.json"),
   Model = path.join(BASE_DIR, "models/robot_model.pkg"),
   ModelScaler = path.join(BASE_DIR, "models/scaler.pkg"),
   ModelTrainingData = path.join(BASE_DIR, "models/training_data.json")

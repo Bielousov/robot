@@ -15,7 +15,7 @@ from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
 
-class AnimatronicRobot:
+class BrainTest:
     def __init__(self):
         # 1. Initialize Manager and Load Brain
         try:
@@ -130,7 +130,7 @@ class AnimatronicRobot:
         print("[System] All robot systems initialized.")
 
 if __name__ == "__main__":
-    robot = AnimatronicRobot()
+    robot = BrainTest()
     robot.run()
     try:
         while True:

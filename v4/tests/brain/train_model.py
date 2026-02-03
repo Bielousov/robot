@@ -1,6 +1,5 @@
 import sys
 import numpy as np
-from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report

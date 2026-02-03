@@ -12,16 +12,21 @@ if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
 from lib.Voice import Voice
+from lib.ModelManager import ModelManager
 from config import Env, Paths
-import config_loader
 
 class AnimatronicRobot:
     def __init__(self):
-        # 1. Load Brain & Vocabulary
+        # 1. Initialize Manager and Load Brain & Vocabulary
         try:
-            self.model, self.scaler = config_loader.load_brain(Paths)
-            self.vocab = config_loader.load_json(Paths.Dictionary)
-            print("[System] Brain and Vocabulary loaded successfully.")
+            # Using the new Manager to handle the heavy lifting
+            self.manager = ModelManager(Paths)
+            self.model, self.scaler = self.manager.load()
+            
+            # Using the direct-path JSON loader for the vocab
+            self.vocab = self.manager._load_json(Paths.Dictionary)
+            
+            print("[System] Brain and Vocabulary loaded successfully via ModelManager.")
         except Exception as e:
             print(f"[Fatal Error] Initialization failed: {e}")
             sys.exit(1)
@@ -31,8 +36,9 @@ class AnimatronicRobot:
         self.is_currently_awake = 0
         self.last_awake_state = 0
         self.is_prompted = 0
-        self.current_action = 0  # 0: Nothing, 1: Hello, 2: Goodbye, 3: Fact
-        self.last_spoke_time = 0 # Initialize at 0 to allow immediate first speech
+        self.current_action = 0  
+        self.last_spoke_time = 0 
+        self.speech_lock = threading.Lock() # Prevents overlapping speech threads
 
         # 3. Hardware/Voice Setup
         self.voice = Voice(Env.Voice, Env.VoiceSampleRate)
@@ -45,8 +51,13 @@ class AnimatronicRobot:
         now = datetime.now()
         return now.hour + (now.minute / 60.0)
 
+    def _threaded_say(self, phrase):
+        """Internal helper to speak without blocking the logic loop"""
+        with self.speech_lock:
+            self.voice.say(phrase)
+
     def speak(self, category):
-        """Modified to be non-blocking for RPi stability"""
+        """Fetches phrase and triggers non-blocking speech"""
         if category == "facts":
             intro = random.choice(self.vocab.get("fact_intro", [""]))
             fact = random.choice(self.vocab.get("facts", ["..."]))
@@ -56,16 +67,16 @@ class AnimatronicRobot:
         
         print(f"\n[ROBOT]: {phrase}")
         
-        # Start speech in a background thread so the logic loop doesn't hang
-        threading.Thread(target=self.voice.say, args=(phrase,), daemon=True).start()
+        # Update state immediately
         self.last_spoke_time = time.time()
+        
+        # Launch speech in background
+        threading.Thread(target=self._threaded_say, args=(phrase,), daemon=True).start()
 
     def _brain_loop(self):
-        """ 
-        The Neural Network 'Think' Loop (20Hz)
-        Inputs: [Awake, Prompted, TimeSinceSpoke, TimeOfDay]
-        """
+        """The Neural Network 'Think' Loop (20Hz)"""
         interval = 0.05 
+        print(f"[System] Brain Loop Active at {1/interval}Hz")
         while self.running:
             start_time = time.time()
 
@@ -73,14 +84,15 @@ class AnimatronicRobot:
             time_since = (time.time() - self.last_spoke_time) / 60.0
             tod = self.get_time_decimal()
             
-            # This array MUST match your training columns: [awake, prompted, time, tod]
             raw_input = np.array([[self.is_currently_awake, self.is_prompted, time_since, tod]])
             
-            # DEBUG: Uncomment this to see the "eyes" of the robot
-            # print(f"[Brain Vision] Input: {raw_input} -> Action: {self.current_action}", end='\r')
-
-            scaled_input = self.scaler.transform(raw_input)
-            self.current_action = self.model.predict(scaled_input)[0]
+            # Inference
+            try:
+                scaled_input = self.scaler.transform(raw_input)
+                self.current_action = self.model.predict(scaled_input)[0]
+            except Exception as e:
+                # Silently catch inference blips during start-up
+                pass
 
             elapsed = time.time() - start_time
             time.sleep(max(0, interval - elapsed))
@@ -88,7 +100,6 @@ class AnimatronicRobot:
     def _logic_loop(self):
         print("[System] Logic Loop Active.")
         while self.running:
-            # Capture state to prevent mid-loop changes
             action = self.current_action
 
             # --- PHASE 1: APPLY BRAIN DECISIONS ---
@@ -103,35 +114,34 @@ class AnimatronicRobot:
                 self.is_prompted = 0
 
             elif action == 3 and self.is_currently_awake == 1:
-                # Debounce: Only trigger if we aren't already mid-speech
-                if (time.time() - self.last_spoke_time) > 1.5:
+                # Use a 3-second cooldown to protect the RPi 5 CPU/Power
+                if (time.time() - self.last_spoke_time) > 3.0:
                     print(f"\n[Brain] {datetime.now().strftime('%H:%M:%S')} Decision: SPEAK FACT")
                     self.speak("facts")
-                self.is_prompted = 0 # Always clear the prompt to satisfy the brain
+                self.is_prompted = 0 
 
             # --- PHASE 2: SPEECH TRANSITIONS ---
             if self.is_currently_awake == 1 and self.last_awake_state == 0:
-                self.last_awake_state = 1 # Update BEFORE speaking
+                self.last_awake_state = 1
                 self.speak("hello")
             
             elif self.is_currently_awake == 0 and self.last_awake_state == 1:
-                self.last_awake_state = 0 # Update BEFORE speaking
+                self.last_awake_state = 0
                 self.speak("goodbye")
 
             time.sleep(0.1)
 
     def run(self):
-        """Starts the background threads and returns control to the caller"""
         self.brain_thread.start()
         self.logic_thread.start()
         print("[System] All robot systems initialized.")
 
 if __name__ == "__main__":
-    # If run directly for testing
     robot = AnimatronicRobot()
     robot.run()
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        print("\n[System] Shutting down...")
         robot.running = False

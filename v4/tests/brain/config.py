@@ -1,6 +1,13 @@
+import sys
 from dotenv import load_dotenv
 from os import getenv, path
+from pathlib import Path
 from sklearn.neural_network import MLPClassifier
+
+# Path Setup
+v4_path = Path(__file__).parent.parent.parent.resolve()
+if str(v4_path) not in sys.path:
+    sys.path.insert(0, str(v4_path))
 
 from lib.Enum import Enum
 

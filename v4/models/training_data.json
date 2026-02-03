@@ -8,6 +8,11 @@
   { "description": "Goodbye: Midday nap",      "inputs": { "awake": 0, "prompted": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 2 },
   { "description": "Goodbye: Nightly sleep",   "inputs": { "awake": 0, "prompted": 0, "time_since_spoke": 0.1, "tod": 22.0 }, "label": 2 },
 
+  { "description": "Stability: Stay awake after waking (Morning)", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 0.05, "tod": 10.0 }, "label": 0 },
+  { "description": "Stability: Stay awake after waking (Afternoon)", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 0 },
+  { "description": "Stability: Stay awake after waking (Evening)", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 0.2, "tod": 19.0 }, "label": 0 },
+  { "description": "Stability: Post-Hello idle", "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 1.0, "tod": 14.0 }, "label": 0 },
+
   { "description": "Fact: Morning chatter",    "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 10.0, "tod": 9.0 }, "label": 3 },
   { "description": "Fact: Afternoon chatter",  "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 15.0, "tod": 14.0 }, "label": 3 },
   { "description": "Fact: Evening chatter",    "inputs": { "awake": 1, "prompted": 0, "time_since_spoke": 12.0, "tod": 19.0 }, "label": 3 },

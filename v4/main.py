@@ -11,7 +11,7 @@ from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
 
-class BrainTest:
+class Pip:
     def __init__(self):
         # 1. Initialize Manager and Load Brain
         try:

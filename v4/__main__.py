@@ -2,10 +2,10 @@ import time
 import sys
 import select
 
-from main import AnimatronicRobot
+from main import Pip
 
 def start_app():
-    robot = AnimatronicRobot()
+    robot = Pip()
     
     print("\n--- Robot Control Active ---")
     print("Commands: [Enter] = Prompt Fact | [s] + [Enter] = Sleep | [Ctrl+C] = Exit")

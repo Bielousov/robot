@@ -1,10 +1,10 @@
 import time
 import sys
 import select
-from main import AnimatronicRobot
+from main import BrainTest
 
 def start_app():
-    robot = AnimatronicRobot()
+    robot = BrainTest()
     
     print("\n--- Robot Control Active ---")
     print("Commands: [Enter] = Prompt Fact | [s] + [Enter] = Sleep | [Ctrl+C] = Exit")

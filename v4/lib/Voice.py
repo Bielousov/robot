@@ -23,9 +23,9 @@ class Voice:
         
         # Specific voice model path
         voice_file = f"{voice_model_name}.onnx"
-        self.model_path = VOICE_DIR / voice_file
-        self.sample_rate = voice_sample_rate
-        print(f"Model path: {self.model_path}")
+        self._model_path = VOICE_DIR / voice_file
+        self._sample_rate = voice_sample_rate
+        print(f"Model path: {self._model_path}")
         
         # Ensure the binary is executable
         if PIPER_BIN.exists():
@@ -42,10 +42,10 @@ class Voice:
         command = (
             f'echo "{clean_text}" | '
             f'nice -n {self._niceness} "{PIPER_BIN}" '
-            f'--model "{self.model_path}" '
-            f'--threads {self.threads} '
+            f'--model "{self._model_path}" '
+            f'--threads {self._threads} '
             f'--output_raw | '
-            f'aplay -r {self.sample_rate} -f {self._format} -t raw'
+            f'aplay -r {self._sample_rate} -f {self._format} -t raw'
         )
         
         def _run():

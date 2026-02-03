@@ -1,48 +1,48 @@
 import sys
-import random
 import time
 import threading
 from datetime import datetime
 from pathlib import Path
 import numpy as np
 
-# Fix test paths
-from test_helper import setup_test_env
-setup_test_env()
+# Path Setup
+v4_path = Path(__file__).parent.parent.parent.resolve()
+if str(v4_path) not in sys.path:
+    sys.path.insert(0, str(v4_path))
 
 from lib.Voice import Voice
 from lib.ModelManager import ModelManager
+from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
 
 class AnimatronicRobot:
     def __init__(self):
-        # 1. Initialize Manager and Load Brain & Vocabulary
+        # 1. Initialize Manager and Load Brain
         try:
-            # Using the new Manager to handle the heavy lifting
             self.manager = ModelManager(Paths)
             self.model, self.scaler = self.manager.load()
             
-            # Using the direct-path JSON loader for the vocab
-            self.vocab = self.manager._load_json(Paths.Dictionary)
+            # 2. Initialize the Dictionary helper
+            self.dictionary = Dictionary(Paths.Dictionary)
             
-            print("[System] Brain and Vocabulary loaded successfully via ModelManager.")
+            print("[System] Brain and Dictionary loaded successfully.")
         except Exception as e:
             print(f"[Fatal Error] Initialization failed: {e}")
             sys.exit(1)
 
-        # 2. State Variables
+        # 3. State Variables
         self.running = True
         self.is_currently_awake = 0
         self.last_awake_state = 0
         self.is_prompted = 0
         self.current_action = 0  
         self.last_spoke_time = 0 
-        self.speech_lock = threading.Lock() # Prevents overlapping speech threads
+        self.speech_lock = threading.Lock()
 
-        # 3. Hardware/Voice Setup
+        # 4. Hardware/Voice Setup
         self.voice = Voice(Env.Voice, Env.VoiceSampleRate)
 
-        # 4. Threading Handles
+        # 5. Threading Handles
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)
         self.logic_thread = threading.Thread(target=self._logic_loop, daemon=True)
 
@@ -56,41 +56,36 @@ class AnimatronicRobot:
             self.voice.say(phrase)
 
     def speak(self, category):
-        """Fetches phrase and triggers non-blocking speech"""
+        """Uses Dictionary helper to fetch phrase and triggers TTS"""
         if category == "facts":
-            intro = random.choice(self.vocab.get("fact_intro", [""]))
-            fact = random.choice(self.vocab.get("facts", ["..."]))
+            # Combine intro and fact using Dictionary.pick
+            intro = self.dictionary.pick("fact_intro", default="")
+            fact = self.dictionary.pick("facts", default="I have no facts currently.")
             phrase = f"{intro} {fact}".strip()
         else:
-            phrase = random.choice(self.vocab.get(category, ["..."]))
+            # Direct pick for 'hello', 'goodbye', etc.
+            phrase = self.dictionary.pick(category)
         
         print(f"\n[ROBOT]: {phrase}")
         
-        # Update state immediately
         self.last_spoke_time = time.time()
-        
-        # Launch speech in background
         threading.Thread(target=self._threaded_say, args=(phrase,), daemon=True).start()
 
     def _brain_loop(self):
         """The Neural Network 'Think' Loop (20Hz)"""
         interval = 0.05 
-        print(f"[System] Brain Loop Active at {1/interval}Hz")
         while self.running:
             start_time = time.time()
 
-            # Inputs
             time_since = (time.time() - self.last_spoke_time) / 60.0
             tod = self.get_time_decimal()
             
             raw_input = np.array([[self.is_currently_awake, self.is_prompted, time_since, tod]])
             
-            # Inference
             try:
                 scaled_input = self.scaler.transform(raw_input)
                 self.current_action = self.model.predict(scaled_input)[0]
-            except Exception as e:
-                # Silently catch inference blips during start-up
+            except:
                 pass
 
             elapsed = time.time() - start_time
@@ -113,7 +108,6 @@ class AnimatronicRobot:
                 self.is_prompted = 0
 
             elif action == 3 and self.is_currently_awake == 1:
-                # Use a 3-second cooldown to protect the RPi 5 CPU/Power
                 if (time.time() - self.last_spoke_time) > 3.0:
                     print(f"\n[Brain] {datetime.now().strftime('%H:%M:%S')} Decision: SPEAK FACT")
                     self.speak("facts")
@@ -142,5 +136,4 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[System] Shutting down...")
         robot.running = False

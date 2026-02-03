@@ -18,7 +18,6 @@ VOICE_FILE = f"{VOICE}.onnx"
 VOICE_SAMPLE_RATE = 16_000
 MODEL_PATH = LIB_PIPER_DIR / "voices" / VOICE_FILE
 
-SAMPLE_RATE = 22050
 TEST_PHRASE = "The quick brown fox jumps over the lazy dog."
 
 def run_benchmark(threads=2, niceness=10):
@@ -30,6 +29,15 @@ def run_benchmark(threads=2, niceness=10):
         f'echo "{TEST_PHRASE}" | '
         f'nice -n {niceness} "{PIPER_BIN}" --model "{MODEL_PATH}" '
         f'--threads {threads} --output_raw > /dev/null'
+    )
+
+    command = (
+        f'echo "{TEST_PHRASE}" | '
+        f'nice -n {niceness} "{PIPER_BIN}" '
+        f'--model "{MODEL_PATH}" '
+        f'--threads {threads} '
+        f'--output_raw | '
+        f'aplay -r {VOICE_SAMPLE_RATE} -f S16_LE -t raw'
     )
 
     start_time = time.perf_counter()
@@ -60,3 +68,5 @@ if __name__ == "__main__":
         # Compare 1 thread vs 2 threads
         run_benchmark(threads=1)
         run_benchmark(threads=2)
+        run_benchmark(threads=3)
+        run_benchmark(threads=4)

@@ -6,10 +6,9 @@ from datetime import datetime
 from pathlib import Path
 import numpy as np
 
-# Path Setup
-v4_path = Path(__file__).parent.parent.parent.resolve()
-if str(v4_path) not in sys.path:
-    sys.path.insert(0, str(v4_path))
+# Fix test paths
+from test_helper import setup_test_env
+setup_test_env()
 
 from lib.Voice import Voice
 from lib.ModelManager import ModelManager

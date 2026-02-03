@@ -4,12 +4,11 @@ from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
-
-# Path Setup
-v4_path = Path(__file__).parent.parent.parent.resolve()
-if str(v4_path) not in sys.path:
-    sys.path.insert(0, str(v4_path))
     
+# Fix test paths
+from test_helper import setup_test_env
+setup_test_env()
+
 # Import your new configuration tools
 from config import Paths
 from lib.ModelManager import ModelManager # Assuming ModelManager is in lib/

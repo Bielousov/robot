@@ -42,14 +42,19 @@ def start_app():
         print("\n[System] Shutdown initiated...")
         
         if robot.is_currently_awake == 1:
-            print("[System] Finalizing Neural Network goodbye routine...")
+            print("[System] Triggering Neural Network goodbye...")
             robot.is_currently_awake = 0
             
-            # Wait for the NN to finish the goodbye sequence
+            # Wait for Logic Loop to process the transition and speak
             max_wait = 10 
             start_wait = time.time()
-            while robot.running and (time.time() - start_wait < max_wait):
+            
+            # CHECK: Stop waiting once last_awake_state catches up to 0
+            while robot.last_awake_state != 0 and (time.time() - start_wait < max_wait):
                 time.sleep(0.1)
+            
+            # Give a small buffer for the voice thread to actually start
+            time.sleep(0.5) 
         
         robot.running = False
         print("[System] Robot offline.")

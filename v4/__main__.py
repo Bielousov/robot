@@ -14,7 +14,7 @@ def start_app():
         # Start the robot's internal loops
         robot.run()
 
-        robot.is_awake_state = 1
+        robot.state.is_awake_state = True
 
         while robot.running:
             # Non-blocking terminal check
@@ -24,15 +24,15 @@ def start_app():
                 if line == "":
                     # Pure Enter key: High priority wake/fact request
                     print("[User] Action: PROMPTED")
-                    robot.is_prompted = 1
+                    robot.state.is_prompted = True
                 
                 elif line == "s" or line == "esc":
                     # Force Sleep Transition
                     print("[User] Action: FORCE SLEEP")
                     # Set target to 0, but keep last at 1 so phase becomes -1
-                    robot.is_awake_state = 0
+                    robot.state.is_awake_state = False
                     # Ensure no lingering prompts wake him up immediately
-                    robot.is_prompted = 0
+                    robot.state.is_prompted = False
 
             time.sleep(0.05)
 
@@ -40,9 +40,9 @@ def start_app():
         print("\n[System] Shutdown initiated...")
         
         # Trigger clean Neural Network goodbye if currently awake
-        if robot.is_awake_state == 1:
+        if robot.state.is_awake_state == True:
             print("[System] Triggering Neural Network goodbye...")
-            robot.is_awake_state = 0
+            robot.state.is_awake_state = False
             
             # Buffer to allow audio to finish playing
             time.sleep(1.0) 

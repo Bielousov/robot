@@ -11,7 +11,7 @@ from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
 from intents import IntentHandler
-from utils import get_state_phase, get_time_decimal, get_time_since
+from state import State
 
 class Pip:
     def __init__(self):
@@ -21,13 +21,8 @@ class Pip:
         self.dictionary = Dictionary(Paths.Dictionary)
         
         # 2. State Variables
+        self.state = State()
         self.running = True
-        self.is_awake_state = 0
-        self.is_awake_prev = 0
-        self.is_prompted = 0
-        self.is_speaking = False
-        self.current_action = 0  
-        self.last_spoke_time = time.time()
         self.speech_lock = threading.Lock()
 
         # 3. Hardware/Voice Setup
@@ -43,26 +38,14 @@ class Pip:
     def _brain_loop(self):
         interval = 0.05 
         while self.running:
-            # We must use a local copy of states to ensure atomicity during calculation
-            current = self.is_awake_state
-            last = self.is_awake_prev
-            
-            awake_phase = get_state_phase(current, last)
-            
-            raw_input = np.array([[
-                float(awake_phase), 
-                float(self.is_prompted), 
-                1.0 if self.is_speaking else 0.0,
-                get_time_since(self.last_spoke_time),
-                get_time_decimal()
-            ]])
+            context = self.state.get_context()
 
-            # print(f">>> {raw_input[0].tolist()}")
-            
             try:
-                scaled_input = self.scaler.transform(raw_input)
-                self.current_action = self.model.predict(scaled_input)[0]
-            except:
+                # Process through the brain
+                scaled_input = self.scaler.transform(context)
+                self.state.current_action = self.model.predict(scaled_input)[0]
+            except Exception as e:
+                # print(f"Brain Error: {e}")
                 pass
 
             time.sleep(interval)

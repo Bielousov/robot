@@ -10,23 +10,16 @@ from lib.Voice import Voice
 from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
+from intents import IntentHandler
 
 class Pip:
     def __init__(self):
-        # 1. Initialize Manager and Load Brain
-        try:
-            self.manager = ModelManager(Paths)
-            self.model, self.scaler = self.manager.load()
-            
-            # 2. Initialize the Dictionary helper
-            self.dictionary = Dictionary(Paths.Dictionary)
-            
-            print("[System] Brain and Dictionary loaded successfully.")
-        except Exception as e:
-            print(f"[Fatal Error] Initialization failed: {e}")
-            sys.exit(1)
-
-        # 3. State Variables
+        # 1. Load Brain model and Dictionary
+        self.manager = ModelManager(Paths)
+        self.model, self.scaler = self.manager.load()
+        self.dictionary = Dictionary(Paths.Dictionary)
+        
+        # 2. State Variables
         self.running = True
         self.is_currently_awake = 0
         self.last_awake_state = 0
@@ -35,8 +28,11 @@ class Pip:
         self.last_spoke_time = 0 
         self.speech_lock = threading.Lock()
 
-        # 4. Hardware/Voice Setup
+        # 3. Hardware/Voice Setup
         self.voice = Voice(Env.Voice, Env.VoiceSampleRate)
+
+        # 4. Intent handler setup
+        self.intent = IntentHandler(self)
 
         # 5. Threading Handles
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)
@@ -88,36 +84,9 @@ class Pip:
             time.sleep(max(0, interval - elapsed))
 
     def _logic_loop(self):
-        print("[System] Logic Loop Active.")
+        """The UI/Interaction Loop"""
         while self.running:
-            action = self.current_action
-
-            # --- PHASE 1: APPLY BRAIN DECISIONS ---
-            if action == 1 and self.is_currently_awake == 0:
-                print("\n[Brain] Decision: WAKE UP")
-                self.is_currently_awake = 1
-                self.is_prompted = 0 
-
-            elif action == 2 and self.is_currently_awake == 1:
-                print("\n[Brain] Decision: GO TO SLEEP")
-                self.is_currently_awake = 0
-                self.is_prompted = 0
-
-            elif action == 3 and self.is_currently_awake == 1:
-                if (time.time() - self.last_spoke_time) > 3.0:
-                    print(f"\n[Brain] {datetime.now().strftime('%H:%M:%S')} Decision: SPEAK FACT")
-                    self.speak("facts")
-                self.is_prompted = 0 
-
-            # --- PHASE 2: SPEECH TRANSITIONS ---
-            if self.is_currently_awake == 1 and self.last_awake_state == 0:
-                self.last_awake_state = 1
-                self.speak("hello")
-            
-            elif self.is_currently_awake == 0 and self.last_awake_state == 1:
-                self.last_awake_state = 0
-                self.speak("goodbye")
-
+            self.intent.handle()
             time.sleep(0.1)
 
     def run(self):
@@ -126,7 +95,7 @@ class Pip:
         print("[System] All robot systems initialized.")
 
 if __name__ == "__main__":
-    robot = BrainTest()
+    robot = Pip()
     robot.run()
     try:
         while True:

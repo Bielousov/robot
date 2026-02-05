@@ -4,9 +4,10 @@
   { "description": "Hello: Afternoon wakeup",  "inputs": { "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 1 },
   { "description": "Hello: Evening wakeup",    "inputs": { "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 21.0 }, "label": 1 },
 
-  { "description": "Nothing: Steady Sleep: Deep Night", "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 120.0, "tod": 2.0 }, "label": 0 },
-  { "description": "Nothing: Steady Sleep: Early Morning", "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 120.0, "tod": 2.0 }, "label": 0 },
-  { "description": "Nothing: Steady Sleep: Late Evening",   "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 21.0 }, "label": 0 },
+  { "description": "Nothing: Steady Sleep: Late Night", "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 23.0 }, "label": 0 },
+  { "description": "Nothing: Steady Sleep: Midnight",   "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 0.0 }, "label": 0 },
+  { "description": "Nothing: Awake but Curfew",        "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0,  "tod": 23.0 }, "label": 0 },
+  { "description": "Nothing: Awake but Curfew",        "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0,  "tod": 0.0 }, "label": 0 },
   
   { "description": "Goodbye: Early sleep",     "inputs": { "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 4.0 }, "label": 2 },
   { "description": "Goodbye: Midday nap",      "inputs": { "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 2 },
@@ -25,10 +26,13 @@
   { "description": "PROMPT: Force wake (AM)",  "inputs": { "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 120.0, "tod": 8.0 }, "label": 1 },
   { "description": "PROMPT: Force wake (General)", "inputs": { "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 10.0, "tod": 12.0 }, "label": 1 },
   
-  { "description": "PROMPT: Force fact now",   "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.2, "tod": 13.0 }, "label": 3 },
-  { "description": "PROMPT: Force fact late",  "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0, "tod": 21.5 }, "label": 3 },
-  { "description": "PROMPT: Fact during nap",  "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 1.0, "tod": 12.0 }, "label": 3 },
-  { "description": "PROMPT: Force fact (Late Night Override)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0,"time_since_spoke": 0.5, "tod": 2.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Midnight)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.2, "tod": 0.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Late Night)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.5, "tod": 2.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Morning)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0, "tod": 8.0 }, "label": 3 },
+  { "description": "PROMPT: Fact during nap (Midday)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 1.0, "tod": 12.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Afternoon)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.1, "tod": 15.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Evening)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 2.0, "tod": 19.0 }, "label": 3 },
+  { "description": "PROMPT: Force fact (Late)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0, "tod": 23.0 }, "label": 3 },
 
   { "description": "Nothing: Late Curfew",     "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 15.0, "tod": 22.5 }, "label": 0 },
   { "description": "Nothing: Early AM Curfew", "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 30.0, "tod": 3.0 }, "label": 0 },
@@ -37,7 +41,5 @@
   { "description": "Nothing: Post-curfew",     "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 21.2 }, "label": 0 },
   { "description": "Nothing: Busy talking",    "inputs": { "awake_phase": 1, "prompted": 0, "speaking": 1, "time_since_spoke": 0.05, "tod": 12.0 }, "label": 0 },
   { "description": "Nothing: Prompted but busy", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 1, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 0 },
-  
-  
-  { "description": "Post-Sleep: Just spoke Goodbye", "inputs": { "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 0 }
+  { "description": "Nothing: Prompted but busy (Priority 0)", "inputs": { "awake_phase": 1, "prompted": 1, "speaking": 1, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 0 }
 ]

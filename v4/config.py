@@ -24,7 +24,7 @@ Paths = Enum (
 class ModelConfig:
     # Brain Hyperparameters
     BRAIN_PARAMS = {
-        'hidden_layer_sizes': (8, 4),
+        'hidden_layer_sizes': (16, 8),
         'max_iter': 100_000,
         'activation': 'relu',
         'solver': 'lbfgs',

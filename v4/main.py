@@ -56,6 +56,8 @@ class Pip:
                 get_time_since(self.last_spoke_time),
                 get_time_decimal()
             ]])
+
+            # print(f">>> {raw_input[0].tolist()}")
             
             try:
                 scaled_input = self.scaler.transform(raw_input)

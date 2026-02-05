@@ -1,7 +1,5 @@
-import sys
 from dotenv import load_dotenv
 from os import getenv, path
-from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 
 from lib.Enum import Enum
@@ -23,11 +21,13 @@ Paths = Enum (
   ModelTrainingData = path.join(BASE_DIR, "models/training_data.json")
 )
 
-Model = MLPClassifier(
-    hidden_layer_sizes=(16, 16),
-    max_iter=20_000,
-    activation='relu',           
-    solver='lbfgs',              
-    alpha=0,                     
-    random_state=42
-)
+class ModelConfig:
+    # Brain Hyperparameters
+    BRAIN_PARAMS = {
+        'hidden_layer_sizes': (8, 4),
+        'max_iter': 100_000,
+        'activation': 'relu',
+        'solver': 'lbfgs',
+        'alpha': 0,
+        'random_state': 42
+    }

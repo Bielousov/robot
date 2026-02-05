@@ -34,3 +34,11 @@ Run:
 ```
 bash v4/setup.sh
 ```
+
+## State
+
+### Awake status
+0	Steady Sleep	Was asleep, still asleep.
+1	Steady Awake	Was awake, still awake.
+2	Falling Asleep	Was awake, now asleep (Trigger "Goodbye").
+-1	Waking Up	Was asleep, now awake (Trigger "Hello").

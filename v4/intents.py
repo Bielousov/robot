@@ -3,36 +3,52 @@ from datetime import datetime
 
 class IntentHandler:
     def __init__(self, robot):
-        self.robot = robot  # Reference to the main Pip instance
+        self.robot = robot
         print("[System] IntentHandler Initialized.")
 
     def handle(self):
-        """Processes the current action state and triggers robot behaviors."""
         action = self.robot.current_action
 
-        # --- PHASE 1: APPLY BRAIN DECISIONS ---
-        if action == 1 and self.robot.is_currently_awake == 0:
-            print("\n[Brain] Decision: WAKE UP")
-            self.robot.is_currently_awake = 1
-            self.robot.is_prompted = 0 
+        # --- PHASE 1: ACTION EXECUTION ---
+        if action == 1:
+            print("[Brain] Action: WAKE UP")
+            self.robot.is_awake_state = 1
+            self.speak("hello")
+        elif action == 2:
+            print("[Brain] Action: SLEEP")
+            self.robot.is_awake_state = 0
+            self.speak("goodbye")
+        elif action == 3:
+            if not self.robot.is_speaking:
+                self.speak("facts")
 
-        elif action == 2 and self.robot.is_currently_awake == 1:
-            print("\n[Brain] Decision: GO TO SLEEP")
-            self.robot.is_currently_awake = 0
-            self.robot.is_prompted = 0
+        # --- PHASE 2: STATE SYNCHRONIZATION ---
+        # This is the most important line for the awake_phase logic!
+        # It turns 'Transition' phases into 'Steady' phases for the next Brain tick.
+        self.robot.is_awake_prev = self.robot.is_awake_state
+        self.robot.is_prompted = 0
+    
 
-        elif action == 3 and self.robot.is_currently_awake == 1:
-            # Prevent rapid-fire talking
-            if (time.time() - self.robot.last_spoke_time) > 3.0:
-                print(f"\n[Brain] {datetime.now().strftime('%H:%M:%S')} Decision: SPEAK FACT")
-                self.robot.speak("facts")
-            self.robot.is_prompted = 0 
+    def _on_speech_done(self, success, error=None):
+        """Callback triggered when the Voice process finishes."""
+        self.robot.is_speaking = False
+        if error:
+            print(f"[Voice Error] {error}")
 
-        # --- PHASE 2: SPEECH TRANSITIONS ---
-        if self.robot.is_currently_awake == 1 and self.robot.last_awake_state == 0:
-            self.robot.last_awake_state = 1
-            self.robot.speak("hello")
+    def speak(self, category):
+        if self.robot.is_speaking:
+            return # Guard clause: don't interrupt current speech
+
+        if category == "facts":
+            intro = self.robot.dictionary.pick("fact_intro", default="")
+            fact = self.robot.dictionary.pick("facts", default="No facts.")
+            phrase = f"{intro} {fact}".strip()
+        else:
+            phrase = self.robot.dictionary.pick(category)
         
-        elif self.robot.is_currently_awake == 0 and self.robot.last_awake_state == 1:
-            self.robot.last_awake_state = 0
-            self.robot.speak("goodbye")
+        print(f"\n[ROBOT]: {phrase}")
+        
+        # Set the state and trigger voice with the callback
+        self.robot.is_speaking = True
+        self.robot.last_spoke_time = time.time()
+        self.robot.voice.say(phrase, callback=self._on_speech_done)

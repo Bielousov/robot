@@ -14,47 +14,38 @@ def start_app():
         # Start the robot's internal loops
         robot.run()
 
+        robot.is_awake_state = 1
+
         while robot.running:
-            # Check if there is data waiting in the terminal input buffer
-            # This is a non-blocking check (timeout=0.1)
+            # Non-blocking terminal check
             if select.select([sys.stdin], [], [], 0.1)[0]:
                 line = sys.stdin.readline().strip().lower()
                 
                 if line == "":
-                    # Pure Enter key pressed
-                    print("[User] Action: PROMPTED (Fact/Wake request)")
+                    # Pure Enter key: High priority wake/fact request
+                    print("[User] Action: PROMPTED")
                     robot.is_prompted = 1
                 
-                elif line == "s":
-                    # 's' + Enter pressed
+                elif line == "s" or line == "esc":
+                    # Force Sleep Transition
                     print("[User] Action: FORCE SLEEP")
-                    robot.is_currently_awake = 0
-                
-                elif line == "esc":
-                    # Typing 'esc' + Enter (since we can't capture raw Esc key easily)
-                    print("[User] Action: FORCE SLEEP")
-                    robot.is_currently_awake = 0
+                    # Set target to 0, but keep last at 1 so phase becomes -1
+                    robot.is_awake_state = 0
+                    # Ensure no lingering prompts wake him up immediately
+                    robot.is_prompted = 0
 
-            # Small sleep to prevent CPU spiking in the main thread
             time.sleep(0.05)
 
     except KeyboardInterrupt:
         print("\n[System] Shutdown initiated...")
         
-        if robot.is_currently_awake == 1:
+        # Trigger clean Neural Network goodbye if currently awake
+        if robot.is_awake_state == 1:
             print("[System] Triggering Neural Network goodbye...")
-            robot.is_currently_awake = 0
+            robot.is_awake_state = 0
             
-            # Wait for Logic Loop to process the transition and speak
-            max_wait = 10 
-            start_wait = time.time()
-            
-            # CHECK: Stop waiting once last_awake_state catches up to 0
-            while robot.last_awake_state != 0 and (time.time() - start_wait < max_wait):
-                time.sleep(0.1)
-            
-            # Give a small buffer for the voice thread to actually start
-            time.sleep(0.5) 
+            # Buffer to allow audio to finish playing
+            time.sleep(1.0) 
         
         robot.running = False
         print("[System] Robot offline.")

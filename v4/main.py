@@ -1,7 +1,7 @@
 import sys
 import time
 import threading
-from datetime import datetime
+
 from pathlib import Path
 import numpy as np
 
@@ -11,6 +11,7 @@ from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
 from config import Env, Paths
 from intents import IntentHandler
+from utils import get_state_phase, get_time_decimal, get_time_since
 
 class Pip:
     def __init__(self):
@@ -21,11 +22,12 @@ class Pip:
         
         # 2. State Variables
         self.running = True
-        self.is_currently_awake = 0
-        self.last_awake_state = 0
+        self.is_awake_state = 0
+        self.is_awake_prev = 0
         self.is_prompted = 0
+        self.is_speaking = False
         self.current_action = 0  
-        self.last_spoke_time = 0 
+        self.last_spoke_time = time.time()
         self.speech_lock = threading.Lock()
 
         # 3. Hardware/Voice Setup
@@ -37,42 +39,23 @@ class Pip:
         # 5. Threading Handles
         self.brain_thread = threading.Thread(target=self._brain_loop, daemon=True)
         self.logic_thread = threading.Thread(target=self._logic_loop, daemon=True)
-
-    def get_time_decimal(self):
-        now = datetime.now()
-        return now.hour + (now.minute / 60.0)
-
-    def _threaded_say(self, phrase):
-        """Internal helper to speak without blocking the logic loop"""
-        with self.speech_lock:
-            self.voice.say(phrase)
-
-    def speak(self, category):
-        """Uses Dictionary helper to fetch phrase and triggers TTS"""
-        if category == "facts":
-            # Combine intro and fact using Dictionary.pick
-            intro = self.dictionary.pick("fact_intro", default="")
-            fact = self.dictionary.pick("facts", default="I have no facts currently.")
-            phrase = f"{intro} {fact}".strip()
-        else:
-            # Direct pick for 'hello', 'goodbye', etc.
-            phrase = self.dictionary.pick(category)
-        
-        print(f"\n[ROBOT]: {phrase}")
-        
-        self.last_spoke_time = time.time()
-        threading.Thread(target=self._threaded_say, args=(phrase,), daemon=True).start()
-
+    
     def _brain_loop(self):
-        """The Neural Network 'Think' Loop (20Hz)"""
         interval = 0.05 
         while self.running:
-            start_time = time.time()
-
-            time_since = (time.time() - self.last_spoke_time) / 60.0
-            tod = self.get_time_decimal()
+            # We must use a local copy of states to ensure atomicity during calculation
+            current = self.is_awake_state
+            last = self.is_awake_prev
             
-            raw_input = np.array([[self.is_currently_awake, self.is_prompted, time_since, tod]])
+            awake_phase = get_state_phase(current, last)
+            
+            raw_input = np.array([[
+                float(awake_phase), 
+                float(self.is_prompted), 
+                1.0 if self.is_speaking else 0.0,
+                get_time_since(self.last_spoke_time),
+                get_time_decimal()
+            ]])
             
             try:
                 scaled_input = self.scaler.transform(raw_input)
@@ -80,8 +63,7 @@ class Pip:
             except:
                 pass
 
-            elapsed = time.time() - start_time
-            time.sleep(max(0, interval - elapsed))
+            time.sleep(interval)
 
     def _logic_loop(self):
         """The UI/Interaction Loop"""

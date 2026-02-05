@@ -1,18 +1,13 @@
 import subprocess
 import os
+import threading
 from pathlib import Path
 from .Threads import Process
 
-# --- Robust Path Resolution ---
-# Path(__file__) is /home/pip/projects/robot/v4/lib/Voice.py
-# .parent gets us to /home/pip/projects/robot/v4/lib/
 LIB_PATH = Path(__file__).parent.resolve()
-
-# Assets are anchored to this lib folder
 PIPER_DIR = LIB_PATH / "piper"
 VOICE_DIR = PIPER_DIR / "voices"
 PIPER_BIN = PIPER_DIR / "piper"
-
 
 class Voice:
     def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=22050):
@@ -21,36 +16,39 @@ class Voice:
         self._niceness = 10
         self._threads = 2
         
-        # Specific voice model path
-        voice_file = f"{voice_model_name}.onnx"
-        self._model_path = VOICE_DIR / voice_file
+        self._model_path = VOICE_DIR / f"{voice_model_name}.onnx"
         self._sample_rate = voice_sample_rate
-        print(f"Model path: {self._model_path}")
         
-        # Ensure the binary is executable
+        # Audio lock prevents multiple 'say' calls from overlapping
+        self._speech_lock = threading.Lock()
+        
         if PIPER_BIN.exists():
             os.chmod(PIPER_BIN, 0o755)
         else:
             print(f"[Voice Warning]: Piper binary not found at {PIPER_BIN}")
 
     def say(self, text, callback=None):
-        # Escape double quotes for shell safety
-        clean_text = text.replace('"', '\\"')
-        
-        # Piper pipeline
-        # -f S16_LE: Signed 16-bit Little Endian raw audio
-        command = (
-            f'echo "{clean_text}" | '
-            f'nice -n {self._niceness} "{PIPER_BIN}" '
-            f'--model "{self._model_path}" '
-            f'--threads {self._threads} '
-            f'--output_raw | '
-            f'aplay -r {self._sample_rate} -f {self._format} -t raw'
-        )
-        
-        def _run():
+        """Public method: Starts a background thread to speak."""
+        threading.Thread(
+            target=self._threaded_execution, 
+            args=(text, callback), 
+            daemon=True
+        ).start()
+
+    def _threaded_execution(self, text, callback):
+        """Internal helper that manages the lock and subprocess."""
+        with self._speech_lock:
+            clean_text = text.replace('"', '\\"')
+            command = (
+                f'echo "{clean_text}" | '
+                f'nice -n {self._niceness} "{PIPER_BIN}" '
+                f'--model "{self._model_path}" '
+                f'--threads {self._threads} '
+                f'--output_raw | '
+                f'aplay -r {self._sample_rate} -f {self._format} -t raw'
+            )
+            
             try:
-                # shell=True handles the pipes (|) correctly
                 process = subprocess.Popen(
                     command, 
                     shell=True, 
@@ -58,14 +56,9 @@ class Voice:
                     stderr=subprocess.DEVNULL
                 )
                 return_code = process.wait()
-
                 if callback:
                     callback(success=(return_code == 0))
-
             except Exception as e:
                 print(f"[Voice Error]: {e}")
                 if callback:
                     callback(success=False, error=str(e))
-
-        # Async execution via your Process thread wrapper
-        self.__process.run(_run)

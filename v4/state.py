@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 import numpy as np
+from random import random
 
 class State:
     def __init__(self):
@@ -33,11 +34,11 @@ class State:
 
     def get_context(self):
         """
-        Generates the 5-feature vector for the Neural Network.
-        Matches training: [phase, prompted, speaking, time_since, tod]
-        """
-        
+        Generates the input vector for the Neural Network.
+        Matches training: [chaos, phase, prompted, speaking, time_since, tod]
+        """   
         return np.array([[
+            random(), # chaos random input 
             self._get_state_phase(self.is_awake_state, self.is_awake_prev),
             self._get_boolean_context(self.is_prompted),
             self._get_boolean_context(self.is_speaking),

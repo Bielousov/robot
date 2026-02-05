@@ -4,7 +4,12 @@ from datetime import datetime
 class IntentHandler:
     def __init__(self, robot):
         self.robot = robot
-        print("[System] IntentHandler Initialized.")
+        self._debug("IntentHandler Initialized.", tag="System")
+
+    def _debug(self, message, tag="Intent"):
+        """Centralized logging with timestamp."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] [{tag}] {message}")
 
     def handle(self):
         action = self.robot.state.current_action
@@ -14,11 +19,11 @@ class IntentHandler:
 
         # --- PHASE 1: ACTION EXECUTION ---
         if action == 1:
-            print("[Brain] Action: WAKE UP")
+            self._debug("Action: WAKE UP")
             self.robot.state.is_awake_state = True
             self.speak("hello")
         elif action == 2:
-            print("[Brain] Action: SLEEP")
+            self._debug("Action: SLEEP")
             self.robot.state.is_awake_state = False
             self.speak("goodbye")
         elif action == 3:
@@ -36,7 +41,7 @@ class IntentHandler:
         """Callback triggered when the Voice process finishes."""
         self.robot.state.is_speaking = False
         if error:
-            print(f"[Voice Error] {error}")
+            self._debug(f"Voice Error: {error}", tag="Error")
 
     def speak(self, category):
         if self.robot.state.is_speaking:
@@ -49,7 +54,7 @@ class IntentHandler:
         else:
             phrase = self.robot.dictionary.pick(category)
         
-        print(f"\n[ROBOT]: {phrase}")
+        self._debug(phrase, tag="ROBOT")
         
         # Set the state and trigger voice with the callback
         self.robot.state.is_speaking = True

@@ -6,6 +6,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 
+ACCURACY_TRESHOLD = 0.9
+
 # Fix paths
 v4_path = Path(__file__).parent.parent.resolve()
 if str(v4_path) not in sys.path:
@@ -29,12 +31,14 @@ if not raw_data:
     sys.exit(1)
 
 # --- DYNAMIC KEY DETECTION ---
+# We grab the keys from the first entry to define our feature order
 input_keys = list(raw_data[0]['inputs'].keys())
 print(f"[System] Detecting input features: {input_keys}")
 
 X = []
 y = []
 for entry in raw_data:
+    # Ensure every entry follows the same key order
     X.append([entry['inputs'][key] for key in input_keys])
     y.append(entry['label'])
 
@@ -52,9 +56,7 @@ model = MLPClassifier(**ModelConfig.BRAIN_PARAMS)
 
 start_time = time.perf_counter()
 model.fit(X_scaled, y)
-end_time = time.perf_counter()
-
-training_time = end_time - start_time
+training_time = time.perf_counter() - start_time
 
 # 5. Diagnostic
 y_pred = model.predict(X_scaled)
@@ -68,11 +70,9 @@ early_stopped = epochs_run < max_epochs
 print("-" * 40)
 print("TRAINING COMPLETE")
 print(f"Rules trained on     : {len(X)}")
-print(f"Input features       : {len(input_keys)}")
+print(f"Input features       : {len(input_keys)} ({', '.join(input_keys)})")
 print(f"Epochs completed     : {epochs_run} / {max_epochs}")
-print(f"Early stopping       : {'YES' if early_stopped else 'NO'}")
 print(f"Final loss           : {model.loss_:.6f}")
-print(f"Training time        : {training_time:.2f} seconds")
 print(f"Rule adherence       : {accuracy * 100:.2f}%")
 print("-" * 40)
 
@@ -85,24 +85,30 @@ print(classification_report(
     zero_division=0
 ))
 
-# 7. Safety Check: Verify Logic
-def quick_test(awake_phase, prompted, speaking, time_since, tod):
-    test_pt = np.array([[awake_phase, prompted, speaking, time_since, tod]])
-    scaled = scaler.transform(test_pt)
-    return model.predict(scaled)[0]
+# 7. DYNAMIC LOGIC VERIFICATION
+# Instead of hardcoding 5 params, we use the model's own logic
+def verify_rules(data, model, scaler, keys, limit=5):
+    print("Logic Verification (Sampling first few rules):")
+    success_count = 0
+    samples = data[:limit]
+    
+    for entry in samples:
+        # Build the feature vector based on dynamic keys
+        test_pt = np.array([[entry['inputs'][k] for k in keys]])
+        scaled = scaler.transform(test_pt)
+        prediction = model.predict(scaled)[0]
+        
+        status = "PASS" if prediction == entry['label'] else "FAIL"
+        if status == "PASS": success_count += 1
+        
+        print(f" - {entry['description'][:30]:<30}: {status} (Wanted {entry['label']}, got {prediction})")
+    
+    return success_count
 
-print("Logic Verification:")
-t1 = quick_test(1, 0, 0, 10.0, 14.0)
-print(f" - 2:00 PM + Idle: {'PASS' if t1 == 3 else 'FAIL'} (Predicted {target_names[t1]})")
-
-t2 = quick_test(1, 0, 0, 10.0, 23.0)
-print(f" - 11:00 PM + No Prompt: {'PASS' if t2 == 0 else 'FAIL'} (Predicted {target_names[t2]})")
-
-t3 = quick_test(1, 1, 0, 10.0, 23.0)
-print(f" - 11:00 PM + PROMPTED: {'PASS' if t3 == 3 else 'FAIL'} (Predicted {target_names[t3]})")
+verify_rules(raw_data, model, scaler, input_keys)
 
 # 8. Save using the Manager
-if accuracy > 0.9:
+if accuracy > ACCURACY_TRESHOLD:
     manager.save(model, scaler)
     print(f"\n[SUCCESS] {len(input_keys)}-Input Brain and Scaler saved via ModelManager.")
 else:

@@ -44,9 +44,16 @@ class Pip:
 
             if confidence > Env.BrainConfidenceScore:
                 if Env.Debug and prediction > 0:
-                    formatted = [f"{x:.4f}" for x in context[0].tolist()]
-                    print(f">>> {formatted}")
-                    print(f"Prediction: {prediction} with confidence {confidence * 100:.2f}%")
+                    formatted_str = ", ".join(
+                        f"{x:.2f}".rstrip("0").rstrip(".")
+                        for x in context[0].tolist()
+                    )
+
+                    print(
+                        f"[DEBUG] Prediction: {prediction} "
+                        f"with confidence {confidence * 100:.2f}%  "
+                        f"[{formatted_str}]"
+                    )
                 
                 self.state.current_action = prediction
             else:

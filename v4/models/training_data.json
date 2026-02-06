@@ -5,8 +5,8 @@
   { "description": "Hello: (Any Chaos)",       "inputs": { "chaos": 1.0, "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 20.0 }, "label": 1 },
 
   { "description": "Nothing: Already Sleeping (Deep Night)", "inputs": { "chaos": 0.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 0.0, "tod": 2.7 }, "label": 0 },
-  { "description": "Nothing: Already Sleeping (General)",    "inputs": { "chaos": 0.5, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Nothing: Steady Sleep: Late Night", "inputs": { "chaos": 0.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 23.0 }, "label": 0 },
+  { "description": "Nothing: Already Sleeping (General)",    "inputs": { "chaos": 0.5, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 20.0, "tod": 14.0 }, "label": 0 },
+  { "description": "Nothing: Steady Sleep: Late Night", "inputs": { "chaos": 0.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 23.0 }, "label": 0 },
   { "description": "Nothing: Steady Sleep: Midnight",   "inputs": { "chaos": 0.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 0.0 }, "label": 0 },
   { "description": "Nothing: Awake at Night (Idle)",     "inputs": { "chaos": 0.5, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 3.0 }, "label": 0 },
   { "description": "Nothing: Awake at Night (Busy)",     "inputs": { "chaos": 0.9, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 3.0 }, "label": 0 },

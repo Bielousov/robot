@@ -19,13 +19,13 @@
   { "description": "Goodbye: Afternoon transition", "inputs": { "chaos": 0.0, "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.5, "tod": 15.0 }, "label": 2 },
   { "description": "Goodbye: Morning transition", "inputs": { "chaos": 0.0, "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.5, "tod": 9.0 }, "label": 2 },
   
-  { "description": "Chaos: Rare early chatter (1m)", "inputs": { "chaos": 0.999, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 14.0 }, "label": 3 },
+  { "description": "Chaos: Rare early chatter (1m)", "inputs": { "chaos": 0.999, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 12.0 }, "label": 3 },
   { "description": "Chaos: Likely mid chatter (5m)",  "inputs": { "chaos": 0.99, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 14.0 }, "label": 3 },
-  { "description": "Chaos: Guaranteed late (15m)",    "inputs": { "chaos": 0.95,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 15.0, "tod": 14.0 }, "label": 3 },
+  { "description": "Chaos: Guaranteed late (15m)",    "inputs": { "chaos": 0.95,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 15.0, "tod": 18.0 }, "label": 3 },
   
+  { "description": "Chaos: Block early chatter",      "inputs": { "chaos": 0.99,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 14.0 }, "label": 0 },
   { "description": "Chaos: Block mid chatter (3m)",   "inputs": { "chaos": 0.99,  "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 3.0, "tod": 14.0 }, "label": 0 },
   { "description": "Chaos: Block late chatter (10m)",  "inputs": { "chaos": 0.95,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Chaos: Block early chatter",      "inputs": { "chaos": 0.99,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 14.0 }, "label": 0 },
   { "description": "Chaos: Block mid chatter",        "inputs": { "chaos": 0.95,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 14.0 }, "label": 0 },
   { "description": "Chaos: Block late chatter",       "inputs": { "chaos": 0.5,   "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 15.0, "tod": 14.0 }, "label": 0 },
   { "description": "Chaos: Absolute floor (Anytime)", "inputs": { "chaos": 0.1,    "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 30.0, "tod": 14.0 }, "label": 0 },

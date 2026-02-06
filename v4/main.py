@@ -9,7 +9,7 @@ import numpy as np
 from lib.Voice import Voice
 from lib.ModelManager import ModelManager
 from lib.Dictionary import Dictionary  # New Import
-from config import Env, Paths
+from config import Env, ModelConfig, Paths
 from intents import IntentHandler
 from state import State
 
@@ -48,7 +48,7 @@ class Pip:
                 confidence = np.max(probabilities)
                 prediction = np.argmax(probabilities)
 
-                if confidence > 0.70: # Only act if 70% sure
+                if confidence > ModelConfig.BRAIN_CONFIDENCE_THRESHOLD:
                     if Env.Debug & prediction > 0:
                         print(f">>> {[f"{x:.4f}" for x in context[0].tolist()]}")
                         print(f"Prediction: {prediction} with confidence {confidence * 100}%")

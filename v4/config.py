@@ -32,3 +32,4 @@ class ModelConfig:
         'alpha': 0,
         'random_state': 42
     }
+    BRAIN_CONFIDENCE_THRESHOLD = float(getenv('MODEL_CONFIDENCE_THRESHOLD'))

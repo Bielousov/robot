@@ -7,9 +7,11 @@ from lib.Enum import Enum
 load_dotenv()
 
 Env = Enum (
-  Debug           = bool(int(getenv('DEBUG'))),
-  Voice           = getenv('VOICE'),
-  VoiceSampleRate = int(getenv('VOICE_SAMPLE_RATE')),
+  BrainConfidenceScore  = float(getenv('BRAIN_CONFIDENCE_THRESHOLD')),
+  BrainFrequency        = int(getenv('BRAIN_FREQUENCY')),
+  Debug                 = bool(int(getenv('DEBUG'))),
+  Voice                 = getenv('VOICE'),
+  VoiceSampleRate       = int(getenv('VOICE_SAMPLE_RATE')),
 )
 
 # --- Model Instance Setup ---
@@ -22,14 +24,11 @@ Paths = Enum (
   ModelTrainingData = path.join(BASE_DIR, "models/training_data.json")
 )
 
-class ModelConfig:
-    # Brain Hyperparameters
-    BRAIN_PARAMS = {
-        'hidden_layer_sizes': (16, 8),
-        'max_iter': 100_000,
-        'activation': 'relu',
-        'solver': 'adam',
-        'alpha': 0,
-        'random_state': 42
-    }
-    BRAIN_CONFIDENCE_THRESHOLD = float(getenv('MODEL_CONFIDENCE_THRESHOLD'))
+ModelConfig = {
+    'hidden_layer_sizes': (16, 8),
+    'max_iter': 100_000,
+    'activation': 'relu',
+    'solver': 'adam',
+    'alpha': 0,
+    'random_state': 42
+}

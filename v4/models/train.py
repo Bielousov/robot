@@ -52,7 +52,7 @@ X_scaled = scaler.fit_transform(X)
 # 4. Define and Train the Model
 print(f"Training the {len(input_keys)}-input brain on {len(X)} rules...")
 
-model = MLPClassifier(**ModelConfig.BRAIN_PARAMS)
+model = MLPClassifier(**ModelConfig)
 
 start_time = time.perf_counter()
 model.fit(X_scaled, y)

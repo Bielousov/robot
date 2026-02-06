@@ -43,9 +43,22 @@ class Pip:
             try:
                 # Process through the brain
                 scaled_input = self.scaler.transform(context)
-                self.state.current_action = self.model.predict(scaled_input)[0]
+
+                probabilities = self.model.predict_proba(scaled_input)[0]
+                confidence = np.max(probabilities)
+                prediction = np.argmax(probabilities)
+
+                if confidence > 0.70: # Only act if 70% sure
+                    if Env.Debug & prediction > 0:
+                        print(f">>> {[f"{x:.4f}" for x in context[0].tolist()]}")
+                        print(f"Prediction: {prediction} with confidence {confidence * 100}%")
+                    self.state.current_action = prediction
+                else:
+                    self.state.current_action = 0 # Default to Nothing
+
+                # self.state.current_action = self.model.predict(scaled_input)[0]
             except Exception as e:
-                # print(f"Brain Error: {e}")
+                print(f"Brain Error: {e}")
                 pass
 
             time.sleep(interval)

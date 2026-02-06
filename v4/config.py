@@ -7,7 +7,8 @@ from lib.Enum import Enum
 load_dotenv()
 
 Env = Enum (
-  Voice             = getenv('VOICE'),
+  Debug           = bool(int(getenv('DEBUG'))),
+  Voice           = getenv('VOICE'),
   VoiceSampleRate = int(getenv('VOICE_SAMPLE_RATE')),
 )
 
@@ -27,7 +28,7 @@ class ModelConfig:
         'hidden_layer_sizes': (16, 8),
         'max_iter': 100_000,
         'activation': 'relu',
-        'solver': 'lbfgs',
+        'solver': 'adam',
         'alpha': 0,
         'random_state': 42
     }

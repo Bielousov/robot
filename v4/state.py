@@ -26,15 +26,20 @@ class State:
         return now.hour + (now.minute / 60.0)
 
 
-    def _get_time_since(self, t):
+    def _get_time_since(self, t, max_value=None):
         now = time.time()
-        return (now - t) / 60.0
+        minutes = (now - t) / 60.0
+
+        if max_value is not None:
+            return min(minutes, max_value)
+
+        return minutes
 
 
     def get_context(self):
         """
         Generates the input vector for the Neural Network.
-        Matches training: [chaos, phase, prompted, speaking, time_since, tod]
+        Matches training: [chaos, phase, prompted, speaking, time_since_spoke, tod]
         """   
         chaos = random.uniform(0, 1)
         return np.array([[
@@ -42,6 +47,6 @@ class State:
             self._get_state_phase(self.is_awake_state, self.is_awake_prev),
             self._get_boolean_context(self.is_prompted),
             self._get_boolean_context(self.is_speaking),
-            self._get_time_since(self.last_spoke_time),
+            self._get_time_since(self.last_spoke_time, 30),
             self._get_time_decimal()
         ]])

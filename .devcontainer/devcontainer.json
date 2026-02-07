@@ -19,7 +19,7 @@
   },
 
   "postCreateCommand": "python -m venv .venv && python -m ensurepip --upgrade && .venv/bin/pip install -r requirements.txt",
-  "postStartCommand": "echo 'Dev container ready!' && exec bash"
+  "postStartCommand": "echo 'Dev container ready!' && exec bash",
 
 
 

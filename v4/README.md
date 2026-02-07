@@ -32,7 +32,7 @@ pip install -r requirements.txt
 ## Piper dependency install:
 Run:
 ```
-bash v4/setup.sh
+bash v4/install.sh
 ```
 
 ## State

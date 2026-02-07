@@ -6,13 +6,16 @@ ENV PYTHONUNBUFFERED=1
 # ---- system deps + sudo ----
 RUN apt-get update \
  && apt-get install -y \
-    python3-venv \
     alsa-utils \
+    curl \
+    git \
     libasound2 \
     libpulse0 \
     procps \
+    python3-venv \
     sudo \
-    git \
+    wget \
+    zstd\
  && rm -rf /var/lib/apt/lists/*
 
 # ---- create appuser ----

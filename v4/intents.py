@@ -30,7 +30,7 @@ class IntentHandler:
             if len(self.robot.state.prompts) > 0:
                 prompt_text = self.robot.state.prompts.pop(0)
                 
-                if prompt_text == "trigger_fact":
+                if not prompt_text or prompt_text == "trigger_fact":
                     self.speak("facts")
                 else:
                     # This is where your Microphone/STT results will land

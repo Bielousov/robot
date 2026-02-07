@@ -12,6 +12,16 @@
   { "description": "Nothing: Awake at Night (Busy)",     "inputs": { "chaos": 0.9, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 3.0 }, "label": 0 },
   { "description": "Nothing: Awake at Night (Late)",     "inputs": { "chaos": 0.1, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 4.5 }, "label": 0 },
   { "description": "Nothing: Awake but Curfew",         "inputs": { "chaos": 0.8, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0,  "tod": 23.0 }, "label": 0 },
+  { 
+    "description": "Nothing: Chaos ignored while sleeping", 
+    "inputs": { "chaos": 1.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 30.0, "tod": 22.0 }, 
+    "label": 0 
+  },
+  { 
+    "description": "Nothing: Chaos ignored while sleeping (Midnight)", 
+    "inputs": { "chaos": 1.0, "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 60.0, "tod": 0.0 }, 
+    "label": 0 
+  },
   
   { "description": "Goodbye: Early sleep",     "inputs": { "chaos": 0.0, "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 4.0 }, "label": 2 },
   { "description": "Goodbye: Midday nap",      "inputs": { "chaos": 0.0, "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 2 },

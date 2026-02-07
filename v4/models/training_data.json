@@ -50,6 +50,10 @@
   { "description": "PROMPT: Fact (Afternoon/Low Chaos)",  "inputs": { "chaos": 0.0, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 10.0, "tod": 14.0 }, "label": 3 },
   { "description": "PROMPT: Fact (Late Night/High Chaos)", "inputs": { "chaos": 1.0, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0,  "tod": 23.0 }, "label": 3 },
   { "description": "PROMPT: Fact (Midnight/Any)",         "inputs": { "chaos": 0.1, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.5, "tod": 0.0 },  "label": 3 },
+  { "description": "PROMPT: Fact (Immediate/Low Chaos)", "inputs": { "chaos": 0.0, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.01, "tod": 12.0 }, "label": 3 },
+  { "description": "PROMPT: Fact (Immediate/High Chaos)", "inputs": { "chaos": 1.0, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.01, "tod": 12.0 }, "label": 3 },
+  { "description": "PROMPT: Fact (Immediate/Midnight)",  "inputs": { "chaos": 0.5, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.01, "tod": 0.0 },  "label": 3 },
+  { "description": "PROMPT: Fact (Immediate/Night)",     "inputs": { "chaos": 0.5, "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.01, "tod": 3.5 },  "label": 3 },
 
   { "description": "Nothing: Busy talking",    "inputs": { "chaos": 0.1, "awake_phase": 1, "prompted": 0, "speaking": 1, "time_since_spoke": 0.05, "tod": 12.0 }, "label": 0 },
   { "description": "Nothing: Busy talking (Any Chaos)",    "inputs": { "chaos": 0.9, "awake_phase": 1, "prompted": 0, "speaking": 1, "time_since_spoke": 0.05, "tod": 12.0 }, "label": 0 },

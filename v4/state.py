@@ -4,15 +4,35 @@ import numpy as np
 
 class State:
     def __init__(self):
-        self.is_awake_state = False
+        self.is_awake = False
         self.is_awake_prev = False
-        self.is_prompted = False
         self.is_speaking = False
         self.last_spoke_time = time.time()
         self.current_action = 0
+        self.prompts = []
 
-    def _get_boolean_context(self, bool):
-        return 1.0 if bool else 0.0
+    @property
+    def chaos(self):
+        return random.uniform(0, 1);
+
+    @property
+    def is_awake_phase (self):
+        return self._get_state_phase(self.is_awake, self.is_awake_prev)
+
+    @property
+    def is_prompted(self):
+        # The NN still needs a number. 1 if queue has items, 0 if empty.
+        return 1.0 if len(self.prompts) > 0 else 0.0
+    
+    @property
+    def last_spoke_diff(self):
+        # The NN still needs a number. 1 if queue has items, 0 if empty.
+        return self._get_time_since(self.last_spoke_time, 30)
+    
+    @property
+    def time_of_day(self):
+        now = datetime.now()
+        return now.hour + (now.minute / 60.0)
 
     def _get_state_phase(self, current, last):
         if current == last:
@@ -20,11 +40,6 @@ class State:
         else:
             # Transitioning: 2 if just fell asleep, -1 if just woke up
             return 2.0 if current else -1.0
-    
-    def _get_time_decimal(self):
-        now = datetime.now()
-        return now.hour + (now.minute / 60.0)
-
 
     def _get_time_since(self, t, max_value=None):
         now = time.time()
@@ -43,10 +58,10 @@ class State:
         """   
         chaos = random.uniform(0, 1)
         return np.array([[
-            chaos, # chaos random input 
-            self._get_state_phase(self.is_awake_state, self.is_awake_prev),
-            self._get_boolean_context(self.is_prompted),
-            self._get_boolean_context(self.is_speaking),
-            self._get_time_since(self.last_spoke_time, 30),
-            self._get_time_decimal()
+            self.chaos, # chaos random input 
+            self.is_awake_phase,
+            self.is_prompted,
+            self.is_speaking,
+            self.last_spoke_diff,
+            self.time_of_day,
         ]])

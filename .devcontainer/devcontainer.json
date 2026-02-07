@@ -1,16 +1,27 @@
 {
-  "name": "Robot Trainer Container",
+  "name": "Pip Robot Dev Container",
   "build": {
-    "dockerfile": "../Dockerfile"
+    "dockerfile": "Dockerfile",
+    "context": ".."
   },
-  "workspaceFolder": "/workspaces/robot",
 
   "customizations": {
     "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/robot/.venv/bin/python",
+        "python.terminal.activateEnvironment": true
+      },
       "extensions": [
         "ms-python.python",
-        "ms-python.debugpy"
+        "ms-azuretools.vscode-docker"
       ]
     }
-  }
+  },
+
+  "postCreateCommand": "python -m venv .venv && python -m ensurepip --upgrade && .venv/bin/pip install -r requirements.txt",
+  "postStartCommand": "echo 'Dev container ready!' && exec bash"
+
+
+
+  "workspaceFolder": "/workspaces/robot"
 }

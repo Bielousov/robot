@@ -7,7 +7,7 @@ from .Threads import Process
 LIB_PATH = Path(__file__).parent.resolve()
 PIPER_DIR = LIB_PATH / "piper"
 VOICE_DIR = PIPER_DIR / "voices"
-PIPER_BIN = PIPER_DIR / "piper"
+PIPER_BIN = PIPER_DIR / "dist/piper"
 
 class Voice:
     def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=22050):

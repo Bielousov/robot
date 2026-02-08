@@ -24,7 +24,20 @@ defaults.pcm.card 0
 defaults.ctl.card 0
 ```
 
-## Dependencies install
+## System dependencies install
+```bash
+  apt-get update && apt-get install -y \
+    alsa-utils \
+    curl \
+    git \
+    procps \
+    python3-venv \
+    sudo \
+    wget \
+    zstd
+```
+
+## Python dependencies install
 ```
 pip install -r requirements.txt
 ```

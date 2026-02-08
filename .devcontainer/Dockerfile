@@ -7,15 +7,11 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get update \
  && apt-get install -y \
     alsa-utils \
-    curl \
     git \
-    libasound2 \
-    libpulse0 \
-    procps \
     python3-venv \
     sudo \
     wget \
-    zstd\
+    zstd \
  && rm -rf /var/lib/apt/lists/*
 
 # ---- create appuser ----
@@ -27,14 +23,9 @@ RUN usermod -aG sudo appuser \
  && echo "appuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/appuser \
  && chmod 0440 /etc/sudoers.d/appuser
 
-# ---- pulseaudio config ----
-RUN echo "default-server = tcp:host.docker.internal:4713" > /etc/pulse/client.conf
-
 WORKDIR /app
-
 
 # ---- app code ----
 COPY . .
 RUN chown -R appuser:appuser /app
-
 USER appuser

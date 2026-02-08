@@ -3,4 +3,10 @@
 **/build/*.npy
 **/*.db
 **/.env
-**/lib/piper
+**/*.tar.gz
+**/*.tar.zst
+**/*.zip
+**/lib/ollama/dist
+**/lib/ollama/models
+**/lib/piper/dist
+**/lib/piper/models

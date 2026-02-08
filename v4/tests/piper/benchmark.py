@@ -10,7 +10,7 @@ if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
 # Configuration - Update these to your actual paths
-LIB_PIPER_DIR = v4_path / "lib" / "piper"
+LIB_PIPER_DIR = v4_path / "lib" / "piper" / "dist"
 PIPER_BIN = LIB_PIPER_DIR / "piper"
 
 VOICE = "en_US-danny-low"

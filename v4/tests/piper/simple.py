@@ -12,7 +12,7 @@ if str(v4_path) not in sys.path:
 from config import Env
 
 # 3. Define the actual assets location
-LIB_PIPER_DIR = v4_path / "lib" / "piper"
+LIB_PIPER_DIR = v4_path / "lib" / "piper" / "dist"
 PIPER_BIN = LIB_PIPER_DIR / "piper"
 
 VOICE_FILE = f"{Env.Voice}.onnx" if Env.Voice else "en_US-danny-low.onnx"

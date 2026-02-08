@@ -55,11 +55,11 @@ class IntentHandler:
 
     def speak(self, category):
         if category == "fact":
-            phrase = self.robot.dictionary.pick("facts", default="No facts.")
-        elif category == "fact_prompted":
             intro = self.robot.dictionary.pick("fact_intro", default="")
             fact = self.robot.dictionary.pick("facts", default="No facts.")
             phrase = f"{intro} {fact}".strip()
+        elif category == "fact_prompted":
+            phrase = self.robot.dictionary.pick("facts", default="No facts.")
         else:
             phrase = self.robot.dictionary.pick(category)
 

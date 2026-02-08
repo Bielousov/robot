@@ -6,7 +6,7 @@ from .Threads import Process
 
 LIB_PATH = Path(__file__).parent.resolve()
 PIPER_DIR = LIB_PATH / "piper"
-VOICE_DIR = PIPER_DIR / "voices"
+VOICE_DIR = PIPER_DIR / "models"
 PIPER_BIN = PIPER_DIR / "dist/piper"
 
 class Voice:

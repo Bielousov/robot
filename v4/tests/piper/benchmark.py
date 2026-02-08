@@ -16,7 +16,7 @@ PIPER_BIN = LIB_PIPER_DIR / "piper"
 VOICE = "en_US-danny-low"
 VOICE_FILE = f"{VOICE}.onnx"
 VOICE_SAMPLE_RATE = 16_000
-MODEL_PATH = LIB_PIPER_DIR / "voices" / VOICE_FILE
+MODEL_PATH = LIB_PIPER_DIR / "models" / VOICE_FILE
 
 TEST_PHRASE = "The quick brown fox jumps over the lazy dog."
 

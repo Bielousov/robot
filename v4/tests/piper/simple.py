@@ -17,7 +17,7 @@ PIPER_BIN = LIB_PIPER_DIR / "piper"
 
 VOICE_FILE = f"{Env.Voice}.onnx" if Env.Voice else "en_US-danny-low.onnx"
 VOICE_SAMPLE_RATE = Env.VoiceSampleRate or 16_000
-MODEL_PATH = LIB_PIPER_DIR / "voices" / VOICE_FILE
+MODEL_PATH = LIB_PIPER_DIR / "models" / VOICE_FILE
 
 def test_speech(text):
     print(f"--- Piper Diagnostic ---")

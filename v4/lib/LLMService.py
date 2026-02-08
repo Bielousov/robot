@@ -107,7 +107,7 @@ class LLMService:
         except Exception as e:
             print(f"[Robot] Critical error during model load: {e}")
 
-    def prompt(self, prompt: str) -> Optional[str]:
+    def think(self, prompt: str) -> Optional[str]:
         """
         Sends a prompt to the model and returns the response string.
         Measures performance in seconds.
@@ -194,7 +194,6 @@ class LLMService:
         self.stop()
 
     def __del__(self):
-        """Destructor to ensure cleanup on exit."""
         self.stop()
 
 # Example usage:
@@ -203,7 +202,7 @@ if __name__ == "__main__":
     
     # Simple interaction loop
     question = "Generate a fictional quote that fits the most your character"
-    answer = brain.prompt(question)
+    answer = brain.think(question)
     
     if answer:
         print(f"\n[Pip]: {answer}\n")

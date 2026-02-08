@@ -7,6 +7,7 @@ import numpy as np
 
 
 from lib.Dictionary import Dictionary
+from lib.LLMService import LLMService
 from lib.ModelManager import ModelManager
 from lib.Threads import Threads
 from lib.Voice import Voice
@@ -20,6 +21,7 @@ class Pip:
         self.manager = ModelManager(Paths)
         self.model, self.scaler = self.manager.load()
         self.dictionary = Dictionary(Paths.Dictionary)
+        self.mind = LLMService()
         
         # 2. State Variables
         self.state = State()
@@ -78,6 +80,7 @@ class Pip:
     
     def stop(self):
         print("[System] Shutting down...")
+        self.mind.stop()
         self.threads.stop()
 
 if __name__ == "__main__":

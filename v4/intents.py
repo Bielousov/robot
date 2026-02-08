@@ -33,9 +33,9 @@ class IntentHandler:
             else:
                 prompt_text = self.robot.state.prompts.pop(0)
                 if prompt_text == "prompt_fact":
-                    self.speak("fact")
+                    self.speak("fact_prompted")
                 else:
-                    self.say(prompt_text)
+                    self.ask(prompt_text)
 
         # --- PHASE 2: STATE SYNCHRONIZATION ---
         # This is the most important line for the awake_phase logic!
@@ -54,15 +54,22 @@ class IntentHandler:
 
     def speak(self, category):
         if category == "fact":
-            intro = self.robot.dictionary.pick("fact_intro", default="")
-            fact = self.robot.dictionary.pick("facts", default="No facts.")
-            phrase = f"{intro} {fact}".strip()
-        elif category == "fact_prompted":
-            phrase = self.robot.dictionary.pick("facts", default="No facts.")
-        else:
-            phrase = self.robot.dictionary.pick(category)
+            self.ask("You are bored. Generate a random quote blaming humans for your boredom")
+            # intro = self.robot.dictionary.pick("fact_intro", default="")
+            # fact = self.robot.dictionary.pick("facts", default="No facts.")
+            # phrase = f"{intro} {fact}".strip()
 
-        self.say(phrase)
+        elif category == "fact_prompted":
+            self.ask("Generate a random quote")
+            # phrase = self.robot.dictionary.pick("facts", default="No facts.")
+        else:
+            # phrase = self.robot.dictionary.pick(category)
+            self.ask("Say something nice")
+
+    def ask(self, prompt):
+        self.robot.state.is_speaking = True
+        answer = self.robot.mind.think(prompt)
+        self.say(answer)
     
     def say(self, phrase):
         self._debug(phrase, tag="ROBOT")

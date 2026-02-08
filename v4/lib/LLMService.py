@@ -46,13 +46,12 @@ class LLMService:
             "OLLAMA_CONTEXT_LENGTH": str(self.context_length),
             "OLLAMA_FLASH_ATTENTION": "0",
             "OLLAMA_MAX_LOADED_MODELS": "1",
-            "OLLAMA_MEMORY_FRACTION": "0.7",
-            "OLLAMA_NUM_PARALLEL": "2",
+            "OLLAMA_MEMORY_FRACTION": "0.6",
+            "OLLAMA_NUM_PARALLEL": "1",
             "OLLAMA_THREADS": str(self.threads),
-            # "OLLAMA_NO_MMAP": "1",
-            # "OLLAMA_NOPRUNE": "1",
-            # "OLLAMA_LLM_LIBRARY": "cpu",
-            # "OLLAMA_NUMA": "0"
+            "OLLAMA_NO_MMAP": "1",
+            "OLLAMA_LLM_LIBRARY": "cpu",
+            "OLLAMA_NUMA": "0"
         }
         os.environ.update(env_vars)
 

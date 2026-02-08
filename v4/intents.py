@@ -26,16 +26,15 @@ class IntentHandler:
             self._debug("Action: SLEEP")
             self.robot.state.is_awake = False
             self.speak("goodbye")
-        elif action == 3: # PROMPT
-            if len(self.robot.state.prompts) > 0:
+        elif action == 3: # PROMPT / UTTERANCE
+            # If no prompt text exists, default to a random fact
+            if not self.robot.state.prompts:
+                self.speak("fact")
+            else:
                 prompt_text = self.robot.state.prompts.pop(0)
-                
-                if not prompt_text:
+                if prompt_text == "prompt_fact":
                     self.speak("fact")
-                elif prompt_text == "prompt_fact":
-                    self.speak("fact_prompted")
                 else:
-                    # This is where your Microphone/STT results will land
                     self.say(prompt_text)
 
         # --- PHASE 2: STATE SYNCHRONIZATION ---

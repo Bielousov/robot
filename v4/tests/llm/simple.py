@@ -19,12 +19,12 @@ def run_test():
     try:
         response = client.chat(
             model='pip',
-            messages=[{'role': 'user', 'content': 'Say something sarcastic about a slow computer.'}],
+            messages=[{'role': 'user', 'content': "Hi, I'm Anton, your master and creator. Say how you feel about being created."}],
             options={
                 'temperature': 1.0,
-                'num_thread': 4  # Specifically pin to the 4 high-perf cores of the RPi5
+                'num_thread': 2,
             },
-            keep_alive=-1  # Use a massive string instead of 0 or -1
+            keep_alive=-1
         )
         
         # --- End Timer ---

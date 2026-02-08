@@ -30,8 +30,10 @@ class IntentHandler:
             if len(self.robot.state.prompts) > 0:
                 prompt_text = self.robot.state.prompts.pop(0)
                 
-                if not prompt_text or prompt_text == "trigger_fact":
-                    self.speak("facts")
+                if not prompt_text:
+                    self.speak("fact")
+                elif prompt_text == "prompt_fact":
+                    self.speak("fact_prompted")
                 else:
                     # This is where your Microphone/STT results will land
                     self.say(prompt_text)
@@ -52,10 +54,9 @@ class IntentHandler:
             self._debug(f"Voice Error: {error}", tag="Error")
 
     def speak(self, category):
-        if self.robot.state.is_speaking:
-            return
-
-        if category == "facts":
+        if category == "fact":
+            phrase = self.robot.dictionary.pick("facts", default="No facts.")
+        elif category == "fact_prompted":
             intro = self.robot.dictionary.pick("fact_intro", default="")
             fact = self.robot.dictionary.pick("facts", default="No facts.")
             phrase = f"{intro} {fact}".strip()

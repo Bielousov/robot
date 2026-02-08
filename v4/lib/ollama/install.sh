@@ -22,17 +22,25 @@ else
     pkill ollama || true
 
     echo "[Ollama] Downloading verified ARM64 binary (v0.15.5)..."
-    wget "https://github.com/ollama/ollama/releases/download/v0.15.5/ollama-linux-arm64.tar.zst" -O "$OLLAMA_LIB_DIR/ollama.tar.zst"
+    wget --continue --tries=5 "https://github.com/ollama/ollama/releases/download/v0.15.5/ollama-linux-arm64.tar.zst" -O "$OLLAMA_LIB_DIR/ollama.tar.zst"
+
+    # FORCE DISK SYNC (Crucial for RPi5 SD cards)
+    echo "[Ollama] Flushing buffers to disk..."
+    sync
+    sleep 2
 
     echo "[Ollama] Extracting .zst archive..."
-    # --zstd flag for tar extracts the bin and lib folders into DIST_DIR
-    tar --zstd -xf "$OLLAMA_LIB_DIR/ollama.tar.zst" -C "$DIST_DIR"
+    # If tar fails, we'll know immediately
+    if ! tar --zstd -xf "$OLLAMA_LIB_DIR/ollama.tar.zst" -C "$DIST_DIR"; then
+        echo "[ERROR] Extraction failed. The download was likely corrupt."
+        echo "Try deleting $OLLAMA_LIB_DIR/ollama.tar.zst and running again."
+        exit 1
+    fi
+
     rm "$OLLAMA_LIB_DIR/ollama.tar.zst"
 
-    # Set permissions for the binary
     if [ -f "$DIST_DIR/bin/ollama" ]; then
         chmod +x "$DIST_DIR/bin/ollama"
-        # Create a symlink in the root of dist for easier access
         ln -sf "$DIST_DIR/bin/ollama" "$OLLAMA_APP"
     fi
 fi

@@ -25,7 +25,7 @@ def start_app():
                 if line == "":
                     # Pure Enter key: Set prompt flag for the next Brain tick
                     print("[User] Action: GENERIC PROMPT")
-                    robot.state.prompts.append("trigger_fact")
+                    robot.state.prompts.append("prompt_fact")
                 
                 elif line.lower() in ["s", "esc"]:
                     print("[User] Action: FORCE SLEEP")

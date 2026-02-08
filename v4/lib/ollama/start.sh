@@ -2,10 +2,9 @@
 # Using #!/bin/bash instead of #!/bin/sh ensures [ "$1" == "stop" ] works.
 
 # 1. Setup paths relative to the script location
-PROJECT_ROOT=$(dirname $(realpath "$0"))
-OLLAMA_DIR="$PROJECT_ROOT/lib/ollama"
-DIST_DIR="$OLLAMA_DIR/dist"
-MODELS_DIR="$OLLAMA_DIR/models"
+OLLAMA_LIB_DIR=$(dirname $(realpath "$0"))
+DIST_DIR="$OLLAMA_LIB_DIR/dist"
+MODELS_DIR="$OLLAMA_LIB_DIR/models"
 OLLAMA_BIN="$DIST_DIR/ollama"
 LOG_FILE="$DIST_DIR/server.log"
 
@@ -44,8 +43,8 @@ echo "[Robot] Waking up the brain..."
 # 7. Start server
 "$OLLAMA_BIN" serve > "$LOG_FILE" 2>&1 &
 
-echo "[Robot] Brain is warming up. Waiting 8 seconds..."
-sleep 8
+echo "[Robot] Brain is warming up..."
+sleep 2
 
 # 8. Health Check
 if curl -s http://localhost:11434/api/version > /dev/null; then

@@ -36,10 +36,8 @@ def run_test():
         print("----------------------")
         print(f"⏱️  Execution Time: {execution_time:.2f} seconds")
         
-        if execution_time > 5:
-            print("💡 Note: That was slow. It was likely loading from the SD card.")
-        else:
-            print("🚀 Note: Snappy response! The model is running from RAM.")
+        if execution_time < 5:
+            print("🚀 Note: Snappy response!")
 
     except Exception as e:
         print(f"Test failed: {e}")

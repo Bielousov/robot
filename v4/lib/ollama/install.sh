@@ -1,6 +1,11 @@
 #!/bin/bash
 # .v4/lib/ollama/install.sh
 
+# --- CONSTANTS ---
+# Use a verified tag. 1b is safe, 4b is fine for Mac Studio.
+readonly BASE_MODEL="gemma3:270m" 
+readonly CUSTOM_MODEL_NAME="pip"
+
 OLLAMA_LIB_DIR=$(dirname $(realpath "$0"))
 PROJECT_ROOT=$(dirname $(dirname "$OLLAMA_LIB_DIR"))
 
@@ -27,14 +32,14 @@ else
     # FORCE DISK SYNC (Crucial for RPi5 SD cards)
     echo "[Ollama] Flushing buffers to disk..."
     sync
-    sleep 2
+    sleep 1
 
     echo "[Ollama] Extracting .zst archive..."
     # If tar fails, we'll know immediately
     if ! tar --zstd -xf "$OLLAMA_LIB_DIR/ollama.tar.zst" -C "$DIST_DIR"; then
         echo "[ERROR] Extraction failed. The download was likely corrupt."
         echo "Try deleting $OLLAMA_LIB_DIR/ollama.tar.zst and running again."
-        exit 1
+        exit 2
     fi
 
     rm "$OLLAMA_LIB_DIR/ollama.tar.zst"
@@ -45,6 +50,7 @@ else
     fi
 fi
 
+
 echo "[Ollama] Starting local server..."
 export OLLAMA_MODELS="$MODELS_DIR"
 # Use the absolute path to start the server
@@ -52,14 +58,14 @@ export OLLAMA_MODELS="$MODELS_DIR"
 OLLAMA_PID=$!
 
 # Wait for server to wake up
-sleep 5
+sleep 1
 
-echo "[Ollama] Pulling Gemma 3 1B..."
-"$OLLAMA_APP" pull gemma3:1b
+echo "[Ollama] Pulling $BASE_MODEL..."
+"$OLLAMA_APP" pull "$BASE_MODEL"
 
-echo "[Ollama] Creating personality 'pip'..."
+echo "[Ollama] Creating personality '$CUSTOM_MODEL_NAME'..."
 if [ -f "$PERSONALITY_MODEL_FILE" ]; then
-    "$OLLAMA_APP" create pip -f "$PERSONALITY_MODEL_FILE"
+    "$OLLAMA_APP" create "$CUSTOM_MODEL_NAME" -f "$PERSONALITY_MODEL_FILE"
 else
     echo "[Error] Could not find $PERSONALITY_MODEL_FILE"
 fi

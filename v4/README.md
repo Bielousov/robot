@@ -28,7 +28,6 @@ defaults.ctl.card 0
 ```bash
   apt-get update && apt-get install -y \
     alsa-utils \
-    curl \
     git \
     procps \
     python3-venv \

@@ -1,6 +1,7 @@
 dotenv
 joblib
 numpy
+ollama
 pandas
 python-dotenv
 scikit-learn

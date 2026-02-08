@@ -1,21 +1,33 @@
 #!/bin/bash
 # .v4/lib/ollama/install.sh
 
-# --- CONSTANTS ---
-# Use a verified tag. 1b is safe, 4b is fine for Mac Studio.
-readonly OLLAMA_VERSION="0.15.6"
-readonly BASE_MODEL="gemma3:270m" 
-readonly CUSTOM_MODEL_NAME="pip"
 
 OLLAMA_LIB_DIR=$(dirname $(realpath "$0"))
 PROJECT_ROOT=$(dirname $(dirname "$OLLAMA_LIB_DIR"))
+
 
 DIST_DIR="$OLLAMA_LIB_DIR/dist"
 MODELS_DIR="$OLLAMA_LIB_DIR/models"
 
 # We update this to point exactly where the binary will end up
 OLLAMA_APP="$DIST_DIR/ollama"
-PERSONALITY_MODEL_FILE="$PROJECT_ROOT/pip.modelfile"
+PERSONALITY_MODEL_FILE="$PROJECT_ROOT/personality.modelfile"
+ENV_FILE="$PROJECT_ROOT/../.env"
+
+if [ -f "$ENV_FILE" ]; then
+    echo "[Ollama] Loading config from $ENV_FILE"
+    # Extract variables from .env while ignoring comments
+    OLLAMA_VERSION=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_VERSION' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+    OLLAMA_BASE_MODEL=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_BASE_MODEL' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+    OLLAMA_MODEL_NAME=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_MODEL_NAME' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+fi
+
+# Fallback defaults if .env is missing or values aren't set
+OLLAMA_VERSION=${OLLAMA_VERSION:-"0.15.6"}
+OLLAMA_BASE_MODEL=${OLLAMA_BASE_MODEL:-"gemma3:1b"}
+OLLAMA_MODEL_NAME=${OLLAMA_MODEL_NAME:-"pip"}
+
+echo "[Ollama] Configuration: '$OLLAMA_MODEL_NAME' model, based on $OLLAMA_BASE_MODEL ($OLLAMA_VERSION)..."
 
 mkdir -p "$DIST_DIR"
 mkdir -p "$MODELS_DIR"
@@ -60,14 +72,14 @@ OLLAMA_PID=$!
 # Wait for server to wake up
 sleep 1
 
-echo "[Ollama] Pulling $BASE_MODEL..."
-"$OLLAMA_APP" pull "$BASE_MODEL"
+echo "[Ollama] Pulling $OLLAMA_BASE_MODEL..."
+"$OLLAMA_APP" pull "$OLLAMA_BASE_MODEL"
 
 sleep 5
 
-echo "[Ollama] Creating personality '$CUSTOM_MODEL_NAME'..."
+echo "[Ollama] Creating personality '$OLLAMA_MODEL_NAME'..."
 if [ -f "$PERSONALITY_MODEL_FILE" ]; then
-    "$OLLAMA_APP" create "$CUSTOM_MODEL_NAME" -f "$PERSONALITY_MODEL_FILE"
+    "$OLLAMA_APP" create "$OLLAMA_MODEL_NAME" -f "$PERSONALITY_MODEL_FILE"
 else
     echo "[Error] Could not find $PERSONALITY_MODEL_FILE"
 fi

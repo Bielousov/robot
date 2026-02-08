@@ -3,5 +3,6 @@ joblib
 numpy
 ollama
 pandas
+psutil
 python-dotenv
 scikit-learn

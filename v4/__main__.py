@@ -25,7 +25,7 @@ def start_app():
                 if line == "":
                     # Pure Enter key: Set prompt flag for the next Brain tick
                     print("[User] Action: GENERIC PROMPT")
-                    robot.state.prompts.append("prompt_fact")
+                    robot.state.prompts.append("quote")
                 
                 elif line.lower() in ["s", "esc"]:
                     print("[User] Action: FORCE SLEEP")
@@ -47,7 +47,7 @@ def start_app():
             robot.state.is_awake = False
             # Wait a moment for the logic thread to pick up the state change 
             # and for the voice to actually say "goodbye"
-            time.sleep(1.5) 
+            time.sleep(5) 
         
         # Cleanly stop the custom threads
         robot.stop()

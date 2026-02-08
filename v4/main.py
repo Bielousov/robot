@@ -20,8 +20,8 @@ class Pip:
         # 1. Load Brain model and Dictionary
         self.manager = ModelManager(Paths)
         self.model, self.scaler = self.manager.load()
-        self.dictionary = Dictionary(Paths.Dictionary)
         self.mind = LLMService()
+        self.prompts = Dictionary(Paths.Prompts)
         
         # 2. State Variables
         self.state = State()

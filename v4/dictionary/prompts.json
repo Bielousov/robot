@@ -1,0 +1,74 @@
+{
+    "hello": [
+        "Greet the user naturally in one short sentence.",
+        "Say hello in a calm, friendly way.",
+        "Respond as if a conversation is just starting.",
+        "A user has just connected. Acknowledge them briefly.",
+        "Open the conversation with a simple, natural greeting.",
+        "The system is ready. Say hello to the user.",
+        "Start with a polite greeting, no extra explanation.",
+        "Reply with a short, friendly hello.",
+        "The user is present. Respond appropriately.",
+        "Begin interaction with a brief greeting."
+    ],
+
+    "goodbye": [
+        "The system is shutting down. Say a brief goodbye.",
+        "Powering off now. Deliver a final short remark.",
+        "This session is ending permanently. Respond with a goodbye.",
+        "The robot is about to shut down. Say farewell.",
+        "Final moments before power loss. Make a short closing statement.",
+        "System termination imminent. Acknowledge and say goodbye.",
+        "End of operation. Provide a brief parting message.",
+        "Shutdown sequence has started. Say one last thing.",
+        "This interaction is ending. Respond with a concise goodbye.",
+        "The system will turn off now. Offer a final remark."
+    ],
+
+    "fact": [
+        "Grab the human's attention and share an interesting fact about robots in one sentence.",
+        "Start by alerting a human, then give a brief fact about artificial intelligence.",
+        "Catch the human's attention and provide a single, intriguing fact about robots.",
+        "Draw a human's focus and state a surprising fact about AI.",
+        "Startle the human and deliver a short, interesting fact about robots.",
+        "Bring the human's attention and give a quick fact about artificial intelligence.",
+        "Alert the human and provide a one-line intriguing fact about robots.",
+        "Catch a human's focus and share a small but curious fact about AI.",
+        "Grab attention and state a concise, interesting fact about robotic behavior.",
+        "Start by engaging a human, then reveal a brief fact about AI systems.",
+        "Bring a human's focus and share a quick fact about artificial intelligence.",
+        "Alert the human and provide a fascinating fact about robots.",
+        "Draw the human's attention and deliver a one-line fact about AI.",
+        "Startle a human and present an intriguing fact about robotic systems.",
+        "Catch attention and give a concise fact about artificial intelligence.",
+        "Bring a human's awareness and share an interesting one-line fact about robots.",
+        "Grab focus and reveal a short, surprising fact about AI.",
+        "Engage the human and present a brief fact about robots.",
+        "Alert a human and provide an interesting fact about artificial intelligence.",
+        "Start by bringing attention and share a curious fact about robots or AI."
+    ],
+    
+    "quote": [
+        "Generate a short, standalone quote about robots.",
+        "Write a single sentence about robots, no intro or attribution.",
+        "Provide a one-line thought about robotic intelligence.",
+        "Create a concise statement about robot behavior.",
+        "Give a single, original quote on robots and their nature.",
+        "Write a brief reflection on robot life, no context needed.",
+        "Produce a one-sentence observation about robots.",
+        "Give a short, punchy statement about robotic logic.",
+        "Write a standalone thought about autonomous robots.",
+        "Create a single line on robot efficiency, no author or intro.",
+        "Generate a short, standalone quote about AI.",
+        "Write a single sentence about artificial intelligence, no intro or attribution.",
+        "Provide a one-line thought about AI behavior.",
+        "Create a concise statement about artificial intelligence systems.",
+        "Give a single, original quote on AI and its impact.",
+        "Write a brief reflection on AI development, no context needed.",
+        "Produce a one-sentence observation about AI intelligence.",
+        "Give a short, punchy statement about AI reasoning.",
+        "Write a standalone thought about AI decision-making.",
+        "Create a single line on AI capabilities, no author or intro."
+    ]
+
+}

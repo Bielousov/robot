@@ -104,7 +104,6 @@ class LLMService:
 
         # Define Pip's personality here
         messages = [
-            {'role': 'system', 'content': 'You are Pip, a sophisticated robot.'},
             {'role': 'user', 'content': prompt}
         ]
 

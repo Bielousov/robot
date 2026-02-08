@@ -63,6 +63,9 @@ class IntentHandler:
     def say(self, phrase):
         self._debug(phrase, tag="ROBOT")
 
+        if not phrase:
+            return
+        
         # Set the state and trigger voice with the callback
         self.robot.state.is_speaking = True
         self.robot.state.last_spoke_time = time.time()

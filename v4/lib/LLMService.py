@@ -1,9 +1,9 @@
-import httpx
 import os
 import psutil
 import subprocess
 import time
 import signal
+import ollama  # Official Library
 from dotenv import load_dotenv
 from pathlib import Path
 from typing import Optional
@@ -11,7 +11,7 @@ from typing import Optional
 LIB_PATH = Path(__file__).parent.resolve()
 OLLAMA_PATH = LIB_PATH / "ollama" / "dist"
 MODELS_PATH = LIB_PATH / "ollama" / "models"
-OLLAMA_BIN = OLLAMA_PATH / "ollama"
+OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
 
 BASE_URL = "http://localhost:11434"
@@ -27,10 +27,11 @@ class LLMService:
         self.context_length = int(os.getenv("OLLAMA_CONTEXT_LENGTH", "1024"))
         self.threads = int(os.getenv("OLLAMA_THREADS", "4"))
         
-        self.process = None
-        self.client = httpx.Client(base_url=BASE_URL, timeout=120.0)
-
         self._prepare_environment()
+        
+        self.process = None
+        self.client = ollama.Client(host=BASE_URL)
+
         self._force_stop_server()
         self.start_server()
         self.load_model()
@@ -59,93 +60,65 @@ class LLMService:
         """Starts the Ollama server if not already running."""
         try:
             # Check if something is already on the port
-            self.client.get("/api/version")
+            self.client.ps() 
             print("[Robot] LLM server already running.")
-        except httpx.ConnectError:
+        except Exception:
             print("[Robot] Waking up the LLM service...")
             log_file = open(LOGS_PATH, "a")
             self.process = subprocess.Popen(
                 [str(OLLAMA_BIN), "serve"],
                 stdout=log_file,
                 stderr=log_file,
-                preexec_fn=os.setsid # Create a process group for clean kill
+                env=os.environ,
+                preexec_fn=os.setsid 
             )
             
             # Wait for health check
             for _ in range(10):
                 time.sleep(1)
                 try:
-                    if self.client.get("/api/version").status_code == 200:
-                        print("[Robot] Server is online.")
-                        return
-                except httpx.ConnectError:
+                    self.client.ps()
+                    print("[Robot] Server is online.")
+                    return
+                except Exception:
                     continue
             raise RuntimeError("LLM service failed to start. Check server.log")
-
+    
     def load_model(self):
-        """Ensures the specific model is loaded into memory."""
-        print(f"[Robot] Loading model: {self.model_name}...")
-        print(f"Loading models path {MODELS_PATH}")
-        payload = {
-            "model": self.model_name,
-            "keep_alive": -1,
-            "prompt": "",
-            "stream": False,
-            "options": {
-                "num_ctx": self.context_length,
-                "num_thread": self.threads
-            }
-        }
+        """Checks if model exists locally; pulls it if missing."""
         try:
-            # CHANGE: Changed endpoint from /api/create to /api/generate
-            response = self.client.post("/api/generate", json=payload)
-            
-            if response.status_code == 200:
-                print(f"[Robot] {self.model_name} is ready for prompts.")
+            self.client.show(self.model_name)
+            print(f"[Robot] Model {self.model_name} found.")
+        except ollama.ResponseError as e:
+            if e.status_code == 404:
+                print(f"[Robot] Pulling {self.model_name}... this may take a while.")
+                self.client.pull(self.model_name)
             else:
-                print(f"[Error] Failed to load model: {response.text}")
-        except Exception as e:
-            print(f"[Robot] Critical error during model load: {e}")
+                raise e
 
     def think(self, prompt: str) -> Optional[str]:
-        """
-        Sends a prompt to the model and returns the response string.
-        Measures performance in seconds.
-        """
         if not prompt:
             return None
 
         print(f"[Robot] Thinking about: {prompt[:50]}...")
 
-        # Start high-precision timer
-        start_time = time.perf_counter()
-
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "stream": False,  # Set to True if you want to handle word-by-word
-            "options": {
-                "num_ctx": self.context_length,
-                "num_thread": self.threads,
-            }
-        }
+        # Define Pip's personality here
+        messages = [
+            {'role': 'system', 'content': 'You are Pip, a sophisticated robot.'},
+            {'role': 'user', 'content': prompt}
+        ]
 
         try:
-            response = self.client.post("/api/generate", json=payload)
+            start_time = time.perf_counter()
+            response = self.client.chat(
+                model=self.model_name,
+                messages=messages,
+                options={"num_thread": self.threads}
+            )
             end_time = time.perf_counter()
-
-            if response.status_code == 200:
-                result = response.json()
-                reply = result.get("response", "")
-                
-                # Performance metrics
-                duration = end_time - start_time
-                print(f"[Robot] Response received in {duration:.2f}s")
-                
-                return reply
-            else:
-                print(f"[Error] Inference failed: {response.text}")
-                return None
+            print(f"[Robot] Response received in {(end_time - start_time):.2f}s")
+            
+            return response['message']['content']
 
         except Exception as e:
             print(f"[Critical] Failed to communicate with brain: {e}")

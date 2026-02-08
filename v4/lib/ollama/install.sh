@@ -5,12 +5,10 @@
 OLLAMA_LIB_DIR=$(dirname $(realpath "$0"))
 PROJECT_ROOT=$(dirname $(dirname "$OLLAMA_LIB_DIR"))
 
-
 DIST_DIR="$OLLAMA_LIB_DIR/dist"
 MODELS_DIR="$OLLAMA_LIB_DIR/models"
+OLLAMA_APP="$DIST_DIR/bin/ollama"
 
-# We update this to point exactly where the binary will end up
-OLLAMA_APP="$DIST_DIR/ollama"
 PERSONALITY_MODEL_FILE="$PROJECT_ROOT/personality.modelfile"
 ENV_FILE="$PROJECT_ROOT/../.env"
 
@@ -18,24 +16,20 @@ if [ -f "$ENV_FILE" ]; then
     echo "[Ollama] Loading config from $ENV_FILE"
     # Extract variables from .env while ignoring comments
     OLLAMA_VERSION=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_VERSION' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
-    OLLAMA_BASE_MODEL=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_BASE_MODEL' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
     OLLAMA_MODEL_NAME=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_MODEL_NAME' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
 fi
 
 # Fallback defaults if .env is missing or values aren't set
 OLLAMA_VERSION=${OLLAMA_VERSION:-"0.15.6"}
-OLLAMA_BASE_MODEL=${OLLAMA_BASE_MODEL:-"gemma3:1b"}
 OLLAMA_MODEL_NAME=${OLLAMA_MODEL_NAME:-"pip"}
-
-echo "[Ollama] Configuration: '$OLLAMA_MODEL_NAME' model, based on $OLLAMA_BASE_MODEL ($OLLAMA_VERSION)..."
 
 mkdir -p "$DIST_DIR"
 mkdir -p "$MODELS_DIR"
 
 
 # 1. Check if Ollama is already installed in the dist folder
-if [[ -d "$DIST_DIR/bin" && -d "$DIST_DIR/lib" ]]; then
-    echo "[Ollama] dist/bin and dist/lib already exist. Skipping download."
+if [[ -f "$OLLAMA_APP" && -d "$DIST_DIR/lib" ]]; then
+    echo "[Ollama] Ollama library already exist. Skipping download."
 else
     # Ensure dependencies and clear old processes
     sudo apt-get update && sudo apt-get install -y zstd
@@ -56,9 +50,8 @@ else
 
     rm "$OLLAMA_LIB_DIR/ollama.tar.zst"
 
-    if [ -f "$DIST_DIR/bin/ollama" ]; then
-        chmod +x "$DIST_DIR/bin/ollama"
-        ln -sf "$DIST_DIR/bin/ollama" "$OLLAMA_APP"
+    if [ -f "$OLLAMA_APP" ]; then
+        chmod +x "$OLLAMA_APP"
     fi
 fi
 
@@ -71,11 +64,6 @@ OLLAMA_PID=$!
 
 # Wait for server to wake up
 sleep 1
-
-echo "[Ollama] Pulling $OLLAMA_BASE_MODEL..."
-"$OLLAMA_APP" pull "$OLLAMA_BASE_MODEL"
-
-sleep 5
 
 echo "[Ollama] Creating personality '$OLLAMA_MODEL_NAME'..."
 if [ -f "$PERSONALITY_MODEL_FILE" ]; then

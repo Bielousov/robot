@@ -1,186 +1,152 @@
 import os
 import psutil
+import re
 import subprocess
 import time
 import signal
-import ollama  # Official Library
+import ollama
 from dotenv import load_dotenv
 from pathlib import Path
 from typing import Optional
 
+# Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
+PROJECT_ROOT = LIB_PATH.parent
 OLLAMA_PATH = LIB_PATH / "ollama" / "dist"
 MODELS_PATH = LIB_PATH / "ollama" / "models"
 OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
+MODELFILE_PATH = PROJECT_ROOT / "personality.modelfile"
 
 BASE_URL = "http://localhost:11434"
 
 class LLMService:
     def __init__(self):
-
-        # 1. Load ENV
         load_dotenv()
-
-        # 2. Configuration from Environment (with your RPi5 defaults)
-        self.model_name = os.getenv("OLLAMA_MODEL_NAME", "gemma3:1b")
-        self.context_length = int(os.getenv("OLLAMA_CONTEXT_LENGTH", "1024"))
-        self.threads = int(os.getenv("OLLAMA_THREADS", "4"))
         
-        self._prepare_environment()
+        # Identity settings
+        self.base_model = os.getenv("OLLAMA_BASE_MODEL", "gemma3:270m")
+        self.model_name = os.getenv("OLLAMA_MODEL_NAME", "pip")
+        self.system_prompt = os.getenv("OLLAMA_SYSTEM_PROMPT", "You are Robot.")
         
         self.process = None
         self.client = ollama.Client(host=BASE_URL)
 
+        # Hardware profile for RPi5
+        self.options = {
+            "num_ctx": int(os.getenv("OLLAMA_CONTEXT_LENGTH", 1024)),
+            "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
+            "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 0.8)),
+            "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", 40)),
+            "stop": ["User:", "Pip:"]
+        }
+
+        self._prepare_environment()
         self._force_stop_server()
         self.start_server()
         self.load_model()
 
     def _prepare_environment(self):
-        """Sets the specific RPi5 environment flags."""
-        os.makedirs(OLLAMA_PATH, exist_ok=True)
+        """RPi5 Stability Flags."""
         os.makedirs(MODELS_PATH, exist_ok=True)
-        
         env_vars = {
             "OLLAMA_MODELS": str(MODELS_PATH),
-            "OLLAMA_CONTEXT_LENGTH": str(self.context_length),
-            "OLLAMA_FLASH_ATTENTION": "0",
             "OLLAMA_MAX_LOADED_MODELS": "1",
-            "OLLAMA_MEMORY_FRACTION": "0.6",
             "OLLAMA_NUM_PARALLEL": "1",
-            "OLLAMA_THREADS": str(self.threads),
-            "OLLAMA_NO_MMAP": "1",
             "OLLAMA_LLM_LIBRARY": "cpu",
-            "OLLAMA_NUMA": "0"
         }
         os.environ.update(env_vars)
 
     def start_server(self):
-        """Starts the Ollama server if not already running."""
+        """Starts Ollama background process."""
         try:
-            # Check if something is already on the port
             self.client.ps() 
-            print("[Robot] LLM server already running.")
+            print("[Robot] Server already active.")
         except Exception:
-            print("[Robot] Waking up the LLM service...")
+            print("[Robot] Starting Ollama server...")
             log_file = open(LOGS_PATH, "a")
             self.process = subprocess.Popen(
                 [str(OLLAMA_BIN), "serve"],
-                stdout=log_file,
-                stderr=log_file,
-                env=os.environ,
-                preexec_fn=os.setsid 
+                stdout=log_file, stderr=log_file,
+                env=os.environ, preexec_fn=os.setsid 
             )
             
-            # Wait for health check
-            for _ in range(10):
+            # Health check loop
+            for _ in range(15):
                 time.sleep(1)
                 try:
                     self.client.ps()
-                    print("[Robot] Server is online.")
                     return
-                except Exception:
-                    continue
-            raise RuntimeError("LLM service failed to start. Check server.log")
-    
+                except: continue
+            raise RuntimeError("Ollama failed to start. Check server.log")
+        
     def load_model(self):
-        """Checks if model exists locally; pulls it if missing."""
+        """Creates the 'pip' model programmatically using the client."""
+        print(f"[Robot] Building personality '{self.model_name}'...")
         try:
-            self.client.show(self.model_name)
-            print(f"[Robot] Model {self.model_name} found.")
-        except ollama.ResponseError as e:
-            if e.status_code == 404:
-                print(f"[Robot] Pulling {self.model_name}... this may take a while.")
-                self.client.pull(self.model_name)
-            else:
-                raise e
+            # Replaces the manual 'api/create' POST
+            self.client.create(
+                model=self.model_name,
+                quantize='q4_K_M',
+                from_=self.base_model,  # Note the underscore!
+                system=self.system_prompt,
+                parameters=self.options
+            )
+            print("[-] Personality locked in.")
+        except Exception as e:
+            print(f"[Error] Could not build personality model: {e}")
+
 
     def think(self, prompt: str) -> Optional[str]:
-        if not prompt:
-            return None
-
-        print(f"[Robot] Thinking about: {prompt[:50]}...")
-
-        # Define Pip's personality here
-        messages = [
-            {'role': 'user', 'content': prompt}
-        ]
-
+        if not prompt: return None
         try:
             start_time = time.perf_counter()
-            response = self.client.chat(
-                model=self.model_name,
-                messages=messages,
-                options={"num_thread": self.threads}
-            )
-            end_time = time.perf_counter()
-            print(f"[Robot] Response received in {(end_time - start_time):.2f}s")
+            # Note: num_thread is already in your Modelfile, no need to pass here
+            response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
             
-            return response['message']['content']
-
+            duration = time.perf_counter() - start_time
+            print(f"[Robot] Response received in {duration:.2f}s")
+            return self._response_format(response['response'])
+        
         except Exception as e:
-            print(f"[Critical] Failed to communicate with brain: {e}")
+            print(f"[Critical] Brain error: {e}")
             return None
-            
+        
+    def _response_format(self, text: str) -> str:
+        """
+        Scrubs emojis and Markdown bold symbols to maintain 
+        Pip's cold, ASCII-only aesthetic.
+        """
+        if not text:
+            return ""
+
+        # 1. Remove Markdown bold/italic symbols (e.g., **text** or *text*)
+        # We replace the asterisks with an empty string
+        clean_text = text.replace("*", "")
+
+        # 2. Remove Emojis and non-ASCII symbols
+        # This regex looks for any character that isn't a standard 
+        # printable ASCII character (letters, numbers, punctuation)
+        clean_text = re.sub(r'[^\x00-\x7F]+', '', clean_text)
+
+        # 3. Clean up extra whitespace/newlines
+        clean_text = " ".join(clean_text.split())
+
+        return clean_text.strip()
+
     def stop(self):
-        """Forcefully kills the server and all its child runners."""
-        if self.process and self.process.poll() is None:
-            print("[-] Force-stopping the LLM service...")
-            try:
-                # Kill the entire process group (the minus sign is key!)
-                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                self.process.wait(timeout=5)
-            except Exception as e:
-                print(f"[!] Cleanup error: {e}")
-            finally:
-                self.process = None
-                print("[-] LLM service stopped.")
+        if self.process:
+            print("[-] Stopping server...")
+            os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+            self.process = None
 
     def _force_stop_server(self):
-        """Pure Python pkill replacement to wipe out any existing Ollama processes."""
-        print("[Robot] Evicting existing brain instances...")
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                # Check if 'ollama' is in name or command line
-                name = proc.info['name'] or ""
-                cmdline = " ".join(proc.info['cmdline'] or [])
-                
-                if 'ollama' in name.lower() or 'ollama' in cmdline.lower():
-                    # Don't kill our current python script if it has 'ollama' in the path
-                    if proc.info['pid'] == os.getpid():
-                        continue
-                        
-                    print(f"[-] Killing process {proc.info['pid']}...")
-                    os.kill(proc.info['pid'], signal.SIGKILL)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        
-        # Short nap to let the OS release port 11434
-        time.sleep(1.5)
+        """Wipes old processes to free up RAM."""
+        for proc in psutil.process_iter(['name']):
+            if 'ollama' in (proc.info['name'] or "").lower():
+                try: os.kill(proc.pid, signal.SIGKILL)
+                except: pass
+        time.sleep(1)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self):
-        self.stop()
-
-    def __del__(self):
-        self.stop()
-
-# Example usage:
-if __name__ == "__main__":
-    brain = LLMService()
-    
-    # Simple interaction loop
-    question = "Generate a fictional quote that fits the most your character"
-    answer = brain.think(question)
-    
-    if answer:
-        print(f"\n[Pip]: {answer}\n")
-
-    try:
-        # Keep the main thread alive
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        pass
+    def __enter__(self): return self
+    def __exit__(self, *args): self.stop()

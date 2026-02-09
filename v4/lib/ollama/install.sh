@@ -9,7 +9,6 @@ DIST_DIR="$OLLAMA_LIB_DIR/dist"
 MODELS_DIR="$OLLAMA_LIB_DIR/models"
 OLLAMA_APP="$DIST_DIR/bin/ollama"
 
-PERSONALITY_MODEL_FILE="$PROJECT_ROOT/personality.modelfile"
 ENV_FILE="$PROJECT_ROOT/../.env"
 
 if [ -f "$ENV_FILE" ]; then
@@ -54,23 +53,3 @@ else
         chmod +x "$OLLAMA_APP"
     fi
 fi
-
-
-echo "[Ollama] Starting local server..."
-export OLLAMA_MODELS="$MODELS_DIR"
-# Use the absolute path to start the server
-"$OLLAMA_APP" serve > "$DIST_DIR/server.log" 2>&1 &
-OLLAMA_PID=$!
-
-# Wait for server to wake up
-sleep 1
-
-echo "[Ollama] Creating personality '$OLLAMA_MODEL_NAME'..."
-if [ -f "$PERSONALITY_MODEL_FILE" ]; then
-    "$OLLAMA_APP" create "$OLLAMA_MODEL_NAME" -f "$PERSONALITY_MODEL_FILE"
-else
-    echo "[Error] Could not find $PERSONALITY_MODEL_FILE"
-fi
-
-kill $OLLAMA_PID
-echo "[Ollama] Setup complete!"

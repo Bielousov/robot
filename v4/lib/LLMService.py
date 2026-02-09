@@ -81,19 +81,32 @@ class LLMService:
             raise RuntimeError("Ollama failed to start. Check server.log")
         
     def load_model(self):
-        """Creates the 'pip' model programmatically using the client."""
-        print(f"[Robot] Building personality '{self.model_name}'...")
+        """Creates the 'pip' model with a simple dot-trail progress indicator."""
+        print(f"[Robot] Initializing brain for '{self.model_name}'", end="", flush=True)
+        
         try:
-            # Replaces the manual 'api/create' POST
-            self.client.create(
+            stream = self.client.create(
                 model=self.model_name,
-                from_=self.base_model,  # Note the underscore!
+                from_=self.base_model,
                 system=self.system_prompt,
-                parameters=self.options
+                parameters=self.options,
+                stream=True 
             )
-            print("[-] Personality locked in.")
+
+            for chunk in stream:
+                # Every time we get a progress update with data, print a dot
+                if 'completed' in chunk:
+                    print(".", end="", flush=True)
+                
+                # If the status changes (e.g., from 'pulling' to 'verifying'), 
+                # you can optionally print the new status on a new line
+                status = chunk.get('status', '')
+                if status == "success":
+                    print("\n[-] Personality locked in.")
+                    return
+
         except Exception as e:
-            print(f"[Error] Could not build personality model: {e}")
+            print(f"\n[Error] Could not build personality model: {e}")
 
 
     def think(self, prompt: str) -> Optional[str]:

@@ -80,10 +80,11 @@ class LLMService:
             raise RuntimeError("Ollama failed to start. Check server.log")
         
     def load_model(self):
-        """Creates the 'pip' model with a simple dot-trail progress indicator."""
-        print(f"[Robot] Initializing personality for '{self.model_name}', using {self.base_model}", end="", flush=True)
+        """Creates the 'pip' model with a dot-trail. Synchronously waits for completion."""
+        print(f"[Robot] Initializing personality for '{self.model_name}'", end="", flush=True)
         
         try:
+            # This call returns a generator but still runs on the main thread
             stream = self.client.create(
                 model=self.model_name,
                 from_=self.base_model,
@@ -92,17 +93,22 @@ class LLMService:
                 stream=True 
             )
 
+            # The loop acts as the 'wait' mechanism
             for chunk in stream:
-                # Every time we get a progress update with data, print a dot
-                if 'completed' in chunk:
+                status = chunk.get('status', '')
+                
+                # Print a dot for progress updates
+                if 'completed' in chunk or status == 'pulling manifest':
                     print(".", end="", flush=True)
                 
-                # If the status changes (e.g., from 'pulling' to 'verifying'), 
-                # you can optionally print the new status on a new line
-                status = chunk.get('status', '')
-                if status == "success":
-                    print("\n[-] Personality locked in.")
+                # Final success check from Ollama
+                if status == "success" or chunk.get('done') is True:
+                    # Small buffer to let the OS finalize the file handle
+                    time.sleep(0.5) 
+                    print("\n[-] Personality locked in. Pip is online.")
                     return
+
+        
 
         except Exception as e:
             print(f"\n[Error] Could not build personality model: {e}")

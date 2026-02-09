@@ -16,7 +16,6 @@ OLLAMA_PATH = LIB_PATH / "ollama" / "dist"
 MODELS_PATH = LIB_PATH / "ollama" / "models"
 OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
-MODELFILE_PATH = PROJECT_ROOT / "personality.modelfile"
 
 BASE_URL = "http://localhost:11434"
 

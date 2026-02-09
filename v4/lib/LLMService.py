@@ -38,6 +38,8 @@ class LLMService:
             "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
             "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 0.8)),
             "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", 40)),
+            "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", 1.2)),
+            "top_p": float(os.getenv("OLLAMA_TOP_P", 0.9)),
             "stop": ["User:", "Pip:"]
         }
 
@@ -118,7 +120,7 @@ class LLMService:
         except Exception as e:
             print(f"\n[Error] Could not build personality model: {e}")
 
-    def think(self, prompt: str, contextual = False) -> Optional[str]:
+    def think(self, prompt: str) -> Optional[str]:
         if not prompt: return None
 
         display_prompt = prompt[:50] + "..." if len(prompt) > 50 else prompt
@@ -126,16 +128,12 @@ class LLMService:
 
         try:
             start_time = time.perf_counter()
-            
-            if contextual:
-                contextual_prompt = (
-                    f"Acknowledge the subject of following topic with a brief, cold summary, "
-                    f"then provide your snarky analysis: {prompt}"
-                )
-                response = self.client.generate(model=self.model_name, prompt=contextual_prompt, stream=False)
-            else:
-                response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
-            
+            response = self.client.generate(
+                model=self.model_name,
+                prompt=prompt,
+                stream=False,
+                keep_alive=-1
+            )
             
             duration = time.perf_counter() - start_time
             print(f"[Robot] Response received in {duration:.2f}s")

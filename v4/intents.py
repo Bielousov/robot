@@ -41,15 +41,13 @@ class IntentHandler:
             else:
                 prompt_text = self.robot.state.prompts.pop(0)
                 if prompt_text == "quote":
-                    self.speak("quote", True)
+                    self.speak("quote")
                 else:
                     self.ask(prompt_text)
 
-    def speak(self, category, contextual = False):
-        self.robot.state.is_speaking = True
+    def speak(self, category):
         prompt = self.robot.prompts.pick(category)
-        answer = self.robot.mind.think(prompt, contextual)
-        self.say(answer)
+        self.ask(prompt)
 
     def ask(self, prompt):
         self.robot.state.is_speaking = True

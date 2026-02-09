@@ -1,46 +1,56 @@
-import os
-import time
-from ollama import Client
+import sys, time
+from pathlib import Path
 
-# Path setup
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "../../"))
-MODELS_DIR = os.path.join(PROJECT_ROOT, "lib/ollama/models")
+# Path Logic
+v4_path = Path(__file__).parent.parent.parent.resolve()
+if str(v4_path) not in sys.path:
+    sys.path.insert(0, str(v4_path))
+
+from lib.LLMService import LLMService 
 
 def run_test():
-    os.environ["OLLAMA_MODELS"] = MODELS_DIR
-    client = Client(host='http://localhost:11434')
-
-    print(f"[Test] Prompting Pip...")
+    print("[Test] Initializing Robot Brain Service...")
     
-    # --- Start Timer ---
-    start_time = time.perf_counter()
-
-    try:
-        response = client.chat(
-            model='pip',
-            messages=[{'role': 'user', 'content': "Hi, I'm Anton, your master and creator. Say how you feel about being created."}],
-            options={
-                'temperature': 1.0,
-                'num_thread': 2,
-            },
-            keep_alive=-1
-        )
+    # Init happens HERE (Server start + Model Create) - excluded from timer
+    with LLMService() as llm:
         
-        # --- End Timer ---
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
+        # --- WARM-UP (Optional but recommended for Pi 5) ---
+        # This ensures the model is fully resident in RAM before we time it
+        print("[Test] Warming up engine...")
+        llm.think("System check.") 
+        llm.clear_history() # Clear warm-up from history to keep test clean
 
-        print("\n--- Pip's Response ---")
-        print(response.message.content)
-        print("----------------------")
-        print(f"⏱️  Execution Time: {execution_time:.2f} seconds")
+        test_prompt = "Hi, I'm Anton, your master and creator. Say how you feel about being created."
         
-        if execution_time < 5:
-            print("🚀 Note: Snappy response!")
+        print(f"[Test] Prompting Pip: '{test_prompt}'")
+        
+        # --- Start Timer: Pure Inference Only ---
+        start_time = time.perf_counter()
 
-    except Exception as e:
-        print(f"Test failed: {e}")
+        try:
+            response = llm.think(test_prompt)
+            
+            # --- End Timer ---
+            end_time = time.perf_counter()
+            execution_time = end_time - start_time
+
+            print("\n--- Response ---")
+            print(f"Pip: {response}")
+            print("----------------------")
+            print(f"⏱️  Inference Latency: {execution_time:.2f} seconds")
+            
+            # Verify history
+            print(f"🧠 Context Window: {len(llm.history)} messages")
+            
+            if execution_time < 3:
+                print("🚀 Note: Exceptional speed for a Pi 5!")
+            elif execution_time < 7:
+                print("⚡ Note: Standard performance.")
+            else:
+                print("🐢 Note: High latency detected. Check CPU thermal throttling.")
+
+        except Exception as e:
+            print(f"Test failed: {e}")
 
 if __name__ == "__main__":
     run_test()

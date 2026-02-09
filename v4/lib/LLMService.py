@@ -4,6 +4,7 @@ import re
 import subprocess
 import time
 import signal
+import sys
 import ollama
 from dotenv import load_dotenv
 from pathlib import Path
@@ -80,11 +81,10 @@ class LLMService:
             raise RuntimeError("Ollama failed to start. Check server.log")
         
     def load_model(self):
-        """Creates the 'pip' model with a dot-trail. Synchronously waits for completion."""
-        print(f"[Robot] Initializing personality for '{self.model_name}'", end="", flush=True)
+        """Creates the 'pip' model showing: Loading model [name] ([size] MB): [percent] %"""
+        print(f"[Robot] Initializing personality for '{self.model_name}'")
         
         try:
-            # This call returns a generator but still runs on the main thread
             stream = self.client.create(
                 model=self.model_name,
                 from_=self.base_model,
@@ -93,33 +93,49 @@ class LLMService:
                 stream=True 
             )
 
-            # The loop acts as the 'wait' mechanism
             for chunk in stream:
                 status = chunk.get('status', '')
-                
-                # Print a dot for progress updates
-                if 'completed' in chunk or status == 'pulling manifest':
-                    print(".", end="", flush=True)
-                
-                # Final success check from Ollama
-                if status == "success" or chunk.get('done') is True:
-                    # Small buffer to let the OS finalize the file handle
-                    time.sleep(0.5) 
-                    print("\n[-] Personality locked in. Pip is online.")
+                completed = chunk.get('completed')
+                total = chunk.get('total')
+
+                if total and completed and total > 0:
+                    total_mb = total / (1024 * 1024)
+                    loaded_pct = (completed / total) * 100
+                    
+                    # Format: Loading model gemma3:1b (120.5 MB): 45.2 %
+                    sys.stdout.write(
+                        f"\rLoading model {self.base_model} ({total_mb:.1f} MB): {loaded_pct:.1f} %"
+                    )
+                    sys.stdout.flush()
+                elif status and status != "success":
+                    # Print other statuses like 'verifying' or 'writing'
+                    sys.stdout.write(f"\r{status}...{' ' * 20}")
+                    sys.stdout.flush()
+
+                if status == "success" or chunk.get('done'):
+                    print(f"\n[-] Personality '{self.model_name}' locked in. Pip is online.")
                     return
-
-        
-
         except Exception as e:
             print(f"\n[Error] Could not build personality model: {e}")
 
-
-    def think(self, prompt: str) -> Optional[str]:
+    def think(self, prompt: str, contextual = False) -> Optional[str]:
         if not prompt: return None
+
+        display_prompt = prompt[:50] + "..." if len(prompt) > 50 else prompt
+        print(f"[ROBOT] Thinking about: {display_prompt}")
+
         try:
             start_time = time.perf_counter()
-            # Note: num_thread is already in your Modelfile, no need to pass here
-            response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
+            
+            if contextual:
+                contextual_prompt = (
+                    f"Acknowledge the subject of following topic with a brief, cold summary, "
+                    f"then provide your snarky analysis: {prompt}"
+                )
+                response = self.client.generate(model=self.model_name, prompt=contextual_prompt, stream=False)
+            else:
+                response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
+            
             
             duration = time.perf_counter() - start_time
             print(f"[Robot] Response received in {duration:.2f}s")

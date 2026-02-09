@@ -12,8 +12,8 @@ from lib.LLMService import LLMService
 
 # -------- config --------
 ITERATIONS = 10
-WARMUP_RUNS = 2
-PROMPT = "Explain what 2 + 2 equals in one short sentence."
+WARMUP_RUNS = 1
+PROMPT = "Briefly explain why the sky appears blue to a human observer, using exactly one sentence without using the word 'scattering'."
 
 def run_once(llm):
     """Executes a single inference and returns the duration."""

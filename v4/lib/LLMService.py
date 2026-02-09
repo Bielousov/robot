@@ -28,6 +28,10 @@ class LLMService:
         self.base_model = os.getenv("OLLAMA_BASE_MODEL", "gemma3:270m")
         self.model_name = os.getenv("OLLAMA_MODEL_NAME", "pip")
         self.system_prompt = os.getenv("OLLAMA_SYSTEM_PROMPT", "You are Robot.")
+
+        # Context history
+        self.history_limit = int(os.getenv("OLLAMA_HISTORY_LIMIT", 2))
+        self.history = []
         
         self.process = None
         self.client = ollama.Client(host=BASE_URL)
@@ -126,18 +130,23 @@ class LLMService:
         display_prompt = prompt[:50] + "..." if len(prompt) > 50 else prompt
         print(f"[ROBOT] Thinking about: {display_prompt}")
 
+        # Add current user message to history
+        messages = self.add_to_history('user', prompt)
+
         try:
             start_time = time.perf_counter()
-            response = self.client.generate(
+            response = self.client.chat(
                 model=self.model_name,
-                prompt=prompt,
+                messages=messages,
                 stream=False,
                 keep_alive=-1
             )
-            
             duration = time.perf_counter() - start_time
             print(f"[Robot] Response received in {duration:.2f}s")
-            return self._response_format(response['response'])
+
+            answer = self._response_format(response['message']['content'])
+            self.add_to_history('assistant', answer)
+            return answer
         
         except Exception as e:
             print(f"[Critical] Brain error: {e}")
@@ -164,6 +173,29 @@ class LLMService:
         clean_text = " ".join(clean_text.split())
 
         return clean_text.strip()
+    
+    def add_to_history(self, role: str, message: str) -> list:
+        """
+        Appends a message to context and maintains the sliding window.
+        Returns the updated history list.
+        """
+        if not message:
+            return self.history
+
+        # 1. Append the new interaction
+        self.history.append({'role': role, 'content': message})
+
+        # 2. Enforce the sliding window (FIFO)
+        # We keep the most recent 'history_limit' messages
+        if len(self.history) > self.history_limit:
+            self.history = self.history[-self.history_limit:]
+            
+        return self.history
+    
+    def clear_history(self):
+        """Reset Pip's short-term memory."""
+        print("[Robot] Memory banks cleared.")
+        self.history = []
 
     def stop(self):
         if self.process:

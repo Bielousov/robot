@@ -87,7 +87,6 @@ class LLMService:
             # Replaces the manual 'api/create' POST
             self.client.create(
                 model=self.model_name,
-                quantize='q4_K_M',
                 from_=self.base_model,  # Note the underscore!
                 system=self.system_prompt,
                 parameters=self.options

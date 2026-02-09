@@ -30,17 +30,37 @@ if not raw_data:
     print("[Error] Training data is empty.")
     sys.exit(1)
 
-# --- DYNAMIC KEY DETECTION ---
-# We grab the keys from the first entry to define our feature order
+# --- DYNAMIC KEY DETECTION & DATA EXPANSION ---
 input_keys = list(raw_data[0]['inputs'].keys())
 print(f"[System] Detecting input features: {input_keys}")
 
 X = []
 y = []
+expanded_data = [] # To keep track of the expanded set for verification
+
 for entry in raw_data:
-    # Ensure every entry follows the same key order
-    X.append([entry['inputs'][key] for key in input_keys])
-    y.append(entry['label'])
+    # Check if any input value is set to "ANY"
+    has_any = any(val == "ANY" for val in entry['inputs'].values())
+    
+    if has_any:
+        # Generate 10 variations (0.0 to 1.0)
+        for i in range(11):
+            val_step = round(i * 0.1, 1)
+            row_inputs = entry['inputs'].copy()
+            
+            # Replace all "ANY" instances with the current step
+            for k, v in row_inputs.items():
+                if v == "ANY":
+                    row_inputs[k] = val_step
+            
+            X.append([row_inputs[k] for k in input_keys])
+            y.append(entry['label'])
+            expanded_data.append({"description": f"{entry['description']} (Auto-gen {val_step})", "inputs": row_inputs, "label": entry['label']})
+    else:
+        # Standard numeric processing
+        X.append([entry['inputs'][k] for k in input_keys])
+        y.append(entry['label'])
+        expanded_data.append(entry)
 
 X = np.array(X)
 y = np.array(y)
@@ -105,7 +125,7 @@ def verify_rules(data, model, scaler, keys, limit=5):
     
     return success_count
 
-verify_rules(raw_data, model, scaler, input_keys)
+verify_rules(expanded_data, model, scaler, input_keys)
 
 # 8. Save using the Manager
 if accuracy > ACCURACY_TRESHOLD:

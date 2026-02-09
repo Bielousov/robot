@@ -88,7 +88,7 @@ class LLMService:
         
     def load_model(self):
         """Creates the 'pip' model showing: Loading model [name] ([size] MB): [percent] %"""
-        print(f"[Robot] Initializing personality for '{self.model_name}'")
+        print(f"[Robot] Initializing personality for '{self.model_name}' based on {self.base_model} model")
         
         try:
             stream = self.client.create(

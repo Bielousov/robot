@@ -47,7 +47,6 @@ def start_app():
             robot.state.is_awake = False
             # Wait a moment for the logic thread to pick up the state change 
             # and for the voice to actually say "goodbye"
-            time.sleep(5) 
         
         # Cleanly stop the custom threads
         robot.stop()

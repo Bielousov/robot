@@ -76,6 +76,7 @@ class Pip:
     
     def stop(self):
         print("[System] Shutting down...")
+        time.sleep(5)
         self.mind.stop()
         self.threads.stop()
 

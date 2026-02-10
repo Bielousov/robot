@@ -84,6 +84,7 @@ class IntentHandler:
         self.robot.state.is_speaking = True
         self.robot.state.last_spoke_time = time.time()
         self.robot.voice.say(phrase, callback)
+        self._debug(f"Saying: {phrase}", tag="ROBOT")
 
     def _unhandled_intent(self, intent):
         self._debug(f"Unhandled Intent $intent")

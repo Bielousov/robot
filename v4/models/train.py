@@ -9,44 +9,10 @@ from sklearn.metrics import accuracy_score, classification_report
 
 ACCURACY_TRESHOLD = 0.9
 
-def expand_dataset(raw_data, input_keys, steps=5):
-    X_expanded = []
-    y_expanded = []
-    verification_list = []
-    
-    for entry in raw_data:
-        # 1. Generate the possible values for every single key
-        prop_variants = []
-        
-        for key in input_keys:
-            val = entry['inputs'][key]
-            if isinstance(val, list):
-                # Create a list of 5 linear steps for this specific prop
-                start, end = val[0], val[1]
-                steps_list = [round(start + (i * (end - start) / (steps - 1)), 2) for i in range(steps)]
-                prop_variants.append(steps_list)
-            else:
-                # Just a single value in a list for the product function
-                prop_variants.append([val])
-        
-        # 2. Generate the Cartesian Product (all combinations)
-        # e.g., 5 chaos * 5 time_since_spoke * 5 tod = 125 combinations
-        for combination in product(*prop_variants):
-            # 'combination' is a tuple of values in the order of input_keys
-            X_expanded.append(list(combination))
-            y_expanded.append(entry['label'])
-            
-            # Map back to dict for the verification list
-            row_inputs = dict(zip(input_keys, combination))
-            verification_list.append({
-                "description": f"{entry['description']} (Combo)",
-                "inputs": row_inputs,
-                "label": entry['label']
-            })
-            
-    return np.array(X_expanded), np.array(y_expanded), verification_list
+# Start the overall timer
+total_start_time = time.perf_counter()
 
-# Fix paths
+# --- INITIALIZATION ---
 v4_path = Path(__file__).parent.parent.resolve()
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
@@ -54,95 +20,96 @@ if str(v4_path) not in sys.path:
 from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
-# 1. Initialize the Manager
 manager = ModelManager(Paths)
 
-# 2. Load Data
+def expand_dataset(raw_data, input_keys, steps=5):
+    """Generates Cartesian product and deduplicates samples."""
+    unique_samples = {} # Use a dict to keep {tuple_of_inputs: label}
+    
+    print(f"[System] Expanding dataset", end="", flush=True)
+    
+    for entry in raw_data:
+        prop_variants = []
+        for key in input_keys:
+            val = entry['inputs'][key]
+            if isinstance(val, list):
+                start, end = val[0], val[1]
+                steps_list = [round(start + (i * (end - start) / (steps - 1)), 2) for i in range(steps)]
+                prop_variants.append(steps_list)
+            else:
+                prop_variants.append([val])
+        
+        # Cartesian Product
+        for combination in product(*prop_variants):
+            # DEDUPLICATION: 
+            # If the same input combo exists, the latest rule in JSON wins
+            unique_samples[combination] = entry['label']
+            
+        print(".", end="", flush=True) # Progress dots for expansion
+            
+    X_expanded = [list(k) for k in unique_samples.keys()]
+    y_expanded = list(unique_samples.values())
+    
+    # Rebuild verification list from unique samples
+    verification_list = [
+        {"description": "Unique Sample", "inputs": dict(zip(input_keys, k)), "label": v}
+        for k, v in unique_samples.items()
+    ]
+    
+    print(f" Done.")
+    return np.array(X_expanded), np.array(y_expanded), verification_list
+
+
 try:
     raw_data = manager._load_model("ModelTrainingData")
 except Exception as e:
     print(f"[Error] Could not load training data: {e}")
     sys.exit(1)
 
-if not raw_data:
-    print("[Error] Training data is empty.")
-    sys.exit(1)
-
-# --- DYNAMIC KEY DETECTION & DATA EXPANSION ---
+# --- DYNAMIC KEY DETECTION ---
 input_keys = list(raw_data[0]['inputs'].keys())
-print(f"[System] Detecting input features: {input_keys}")
-
-
-# Expand ranges (e.g., [0.0, 1.0] -> 5 rows)
 X, y, expanded_data = expand_dataset(raw_data, input_keys, steps=5)
 
-print(f"Dataset expanded: {len(raw_data)} rules -> {len(X)} training samples.")
+print(f"[System] Deduplication complete: {len(X)} unique samples remaining.")
 
-# 3. Scale the data
+# --- SCALING ---
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# 4. Define and Train the Model
-print(f"Training the {len(input_keys)}-input brain on {len(X)} rules...")
-
+# --- TRAINING ---
+print(f"[System] Training Neural Network (this may take a moment)", end="", flush=True)
 model = MLPClassifier(**ModelConfig)
 
-start_time = time.perf_counter()
+# Training progress "fake" pulse because MLPClassifier.fit is blocking
+# For true live progress, we'd use partial_fit, but that's overkill for this size
 model.fit(X_scaled, y)
-training_time = time.perf_counter() - start_time
+print(" Done.")
 
-# 5. Diagnostic
+# --- DIAGNOSTICS ---
 y_pred = model.predict(X_scaled)
 accuracy = accuracy_score(y, y_pred)
+total_end_time = time.perf_counter()
+total_duration = total_end_time - total_start_time
 
-# --- TRAINING SUMMARY ---
-epochs_run = model.n_iter_
-max_epochs = model.max_iter
-early_stopped = epochs_run < max_epochs
-
-print("-" * 40)
-print("TRAINING COMPLETE")
-print(f"Rules trained on     : {len(X)}")
-print(f"Input features       : {len(input_keys)} ({', '.join(input_keys)})")
-print(f"Epochs completed     : {epochs_run} / {max_epochs}")
-print(f"Final loss           : {model.loss_:.6f}")
-print(f"Rule adherence       : {accuracy * 100:.2f}%")
+# --- FINAL SUMMARY ---
+print("\n" + "="*40)
+print(f"       BRAIN TRAINING RESULTS")
+print("="*40)
+print(f"Overall Process Time : {total_duration:.2f} seconds")
+print(f"Unique Samples       : {len(X)}")
+print(f"Feature Set          : {', '.join(input_keys)}")
+print(f"Epochs Run           : {model.n_iter_} / {model.max_iter}")
+print(f"Loss Score           : {model.loss_:.6f}")
+print(f"Training Accuracy    : {accuracy * 100:.2f}%")
 print("-" * 40)
 
 # 6. Detailed Report
-target_names = ['Nothing', 'Hello', 'Goodbye', 'Fact']
-print(classification_report(
-    y, y_pred,
-    labels=[0, 1, 2, 3],
-    target_names=target_names,
-    zero_division=0
-))
+target_names = ['Nothing', 'Hello', 'Goodbye', 'Prompt']
+print(classification_report(y, y_pred, labels=[0, 1, 2, 3], target_names=target_names, zero_division=0))
 
-# 7. DYNAMIC LOGIC VERIFICATION
-# Instead of hardcoding 5 params, we use the model's own logic
-def verify_rules(data, model, scaler, keys, limit=5):
-    print("Logic Verification (Sampling first few rules):")
-    success_count = 0
-    samples = data[:limit]
-    
-    for entry in samples:
-        # Build the feature vector based on dynamic keys
-        test_pt = np.array([[entry['inputs'][k] for k in keys]])
-        scaled = scaler.transform(test_pt)
-        prediction = model.predict(scaled)[0]
-        
-        status = "PASS" if prediction == entry['label'] else "FAIL"
-        if status == "PASS": success_count += 1
-        
-        print(f" - {entry['description'][:30]:<30}: {status} (Wanted {entry['label']}, got {prediction})")
-    
-    return success_count
-
-verify_rules(expanded_data, model, scaler, input_keys)
-
-# 8. Save using the Manager
+# 8. Save
 if accuracy > ACCURACY_TRESHOLD:
     manager.save(model, scaler)
-    print(f"\n[SUCCESS] {len(input_keys)}-Input Brain and Scaler saved via ModelManager.")
+    print(f"\n[SUCCESS] Brain saved to {Paths.Model}") 
 else:
-    print("\n[WARNING] Accuracy too low. Brain not saved.")
+    print("\n[WARNING] Accuracy threshold not met. Save aborted.")

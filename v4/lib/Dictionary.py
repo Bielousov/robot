@@ -16,8 +16,13 @@ class Dictionary:
         with open(self.path, 'r') as f:
             return json.load(f)
 
+    def has(self, key: str) -> bool:
+        """Check if a top-level key exists in the dictionary."""
+        return key in self.data
+
     def pick(self, key, default="..."):
         """Selects a random entry from a list identified by the key."""
+        
         entries = self.data.get(key)
         
         if not entries:

@@ -1,31 +1,38 @@
 import random, time
-from datetime import datetime
 import numpy as np
+from datetime import datetime
 
 class State:
     def __init__(self):
         self.is_awake = False
         self.is_awake_prev = False
-        self.is_speaking = False
         self.last_spoke_time = time.time()
+        self.is_speaking = False
+        self.is_thinking = False
         self.current_action = 0
         self.prompts = []
+        self.responses = []
 
     @property
     def chaos(self):
         return random.uniform(0, 1);
 
     @property
-    def is_awake_phase (self):
+    def awake_phase (self):
         return self._get_state_phase(self.is_awake, self.is_awake_prev)
 
     @property
-    def is_prompted(self):
+    def has_pending_prompt(self):
         # The NN still needs a number. 1 if queue has items, 0 if empty.
         return 1.0 if len(self.prompts) > 0 else 0.0
     
     @property
-    def last_spoke_diff(self):
+    def has_pending_response(self):
+        # The NN still needs a number. 1 if queue has items, 0 if empty.
+        return 1.0 if len(self.responses) > 0 else 0.0
+    
+    @property
+    def last_spoke_time_diff(self):
         # The NN still needs a number. 1 if queue has items, 0 if empty.
         return self._get_time_since(self.last_spoke_time, 30)
     
@@ -59,9 +66,11 @@ class State:
         chaos = random.uniform(0, 1)
         return np.array([[
             self.chaos, # chaos random input 
-            self.is_awake_phase,
-            self.is_prompted,
+            self.awake_phase,
+            self.has_pending_prompt,
+            self.is_thinking,
+            self.has_pending_response,
             self.is_speaking,
-            self.last_spoke_diff,
-            self.time_of_day,
+            self.last_spoke_time_diff,
+            self.time_of_day
         ]])

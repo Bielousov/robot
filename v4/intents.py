@@ -13,12 +13,10 @@ class IntentHandler:
 
     def handle(self):
         action = self.robot.state.current_action
-        is_awake = self.robot.state.is_awake
 
         if action == 0:
             return
         
-        # This is the most important line for the awake_phase logic!
         # It turns 'Transition' phases into 'Steady' phases for the next Brain tick.
         self.robot.state.is_awake_prev = self.robot.state.is_awake
 
@@ -26,47 +24,67 @@ class IntentHandler:
         self.robot.state.current_action = 0 
 
         # --- PHASE 1: ACTION EXECUTION ---
-        if action == 1: # WAKE UP
-            self._debug("Action: WAKE UP")
-            self.robot.state.is_awake = True
-            self.speak("hello")
-        elif action == 2: # SLEEP
-            self._debug("Action: SLEEP")
-            self.robot.state.is_awake = False
-            self.speak("goodbye")
+        if action == 1: # SLEEP
+            self._debug("Action: SLEEP", tag="ROBOT")
+            self._handle_sleep_intent();
+        
+        elif action == 2: # WAKE UP
+            self._debug("Action: WAKE UP", tag="ROBOT")
+            self._handle_wake_up_intent()
+  
         elif action == 3: # PROMPT / UTTERANCE
-            # If no prompt text exists, default to a random fact
-            if not self.robot.state.prompts:
-                self.speak("fact")
-            else:
-                prompt_text = self.robot.state.prompts.pop(0)
-                if prompt_text == "quote":
-                    self.speak("quote")
-                else:
-                    self.ask(prompt_text)
+            self._debug("Action: PROMPT", tag="ROBOT")
+            prompt = "quote" if not self.robot.state.prompts else self.robot.state.prompts.pop(0)
+            self._handle_prompt_intent(prompt)
 
-    def speak(self, category):
-        prompt = self.robot.prompts.pick(category)
-        self.ask(prompt)
+        elif action == 4: # SPEAK
+            self._debug("Action: SPEAK", tag="ROBOT")
+            message = self.robot.state.responses.pop(0)
+            self._handle_speak_intent(message)
+        
+        else:
+            self._unhandled_intent(action)
+    
+    def _handle_sleep_intent(self): 
+        self.robot.state.is_awake = False
+        self.robot.state.prompts.append("goodbye")
 
-    def ask(self, prompt):
-        self.robot.state.is_speaking = True
-        answer = self.robot.mind.think(prompt)
-        self.say(answer)
+    def _handle_wake_up_intent(self): 
+        self.robot.state.is_awake = True
+        self.robot.state.prompts.append("hello")
+          
+    def _handle_prompt_intent(self, prompt):
+        self.robot.state.is_thinking = True
 
-    def _on_speech_done(self, success, error=None):
-        """Callback triggered when the Voice process finishes."""
-        self.robot.state.is_speaking = False
-        if error:
-            self._debug(f"Voice Error: {error}", tag="Error")
+        def callback(result, error=None):
+            """Callback triggered when the LLM process finishes."""
+            self.robot.state.is_thinking = False
+            if result:
+                self.robot.state.responses.append(result)
+            if error:
+                self._debug(f"LLM Error: {error}", tag="Error")
 
-    def say(self, phrase):
-        self._debug(phrase, tag="ROBOT")
+        if self.robot.prompts.has(prompt):
+            category = self.robot.prompts.pick(prompt)
+            self.robot.mind.think(category, callback)
+        else:
+            self.robot.mind.think(prompt, callback)
 
+    def _handle_speak_intent(self, phrase):
         if not phrase:
             return
         
+        def callback(success, error=None):
+            """Callback triggered when the Voice process finishes."""
+            self.robot.state.is_speaking = False
+            if error:
+                self._debug(f"Voice Error: {error}", tag="Error")
+
         # Set the state and trigger voice with the callback
         self.robot.state.is_speaking = True
         self.robot.state.last_spoke_time = time.time()
-        self.robot.voice.say(phrase, callback=self._on_speech_done)
+        self.robot.voice.say(phrase, callback)
+
+    def _unhandled_intent(self, intent):
+        self._debug(f"Unhandled Intent $intent")
+        return

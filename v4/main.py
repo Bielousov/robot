@@ -69,14 +69,10 @@ class Pip:
         self.intent.handle()
 
     def run(self):
-        # Use your custom Threads manager to start loops
-        # Brain runs at 20Hz (0.05 interval)
         self.threads.start(1 / Env.BrainFrequency, self._brain_tick)
-        
-        # Logic runs at 10Hz (0.1 interval)
         self.threads.start(1 / Env.BrainFrequency, self._logic_tick)
         
-        print("[System] All robot systems initialized using Custom Threads.")
+        print("[System] All robot systems initialized")
     
     def stop(self):
         print("[System] Shutting down...")

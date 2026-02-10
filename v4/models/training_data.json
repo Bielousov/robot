@@ -1,45 +1,16 @@
 [
-  { "description": "Hello: Night-time wakeup", "inputs": { "chaos": "ANY", "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 0.0 }, "label": 1 },
-  { "description": "Hello: Evening wakeup",    "inputs": { "chaos": "ANY", "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 5.0 }, "label": 1 },
-  { "description": "Hello: Morning wakeup",    "inputs": { "chaos": "ANY", "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 10.0 }, "label": 1 },
-  { "description": "Hello: (Any Chaos)",       "inputs": { "chaos": "ANY", "awake_phase": 2, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 20.0 }, "label": 1 },
+  { "description": "Sleep",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": -1, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 1 },
+  { "description": "Wake up",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": 2, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 2 },
+  
+  { "description": "Prompt",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 1, "is_thinking": 0, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 3 },
+  { "description": "Prompt",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 1, "is_thinking": 0, "has_pending_response": 0, "speaking": 1, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 3 },
+  
+  { "description": "Speak",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 1, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 4 },
+  { "description": "Speak",     "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 0, "is_thinking": 1, "has_pending_response": 1, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 4 },
 
-  { "description": "Nothing: Already Sleeping (Deep Night)", "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 0.0, "tod": 2.7 }, "label": 0 },
-  { "description": "Nothing: Already Sleeping (General)",    "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 20.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Nothing: Steady Sleep: Late Night", "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 23.0 }, "label": 0 },
-  { "description": "Nothing: Steady Sleep: Midnight",   "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 0.0 }, "label": 0 },
-  { "description": "Nothing: Awake at Night (Idle)",     "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 3.0 }, "label": 0 },
-  { "description": "Nothing: Awake at Night (Busy)",     "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 3.0 }, "label": 0 },
-  { "description": "Nothing: Awake at Night (Late)",     "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 4.5 }, "label": 0 },
-  { "description": "Nothing: Awake but Curfew",         "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0,  "tod": 23.0 }, "label": 0 },
-
-  { "description": "Goodbye: Early sleep",     "inputs": { "chaos": "ANY", "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 4.0 }, "label": 2 },
-  { "description": "Goodbye: Midday nap",      "inputs": { "chaos": "ANY", "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 12.0 }, "label": 2 },
-  { "description": "Goodbye: Nightly sleep",   "inputs": { "chaos": "ANY", "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.1, "tod": 22.0 }, "label": 2 },
-  { "description": "Goodbye: Afternoon transition", "inputs": { "chaos": "ANY", "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.5, "tod": 15.0 }, "label": 2 },
-  { "description": "Goodbye: Morning transition", "inputs": { "chaos": "ANY", "awake_phase": -1, "prompted": 0, "speaking": 0, "time_since_spoke": 0.5, "tod": 9.0 }, "label": 2 },
+  { "description": "SKIP: Awake",   "inputs": { "chaos": [0.0, 1.0], "awake_phase": 0, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 0 },
+  { "description": "SKIP: Asleep",  "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 0 },
+  { "description": "SKIP: Prompt",  "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 1, "is_thinking": 1, "has_pending_response": 0, "speaking": 0, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 0 },
+  { "description": "SKIP: Speak",   "inputs": { "chaos": [0.0, 1.0], "awake_phase": 1, "has_pending_prompt": 0, "is_thinking": 0, "has_pending_response": 1, "speaking": 1, "time_since_spoke": [0.0, 60.0], "tod": [0.0, 24.0] }, "label": 0 }
   
-  { "description": "Chaos: Rare early chatter (1m)", "inputs": { "chaos": 0.999, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 12.0 }, "label": 3 },
-  { "description": "Chaos: Likely mid chatter (5m)",  "inputs": { "chaos": 0.995, "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 14.0 }, "label": 3 },
-  { "description": "Chaos: Common late chatter (10m)", "inputs": { "chaos": 0.98,  "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 16.0 }, "label": 3 },
-  { "description": "Chaos: Guaranteed late (15m)",    "inputs": { "chaos": 0.90,  "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 15.0, "tod": 18.0 }, "label": 3 },
-  
-  { "description": "Chaos: Block early chatter",      "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 1.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Chaos: Block mid chatter (5m)",   "inputs": { "chaos": "ANY",  "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 5.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Chaos: Block late chatter (10m)", "inputs": { "chaos": "ANY",  "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 10.0, "tod": 14.0 }, "label": 0 },
-  { "description": "Chaos: Absolute floor (Anytime)", "inputs": { "chaos": "ANY",    "awake_phase": 1, "prompted": 0, "speaking": 0, "time_since_spoke": 30.0, "tod": 14.0 }, "label": 0 },
-  
-  { "description": "PROMPT: Wake (Midnight)",         "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 0.0,  "tod": 0.0 },  "label": 1 },
-  { "description": "PROMPT: Wake (Night)",            "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 0.0, "tod": 3.0 },  "label": 1 },
-  { "description": "PROMPT: Wake (Day)",              "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 10.0, "tod": 12.0 }, "label": 1 },
-  { "description": "PROMPT: Wake (Evening)",          "inputs": { "chaos": "ANY", "awake_phase": 0, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0,  "tod": 19.0 }, "label": 1 },
-
-  { "description": "PROMPT: Fact (Midnight)",         "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.5, "tod": 0.0 },  "label": 3 },
-  { "description": "PROMPT: Fact (Deep Night)",       "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 0.1, "tod": 4.0 },  "label": 3 },
-  { "description": "PROMPT: Fact (Morning)",          "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 1.0, "tod": 8.0 },  "label": 3 },
-  { "description": "PROMPT: Fact (Afternoon)",        "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 10.0, "tod": 14.0 }, "label": 3 },
-  { "description": "PROMPT: Fact (Late Night)",       "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 0, "time_since_spoke": 5.0,  "tod": 23.0 }, "label": 3 },
-  
-  { "description": "Nothing: Busy talking",    "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 0, "speaking": 1, "time_since_spoke": 0.05, "tod": 12.0 }, "label": 0 },
-  { "description": "Nothing: Prompted but busy", "inputs": { "chaos": "ANY", "awake_phase": 1, "prompted": 1, "speaking": 1, "time_since_spoke": 0.1, "tod": 14.0 }, "label": 0 }
 ]

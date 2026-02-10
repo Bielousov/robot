@@ -8,7 +8,7 @@ import sys
 import ollama
 from dotenv import load_dotenv
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -124,13 +124,20 @@ class LLMService:
         except Exception as e:
             print(f"\n[Error] Could not build personality model: {e}")
 
-    def think(self, prompt: str) -> Optional[str]:
-        if not prompt: return None
+    def think(
+        self,
+        prompt: str,
+        callback: Optional[Callable[[Optional[str], Optional[Exception]], None]] = None
+    ) -> Optional[str]:
+
+        if not prompt:
+            if callback:
+                callback(None, ValueError("Empty prompt"))
+            return None
 
         display_prompt = prompt[:50] + "..." if len(prompt) > 50 else prompt
         print(f"[ROBOT] Thinking about: {display_prompt}")
 
-        # Add current user message to history
         messages = self.add_to_history('user', prompt)
 
         try:
@@ -146,10 +153,18 @@ class LLMService:
 
             answer = self._response_format(response['message']['content'])
             self.add_to_history('assistant', answer)
+
+            if callback:
+                callback(answer, None)
+
             return answer
-        
+
         except Exception as e:
             print(f"[Critical] Brain error: {e}")
+
+            if callback:
+                callback(None, e)
+
             return None
         
     def _response_format(self, text: str) -> str:

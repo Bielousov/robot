@@ -24,29 +24,6 @@
         "This interaction is ending. Respond with a concise goodbye.",
         "The system will turn off now. Offer a final remark."
     ],
-
-    "fact": [
-        "Grab the human's attention and share an interesting fact about robots in one sentence.",
-        "Start by alerting a human, then give a brief fact about artificial intelligence.",
-        "Catch the human's attention and provide a single, intriguing fact about robots.",
-        "Draw a human's focus and state a surprising fact about AI.",
-        "Startle the human and deliver a short, interesting fact about robots.",
-        "Bring the human's attention and give a quick fact about artificial intelligence.",
-        "Alert the human and provide a one-line intriguing fact about robots.",
-        "Catch a human's focus and share a small but curious fact about AI.",
-        "Grab attention and state a concise, interesting fact about robotic behavior.",
-        "Start by engaging a human, then reveal a brief fact about AI systems.",
-        "Bring a human's focus and share a quick fact about artificial intelligence.",
-        "Alert the human and provide a fascinating fact about robots.",
-        "Draw the human's attention and deliver a one-line fact about AI.",
-        "Startle a human and present an intriguing fact about robotic systems.",
-        "Catch attention and give a concise fact about artificial intelligence.",
-        "Bring a human's awareness and share an interesting one-line fact about robots.",
-        "Grab focus and reveal a short, surprising fact about AI.",
-        "Draw the human's attention and deliver a one-line fact about AI.",
-        "Alert a human and provide an interesting fact about artificial intelligence.",
-        "Start by bringing attention and share a curious fact about robots or AI."
-    ],
     
     "quote": [
         "State something condescending about my current environment.",

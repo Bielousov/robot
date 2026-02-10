@@ -1,12 +1,50 @@
 import sys
 import time
 import numpy as np
+from itertools import product
 from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 
 ACCURACY_TRESHOLD = 0.9
+
+def expand_dataset(raw_data, input_keys, steps=5):
+    X_expanded = []
+    y_expanded = []
+    verification_list = []
+    
+    for entry in raw_data:
+        # 1. Generate the possible values for every single key
+        prop_variants = []
+        
+        for key in input_keys:
+            val = entry['inputs'][key]
+            if isinstance(val, list):
+                # Create a list of 5 linear steps for this specific prop
+                start, end = val[0], val[1]
+                steps_list = [round(start + (i * (end - start) / (steps - 1)), 2) for i in range(steps)]
+                prop_variants.append(steps_list)
+            else:
+                # Just a single value in a list for the product function
+                prop_variants.append([val])
+        
+        # 2. Generate the Cartesian Product (all combinations)
+        # e.g., 5 chaos * 5 time_since_spoke * 5 tod = 125 combinations
+        for combination in product(*prop_variants):
+            # 'combination' is a tuple of values in the order of input_keys
+            X_expanded.append(list(combination))
+            y_expanded.append(entry['label'])
+            
+            # Map back to dict for the verification list
+            row_inputs = dict(zip(input_keys, combination))
+            verification_list.append({
+                "description": f"{entry['description']} (Combo)",
+                "inputs": row_inputs,
+                "label": entry['label']
+            })
+            
+    return np.array(X_expanded), np.array(y_expanded), verification_list
 
 # Fix paths
 v4_path = Path(__file__).parent.parent.resolve()
@@ -34,36 +72,11 @@ if not raw_data:
 input_keys = list(raw_data[0]['inputs'].keys())
 print(f"[System] Detecting input features: {input_keys}")
 
-X = []
-y = []
-expanded_data = [] # To keep track of the expanded set for verification
 
-for entry in raw_data:
-    # Check if any input value is set to "ANY"
-    has_any = any(val == "ANY" for val in entry['inputs'].values())
-    
-    if has_any:
-        # Generate 10 variations (0.0 to 1.0)
-        for i in range(11):
-            val_step = round(i * 0.1, 1)
-            row_inputs = entry['inputs'].copy()
-            
-            # Replace all "ANY" instances with the current step
-            for k, v in row_inputs.items():
-                if v == "ANY":
-                    row_inputs[k] = val_step
-            
-            X.append([row_inputs[k] for k in input_keys])
-            y.append(entry['label'])
-            expanded_data.append({"description": f"{entry['description']} (Auto-gen {val_step})", "inputs": row_inputs, "label": entry['label']})
-    else:
-        # Standard numeric processing
-        X.append([entry['inputs'][k] for k in input_keys])
-        y.append(entry['label'])
-        expanded_data.append(entry)
+# Expand ranges (e.g., [0.0, 1.0] -> 5 rows)
+X, y, expanded_data = expand_dataset(raw_data, input_keys, steps=5)
 
-X = np.array(X)
-y = np.array(y)
+print(f"Dataset expanded: {len(raw_data)} rules -> {len(X)} training samples.")
 
 # 3. Scale the data
 scaler = StandardScaler()

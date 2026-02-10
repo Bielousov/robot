@@ -5,6 +5,7 @@ from main import Pip
 
 def start_app():
     robot = Pip()
+    running = True
     
     print("\n--- Robot Control Active ---")
     print("Commands: [Enter] = Prompt Fact | [s] = Sleep | [Ctrl+C] = Exit")
@@ -16,42 +17,49 @@ def start_app():
         # Initial start state
         robot.state.is_awake = True
 
-        while True:
-            # Non-blocking terminal check for user input
-            # select.select monitors stdin for 0.1s
-            if select.select([sys.stdin], [], [], 0.1)[0]:
-                line = sys.stdin.readline().strip()
+        while running:
+            try:
+                # Non-blocking check for user input (0.1s timeout)
+                # On Windows, select only works on sockets; 
+                # this works perfectly on RPi5/Linux.
+                rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
                 
-                if line == "":
-                    # Pure Enter key: Set prompt flag for the next Brain tick
-                    print("[User] Action: GENERIC PROMPT")
-                    robot.state.prompts.append("quote")
-                
-                elif line.lower() in ["s", "esc"]:
-                    print("[User] Action: FORCE SLEEP")
-                    robot.state.is_awake = False
-                    robot.state.prompts.clear()
-                
-                else:
-                    print(f"[User] Input: {line}")
-                    robot.state.prompts.append(line)
+                if rlist:
+                    line = sys.stdin.readline().strip()
+                    
+                    if line == "":
+                        print("[User] Action: GENERIC PROMPT")
+                        robot.state.prompts.append("quote")
+                    
+                    elif line.lower() in ["s", "esc"]:
+                        print("[User] Action: FORCE SLEEP")
+                        robot.state.is_awake = False
+                        robot.state.prompts.clear()
+                    
+                    elif line.lower() == "exit":
+                        running = False # Clean exit via command
+                    
+                    else:
+                        print(f"[User] Input: {line}")
+                        robot.state.prompts.append(line)
 
-            time.sleep(0.05)
+            except InterruptedError:
+                # Handle signals gracefully during the select call
+                running = False
+
+            # Minimal sleep to prevent CPU spiking on the RPi5
+            time.sleep(0.01)
 
     except KeyboardInterrupt:
-        print("\n[System] Shutdown initiated...")
-        
-        # Trigger clean Neural Network goodbye if currently awake
-        if robot.state.is_awake:
-            print("[System] Triggering Neural Network goodbye...")
-            robot.state.is_awake = False
-            # Wait a moment for the logic thread to pick up the state change 
-            # and for the voice to actually say "goodbye"
-        
-        # Cleanly stop the custom threads
+        print("\n[System] Shutdown signal received (Ctrl+C)...")
+
+    finally:
+        # This 'finally' block ensures the robot stops even if 
+        # an unexpected error occurs inside the while loop.
+        running = False
+        print("[System] Cleaning up robotic systems...")
         robot.stop()
         print("[System] Robot offline.")
-        sys.exit(0)
 
 if __name__ == "__main__":
     start_app()

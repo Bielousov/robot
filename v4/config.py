@@ -25,7 +25,7 @@ Paths = Enum (
 )
 
 ModelConfig = {
-    'hidden_layer_sizes': (8, ),
+    'hidden_layer_sizes': (16, 8),
     'max_iter': 100_000,
     'activation': 'logistic', # 'relu',
     'solver': 'lbfgs', # 'adam',

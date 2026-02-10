@@ -75,6 +75,7 @@ class Pip:
         print("[System] All robot systems initialized")
     
     def stop(self):
+        self.state.is_awake = False
         print("[System] Shutting down...")
         time.sleep(5)
         self.mind.stop()

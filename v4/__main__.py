@@ -29,7 +29,10 @@ def start_app():
                     
                     if line == "":
                         print("[User] Action: GENERIC PROMPT")
-                        robot.state.prompts.append("quote")
+                        if robot.state.is_awake:
+                            robot.state.prompts.append("quote")
+                        else:
+                            robot.state.prompts.append("hello")
                     
                     elif line.lower() in ["s", "esc"]:
                         print("[User] Action: FORCE SLEEP")

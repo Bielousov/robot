@@ -2,8 +2,10 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV TZ=America/Vancouver
+ENV DEBIAN_FRONTEND=noninteractive
 
-# ---- system deps + sudo ----
+# ---- system deps + sudo + tzdata ----
 RUN apt-get update \
  && apt-get install -y \
     alsa-utils \
@@ -12,6 +14,9 @@ RUN apt-get update \
     sudo \
     wget \
     zstd \
+    tzdata \
+ && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
  && rm -rf /var/lib/apt/lists/*
 
 # ---- create appuser ----

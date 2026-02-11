@@ -34,13 +34,19 @@ class IntentHandler:
   
         elif action == 3: # PROMPT / UTTERANCE
             self._debug("Action: PROMPT", tag="ROBOT")
-            prompt = "quote" if not self.robot.state.prompts else self.robot.state.prompts.pop(0)
-            self._handle_prompt_intent(prompt)
+            if self.robot.state.prompts:
+                prompt = "quote" if not self.robot.state.prompts else self.robot.state.prompts.pop(0)
+                self._handle_prompt_intent(prompt)
+            else:
+                self._debug("No prompts", tag="ROBOT")
 
         elif action == 4: # SPEAK
             self._debug("Action: SPEAK", tag="ROBOT")
-            message = self.robot.state.responses.pop(0)
-            self._handle_speak_intent(message)
+            if self.robot.state.responses:
+                message = self.robot.state.responses.pop(0)
+                self._handle_speak_intent(message)
+            else:
+                self._debug("No response", tag="ROBOT")
         
         else:
             self._unhandled_intent(action)
@@ -51,7 +57,7 @@ class IntentHandler:
 
     def _handle_wake_up_intent(self): 
         self.robot.state.is_awake = True
-        if not  self.robot.state.prompts:
+        if not self.robot.state.prompts:
             self.robot.state.prompts.append("hello")
           
     def _handle_prompt_intent(self, prompt):

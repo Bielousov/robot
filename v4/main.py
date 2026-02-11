@@ -77,7 +77,7 @@ class Pip:
     def stop(self):
         self.state.is_awake = False
         print("[System] Shutting down...")
-        time.sleep(5)
+        time.sleep(1)
         self.mind.stop()
         self.threads.stop()
 

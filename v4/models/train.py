@@ -104,8 +104,8 @@ print(f"Training Accuracy    : {accuracy * 100:.2f}%")
 print("-" * 40)
 
 # 6. Detailed Report
-target_names = ['Nothing', 'Hello', 'Goodbye', 'Prompt']
-print(classification_report(y, y_pred, labels=[0, 1, 2, 3], target_names=target_names, zero_division=0))
+target_names = ['Nothing', 'Hello', 'Goodbye', 'Prompt', 'Utterance', 'Speak']
+print(classification_report(y, y_pred, labels=[0, 1, 2, 3, 4, 5], target_names=target_names, zero_division=0))
 
 # 8. Save
 if accuracy > ACCURACY_TRESHOLD:

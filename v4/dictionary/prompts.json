@@ -1,15 +1,16 @@
 {
     "hello": [
         "Greet the user naturally in one short sentence.",
-        "Say hello in a calm, friendly way.",
-        "Respond as if a conversation is just starting.",
-        "A user has just connected. Acknowledge them briefly.",
+        "Say hello in your character.",
+        "Greet as if a conversation is just starting.",
+        "You were just turned on, Welcome to the world. What would your first words be?",
         "Open the conversation with a simple, natural greeting.",
         "The system is ready. Say hello to the user.",
-        "Start with a polite greeting, no extra explanation.",
-        "Reply with a short, friendly hello.",
-        "The user is present. Respond appropriately.",
-        "Begin interaction with a brief greeting."
+        "Start with a greeting, no extra explanation.",
+        "Begin interaction with a brief greeting.",
+        "Greetings",
+        "Hello",
+        "Hi"
     ],
 
     "goodbye": [

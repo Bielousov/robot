@@ -40,12 +40,27 @@ class LLMService:
 
         # Hardware profile for RPi5
         self.options = {
+            # The maximum number of tokens the model can "remember" at once (history + system prompt + current input).
             "num_ctx": int(os.getenv("OLLAMA_CONTEXT_LENGTH", 1024)),
+
+            # Number of CPU cores allocated for processing; higher can be faster, but too high causes system stutter.
             "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
-            "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 0.8)),
+
+            # Controls randomness: 0.0 is deterministic/robotic, 1.0+ is creative/chaotic. (Lower is better for Pip).
+            "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 1.0)),
+
+            # The maximum length of the generated response in tokens; prevents the model from rambling.
             "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", 40)),
+
+            # Discourages the model from repeating words or phrases; helps prevent Pip from getting stuck in a loop.
             "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", 1.2)),
+
+            # Quality filter: Limits the model's word choices to the 'K' most likely next words.
+            "top_k": float(os.getenv("OLLAMA_TOP_K", 40)),  # Limits vocabulary to the most likely "efficient" words
+            
+            # Probability filter: Only considers words whose combined probability reaches 'P' (Nucleus sampling).
             "top_p": float(os.getenv("OLLAMA_TOP_P", 0.9)),
+            
             "stop": ["User:", "Pip:"]
         }
 

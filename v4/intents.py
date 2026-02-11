@@ -32,15 +32,21 @@ class IntentHandler:
             self._debug("Action: WAKE UP", tag="ROBOT")
             self._handle_wake_up_intent()
   
-        elif action == 3: # PROMPT / UTTERANCE
+        elif action == 3: # PROMPT
             self._debug("Action: PROMPT", tag="ROBOT")
-            if self.robot.state.prompts:
-                prompt = "quote" if not self.robot.state.prompts else self.robot.state.prompts.pop(0)
-                self._handle_prompt_intent(prompt)
+            prompts_to_process = self.robot.state.prompts[:]
+            self.robot.state.prompts.clear()
+
+            if prompts_to_process:
+                self._handle_prompt_intent(prompts_to_process)
             else:
                 self._debug("No prompts", tag="ROBOT")
 
-        elif action == 4: # SPEAK
+        elif action == 4: # UTTERANCE
+            self._debug("Action: UTTERANCE", tag="ROBOT")
+            self._handle_utterance_intent()
+
+        elif action == 5: # SPEAK
             self._debug("Action: SPEAK", tag="ROBOT")
             if self.robot.state.responses:
                 message = self.robot.state.responses.pop(0)
@@ -60,7 +66,7 @@ class IntentHandler:
         if not self.robot.state.prompts:
             self.robot.state.prompts.append("hello")
           
-    def _handle_prompt_intent(self, prompt):
+    def _handle_prompt_intent(self, raw_prompts):
         self.robot.state.is_thinking = True
 
         def callback(result, error=None):
@@ -71,11 +77,18 @@ class IntentHandler:
             if error:
                 self._debug(f"LLM Error: {error}", tag="Error")
 
-        if self.robot.prompts.has(prompt):
-            category = self.robot.prompts.pick(prompt)
-            self.robot.mind.think(category, callback)
-        else:
-            self.robot.mind.think(prompt, callback)
+        processed_prompts = []
+        for p in raw_prompts:
+            if self.robot.prompts.has(p):
+                # Replace key with a specific prompt from the dictionary category
+                processed_prompts.append(self.robot.prompts.pick(p))
+            else:
+                processed_prompts.append(p)
+
+        self.robot.mind.think(processed_prompts, callback)
+
+    def _handle_utterance_intent(self):
+         self.robot.state.prompts.append('quote')
 
     def _handle_speak_intent(self, phrase):
         if not phrase:

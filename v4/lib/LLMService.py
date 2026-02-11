@@ -8,7 +8,7 @@ import sys
 import ollama
 from dotenv import load_dotenv
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Union
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -28,6 +28,8 @@ class LLMService:
         self.base_model = os.getenv("OLLAMA_BASE_MODEL", "gemma3:270m")
         self.model_name = os.getenv("OLLAMA_MODEL_NAME", "pip")
         self.system_prompt = os.getenv("OLLAMA_SYSTEM_PROMPT", "You are Robot.")
+
+        self.is_ready = False
 
         # Context history
         self.history_limit = int(os.getenv("OLLAMA_HISTORY_LIMIT", 2))
@@ -51,6 +53,7 @@ class LLMService:
         self._force_stop_server()
         self.start_server()
         self.load_model()
+        self._wait_until_ready()
 
     def _prepare_environment(self):
         """RPi5 Stability Flags."""
@@ -120,37 +123,39 @@ class LLMService:
 
                 if status == "success" or chunk.get('done'):
                     print(f"\n[-] Personality '{self.model_name}' locked in. Pip is online.")
+                    self.is_ready = True
                     return
         except Exception as e:
             print(f"\n[Error] Could not build personality model: {e}")
 
     def think(
         self,
-        prompt: str,
+        prompt: Union[str, List[str]],
         callback: Optional[Callable[[Optional[str], Optional[Exception]], None]] = None
     ) -> Optional[str]:
 
-        if not prompt:
+        # Normalize prompt to a list for consistent processing
+        prompts = [prompt] if isinstance(prompt, str) else prompt
+
+        if not prompts or all(not p for p in prompts):
             if callback:
                 callback(None, ValueError("Empty prompt"))
             return None
 
-        display_prompt = prompt[:50] + "..." if len(prompt) > 50 else prompt
-        print(f"[ROBOT] Thinking about: {display_prompt}")
-
-        messages = self.add_to_history('user', prompt)
+        messages = None
+        for p in prompts:
+            if p: # Ensure we don't send empty strings in the array
+                messages = self.add_to_history('user', p)
 
         try:
-            start_time = time.perf_counter()
             response = self.client.chat(
                 model=self.model_name,
                 messages=messages,
                 stream=False,
                 keep_alive=-1
             )
-            duration = time.perf_counter() - start_time
-            print(f"[Robot] Response received in {duration:.2f}s")
-
+            self._response_metrics(response)
+            
             answer = self._response_format(response['message']['content'])
             self.add_to_history('assistant', answer)
 
@@ -166,29 +171,7 @@ class LLMService:
                 callback(None, e)
 
             return None
-        
-    def _response_format(self, text: str) -> str:
-        """
-        Scrubs emojis and Markdown bold symbols to maintain 
-        Pip's cold, ASCII-only aesthetic.
-        """
-        if not text:
-            return ""
 
-        # 1. Remove Markdown bold/italic symbols (e.g., **text** or *text*)
-        # We replace the asterisks with an empty string
-        clean_text = text.replace("*", "")
-
-        # 2. Remove Emojis and non-ASCII symbols
-        # This regex looks for any character that isn't a standard 
-        # printable ASCII character (letters, numbers, punctuation)
-        clean_text = re.sub(r'[^\x00-\x7F]+', '', clean_text)
-
-        # 3. Clean up extra whitespace/newlines
-        clean_text = " ".join(clean_text.split())
-
-        return clean_text.strip()
-    
     def add_to_history(self, role: str, message: str) -> list:
         """
         Appends a message to context and maintains the sliding window.
@@ -212,6 +195,43 @@ class LLMService:
         print("[Robot] Memory banks cleared.")
         self.history = []
 
+    def _response_format(self, text: str) -> str:
+        """
+        Scrubs emojis and Markdown bold symbols to maintain 
+        Pip's cold, ASCII-only aesthetic.
+        """
+        if not text:
+            return ""
+
+        # 1. Remove Markdown bold/italic symbols (e.g., **text** or *text*)
+        # We replace the asterisks with an empty string
+        clean_text = text.replace("*", "")
+
+        # 2. Remove Emojis and non-ASCII symbols
+        # This regex looks for any character that isn't a standard 
+        # printable ASCII character (letters, numbers, punctuation)
+        clean_text = re.sub(r'[^\x00-\x7F]+', '', clean_text)
+
+        # 3. Clean up extra whitespace/newlines
+        clean_text = " ".join(clean_text.split())
+
+        return clean_text.strip()
+    
+    def _response_metrics(self, response):
+        # Ollama returns these in nanoseconds
+        total_dur = response.get('total_duration', 0) / 1e9
+        # Time spent loading the model into the GPU/RAM.
+        load_dur = response.get('load_duration', 0) / 1e9
+        # Time spent "writing" the response.
+        eval_dur = response.get('eval_duration', 0) / 1e9
+        
+        # Throughput: tokens per second
+        eval_count = response.get('eval_count', 1)
+        tps = eval_count / eval_dur if eval_dur > 0 else 0
+
+        print(f"[Robot] Response: {eval_count} tokens | {tps:.2f} tokens/s")
+        print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
+    
     def stop(self):
         if self.process:
             print("[-] Stopping server...")
@@ -225,6 +245,10 @@ class LLMService:
                 try: os.kill(proc.pid, signal.SIGKILL)
                 except: pass
         time.sleep(1)
+
+    def _wait_until_ready(self):
+        while not self.is_ready:
+            time.sleep(0.5)
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

@@ -217,7 +217,6 @@ class LLMService:
             f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%H:%M %p')}]"
             f"ACTIVE_ID: Pip"
         )
-        unified_system=self.system_prompt
 
         return [{"role": "system", "content": unified_system}]
 

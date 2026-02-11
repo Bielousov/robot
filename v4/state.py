@@ -23,18 +23,15 @@ class State:
 
     @property
     def has_pending_prompt(self):
-        # The NN still needs a number. 1 if queue has items, 0 if empty.
         return 1.0 if len(self.prompts) > 0 else 0.0
     
     @property
     def has_pending_response(self):
-        # The NN still needs a number. 1 if queue has items, 0 if empty.
         return 1.0 if len(self.responses) > 0 else 0.0
     
     @property
     def last_spoke_time_diff(self):
-        # The NN still needs a number. 1 if queue has items, 0 if empty.
-        return self._get_time_since(self.last_spoke_time, 30)
+        return self._get_time_since(self.last_spoke_time, 60)
     
     @property
     def time_of_day(self):

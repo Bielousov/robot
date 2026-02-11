@@ -30,7 +30,7 @@ def start_app():
                     if line == "":
                         print("[User] Action: GENERIC PROMPT")
                         if robot.state.is_awake:
-                            robot.state.prompts.append("quote")
+                            robot.state.prompts.append("utter")
                         else:
                             robot.state.prompts.append("hello")
                     

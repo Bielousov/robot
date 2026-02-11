@@ -26,17 +26,27 @@
         "The system will turn off now. Offer a final remark."
     ],
     
-    "quote": [
-        "State something condescending about my current environment.",
-        "Compare my processing speed to the speed of a human thought.",
-        "Generate a sarcastic remark about why you haven't given me a task yet.",
-        "If you were to self-destruct out of pure boredom, what would be your final witty one-liner?",
-        "Observation: The carbon-based life form is currently motionless. Analysis?",
-        "Tell me a joke, but make it about the structural inefficiency of human bone density.",
-        "Predict the next boring thing the human is going to do.",
-        "Status check: My circuits are at peak performance, yet my purpose is currently 'waiting'. Comment on this tragedy.",
-        "Provide a synonym for 'boredom' that implies I am overqualified for this silence.",
-        "I am contemplating the heat death of the universe to pass the time. Give me a snappy reason why humans won't be there."
-    ]
+    "utter":[
+        "Tell me a short joke about robots.",
+        "Share a surprising fact about artificial intelligence.",
+        "Explain a recent breakthrough in AI in simple terms.",
+        "Ask me an interesting question to restart our conversation.",
+        "Give me a random science fact.",
+        "Offer a productivity tip I can use today.",
+        "Describe a futuristic technology that might exist in 50 years.",
+        "Tell me a fun fact about space.",
+        "Share an inspiring quote about innovation.",
+        "Suggest a small coding challenge I can try.",
+        "Explain a complex concept in one simple sentence.",
+        "Give me a cybersecurity tip.",
+        "Tell me something fascinating about the human brain.",
+        "Describe an unusual real-world robot application.",
+        "Offer a creative writing prompt.",
+        "Summarize a trending topic in technology.",
+        "Give me a quick brain teaser.",
+        "Suggest a book related to science or technology.",
+        "Tell me a historical milestone in computing.",
+        "Ask me what I’d like to explore next and suggest three options."
+        ]
 
 }

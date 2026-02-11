@@ -6,6 +6,7 @@ import time
 import signal
 import sys
 import ollama
+from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 from typing import Callable, List, Optional, Union
@@ -160,13 +161,11 @@ class LLMService:
         for p in prompts:
             if p: # Ensure we don't send empty strings in the array
                 self.add_to_history('user', p)
-        
-        messages = [{"role": "system", "content": self.system_prompt}] + self.history
 
         try:
             response = self.client.chat(
                 model=self.model_name,
-                messages=messages,
+                messages=self._generate_prompt_context() + self.history,
                 stream=False,
                 keep_alive=-1
             )
@@ -210,6 +209,17 @@ class LLMService:
         """Reset Pip's short-term memory."""
         print("[Robot] Memory banks cleared.")
         self.history = []
+
+    def _generate_prompt_context(self):
+        now = datetime.now()
+        unified_system = (
+            f"{self.system_prompt}\n\n"
+            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%H:%M %p')}]"
+            f"ACTIVE_ID: Pip"
+        )
+        unified_system=self.system_prompt
+
+        return [{"role": "system", "content": unified_system}]
 
     def _response_format(self, text: str) -> str:
         """

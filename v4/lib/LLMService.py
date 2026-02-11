@@ -157,10 +157,11 @@ class LLMService:
                 callback(None, ValueError("Empty prompt"))
             return None
 
-        messages = None
         for p in prompts:
             if p: # Ensure we don't send empty strings in the array
-                messages = self.add_to_history('user', p)
+                self.add_to_history('user', p)
+        
+        messages = [{"role": "system", "content": self.system_prompt}] + self.history
 
         try:
             response = self.client.chat(

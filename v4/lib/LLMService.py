@@ -39,6 +39,11 @@ class LLMService:
         self.process = None
         self.client = ollama.Client(host=BASE_URL)
 
+        self.context = {
+            "location": os.getenv("CONTEXT_LOCATION", "Planet Earth"),
+            "name": os.getenv("NAME", "Robot"),
+        }
+
         # Hardware profile for RPi5
         self.options = {
             # The maximum number of tokens the model can "remember" at once (history + system prompt + current input).
@@ -214,8 +219,8 @@ class LLMService:
         now = datetime.now()
         unified_system = (
             f"{self.system_prompt}\n\n"
-            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%H:%M %p')}]"
-            f"ACTIVE_ID: Pip"
+            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%I:%M %p')}, Location: {self.context['location']}]"
+            f"ACTIVE_ID: {self.context['name']}"
         )
 
         return [{"role": "system", "content": unified_system}]

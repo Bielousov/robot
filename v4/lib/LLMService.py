@@ -74,7 +74,9 @@ class LLMService:
         self._force_stop_server()
         self.start_server()
         self.load_model()
-        self._wait_until_ready()
+        
+        while not self.is_ready:
+            time.sleep(0.5)
 
     def _prepare_environment(self):
         """RPi5 Stability Flags."""
@@ -144,6 +146,13 @@ class LLMService:
 
                 if status == "success" or chunk.get('done'):
                     print(f"\n[-] Personality '{self.model_name}' locked in. Pip is online.")
+
+                    self.client.generate(
+                        model=self.model_name,
+                        prompt='',
+                        stream=False,
+                        keep_alive=-1
+                    )
                     self.is_ready = True
                     return
         except Exception as e:
@@ -275,10 +284,6 @@ class LLMService:
                 try: os.kill(proc.pid, signal.SIGKILL)
                 except: pass
         time.sleep(1)
-
-    def _wait_until_ready(self):
-        while not self.is_ready:
-            time.sleep(0.5)
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

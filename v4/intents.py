@@ -51,7 +51,7 @@ class IntentHandler:
     
     def _handle_sleep_intent(self): 
         self.robot.state.is_awake = False
-        # self.robot.state.prompts.append("goodbye")
+        self.robot.state.prompts.append("goodbye")
 
     def _handle_wake_up_intent(self): 
         self.robot.state.is_awake = True

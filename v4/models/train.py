@@ -34,7 +34,10 @@ def expand_dataset(raw_data, input_keys, steps=5):
             val = entry['inputs'][key]
             if isinstance(val, list):
                 start, end = val[0], val[1]
-                steps_list = [round(start + (i * (end - start) / (steps - 1)), 2) for i in range(steps)]
+                # Adaptive rounding: use 2 decimals for large ranges, more for small ranges
+                range_val = end - start
+                decimals = 2 if range_val >= 1 else 4
+                steps_list = [round(start + (i * (end - start) / (steps - 1)), decimals) for i in range(steps)]
                 prop_variants.append(steps_list)
             else:
                 prop_variants.append([val])

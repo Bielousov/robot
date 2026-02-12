@@ -34,7 +34,7 @@ def start_app():
                         else:
                             robot.state.set_awake(True)
                     
-                    elif line.lower() in ["s", "esc"]:
+                    elif line.lower() in ["sleep"]:
                         print("[User] Action: FORCE SLEEP")
                         robot.state.set_awake(False)
                         robot.state.prompts.clear()

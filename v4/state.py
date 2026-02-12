@@ -14,7 +14,8 @@ class State:
 
     @property
     def chaos(self):
-        return random.uniform(0, 1);
+        # Mostly small numbers; 0.99 becomes very rare.
+        return random.triangular(0, 1, 0);
 
     @property
     def awake_phase (self):
@@ -73,3 +74,6 @@ class State:
 
     def set_awake(self, is_awake_next):
         self.is_awake_next = is_awake_next
+
+    def set_last_spoke(self):
+        self.last_spoke_time = time.time()

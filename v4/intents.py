@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 
 class IntentHandler:
@@ -55,6 +54,7 @@ class IntentHandler:
 
     def _handle_wake_up_intent(self): 
         self.robot.state.is_awake = True
+        self.robot.state.set_last_spoke()
         if not self.robot.state.prompts:
             self.robot.state.prompts.append("hello")
           
@@ -94,7 +94,7 @@ class IntentHandler:
 
         # Set the state and trigger voice with the callback
         self.robot.state.is_speaking = True
-        self.robot.state.last_spoke_time = time.time()
+        self.robot.state.set_last_spoke()
         self.robot.voice.say(phrase, callback)
         self._debug(f"Saying: {phrase}", tag="ROBOT")
 

@@ -28,11 +28,11 @@ def start_app():
                     line = sys.stdin.readline().strip()
                     
                     if line == "":
-                        print("[User] Action: GENERIC PROMPT")
+                        print("[User] Action: USER INPUT")
                         if robot.state.is_awake:
                             robot.state.prompts.append("utter")
                         else:
-                            robot.state.prompts.append("hello")
+                            robot.state.set_awake(True)
                     
                     elif line.lower() in ["s", "esc"]:
                         print("[User] Action: FORCE SLEEP")

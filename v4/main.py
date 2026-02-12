@@ -1,10 +1,5 @@
-import sys
 import time
-import threading
-
-from pathlib import Path
 import numpy as np
-
 
 from lib.Dictionary import Dictionary
 from lib.LLMService import LLMService
@@ -34,6 +29,9 @@ class Pip:
 
         # 5. Custom Threading Manager
         self.threads = Threads()
+        self.brain_thread = None
+        self.logic_thread = None
+        self.freq_thread = None
     
     def _brain_tick(self):
         """One iteration of the brain logic"""
@@ -57,25 +55,42 @@ class Pip:
                         f"[{formatted_str}]"
                     )
                 
-                self.state.current_action = prediction
-            else:
-                self.state.current_action = 0 
+                self.intent.handle(prediction)
                 
         except Exception as e:
             print(f"Brain Error: {e}")
 
-    def _logic_tick(self):
-        """One iteration of the intent handling"""
-        self.intent.handle()
+    def _brain_frequency_manager(self):
+        """Adjust brain/logic thread intervals based on awake state.
+
+        When `self.state.is_awake` is True we use `Env.BrainFrequencyGamma`,
+        otherwise `Env.BrainFrequencyDelta`. Threads expect an interval value
+        (seconds), so we use `1 / frequency` to match existing usage.
+        """
+        try:
+            if self.state.is_awake:
+                interval = 1 / Env.BrainFrequencyGamma
+            else:
+                interval = 1 / Env.BrainFrequencyDelta
+
+            if self.brain_thread is not None:
+                self.threads.set_interval(self.brain_thread, interval)
+        except Exception as e:
+            print(f"[Frequency Manager Error] {e}")
 
     def run(self):
-        self.threads.start(1 / Env.BrainFrequency, self._brain_tick)
-        self.threads.start(1 / Env.BrainFrequency, self._logic_tick)
+        # Create brain and logic threads and keep references so we can change
+        # their intervals at runtime.
+        self.brain_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_tick)
+
+        # Start a small manager that periodically enforces the desired
+        # interval based on awake/sleep state.
+        self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
         
         print("[System] All robot systems initialized")
     
     def stop(self):
-        self.state.is_awake = False
+        self.state.set_awake(False)
         print("[System] Shutting down...")
         time.sleep(1)
         self.mind.stop()

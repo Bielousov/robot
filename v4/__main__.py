@@ -15,7 +15,7 @@ def start_app():
         robot.run()
 
         # Initial start state
-        robot.state.is_awake = True
+        robot.state.set_awake(True)
 
         while running:
             try:
@@ -36,7 +36,7 @@ def start_app():
                     
                     elif line.lower() in ["s", "esc"]:
                         print("[User] Action: FORCE SLEEP")
-                        robot.state.is_awake = False
+                        robot.state.set_awake(False)
                         robot.state.prompts.clear()
                     
                     elif line.lower() == "exit":

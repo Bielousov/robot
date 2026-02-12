@@ -7,11 +7,12 @@ from lib.Enum import Enum
 load_dotenv()
 
 Env = Enum (
-  BrainConfidenceScore  = float(getenv('BRAIN_CONFIDENCE_THRESHOLD')),
-  BrainFrequency        = int(getenv('BRAIN_FREQUENCY')),
-  Debug                 = bool(int(getenv('DEBUG'))),
-  Voice                 = getenv('VOICE'),
-  VoiceSampleRate       = int(getenv('VOICE_SAMPLE_RATE')),
+  BrainConfidenceScore  = float(getenv('BRAIN_CONFIDENCE_THRESHOLD', '0.9')),
+  BrainFrequencyDelta        = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),
+  BrainFrequencyGamma        = int(getenv('BRAIN_FREQUENCY_GAMMA', '20')),
+  Debug                 = bool(int(getenv('DEBUG', '0'))),
+  Voice                 = getenv('VOICE', 'en_US-danny-low'),
+  VoiceSampleRate       = int(getenv('VOICE_SAMPLE_RATE', '16000')),
 )
 
 # --- Model Instance Setup ---

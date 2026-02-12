@@ -11,17 +11,9 @@ class IntentHandler:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] [{tag}] {message}")
 
-    def handle(self):
-        action = self.robot.state.current_action
-
+    def handle(self, action):
         if action == 0:
             return
-        
-        # It turns 'Transition' phases into 'Steady' phases for the next Brain tick.
-        self.robot.state.is_awake_prev = self.robot.state.is_awake
-
-        # Reset action after handling
-        self.robot.state.current_action = 0 
 
         # --- PHASE 1: ACTION EXECUTION ---
         if action == 1: # SLEEP
@@ -88,7 +80,7 @@ class IntentHandler:
         self.robot.mind.think(processed_prompts, callback)
 
     def _handle_utterance_intent(self):
-         self.robot.state.prompts.append('quote')
+         self.robot.state.prompts.append('utter')
 
     def _handle_speak_intent(self, phrase):
         if not phrase:

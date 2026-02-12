@@ -5,11 +5,10 @@ from datetime import datetime
 class State:
     def __init__(self):
         self.is_awake = False
-        self.is_awake_prev = False
+        self.is_awake_next = False
         self.last_spoke_time = time.time()
         self.is_speaking = False
         self.is_thinking = False
-        self.current_action = 0
         self.prompts = []
         self.responses = []
 
@@ -19,7 +18,7 @@ class State:
 
     @property
     def awake_phase (self):
-        return self._get_state_phase(self.is_awake, self.is_awake_prev)
+        return self._get_state_phase(self.is_awake, self.is_awake_next)
 
     @property
     def has_pending_prompt(self):
@@ -38,12 +37,12 @@ class State:
         now = datetime.now()
         return now.hour + (now.minute / 60.0)
 
-    def _get_state_phase(self, current, last):
-        if current == last:
+    def _get_state_phase(self, current, next):
+        if current == next:
             return 1.0 if current else 0.0
         else:
             # Transitioning: 2 if just fell asleep, -1 if just woke up
-            return 2.0 if current else -1.0
+            return 2.0 if next else -1.0
 
     def _get_time_since(self, t, max_value=None):
         now = time.time()
@@ -71,3 +70,6 @@ class State:
             self.last_spoke_time_diff,
             self.time_of_day
         ]])
+
+    def set_awake(self, is_awake_next):
+        self.is_awake_next = is_awake_next

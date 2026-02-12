@@ -38,6 +38,7 @@ class Thread(threading.Thread):
         # We pass the run_event from the Threads manager
         super().__init__(daemon=True)
         self.interval = interval
+        self._lock = threading.Lock()
         self.function = function
         self.run_event = run_event
         self.args = args
@@ -49,7 +50,17 @@ class Thread(threading.Thread):
                 self.function(*self.args, **self.kwargs)
             except Exception as e:
                 print(f"[Thread Loop Error] {e}")
-            time.sleep(self.interval)
+            # Read interval under lock so it can be changed safely at runtime
+            with self._lock:
+                interval = self.interval
+            # Sleep for the current interval; updating `self.interval` will take
+            # effect on the next loop iteration.
+            time.sleep(interval)
+
+    def set_interval(self, interval):
+        """Change this thread's interval at runtime (thread-safe)."""
+        with self._lock:
+            self.interval = interval
 
 class Threads:
     def __init__(self):
@@ -63,6 +74,40 @@ class Threads:
         self.collection.append(t)
         t.start()
         return t
+
+    def set_interval(self, thread_or_index, interval):
+        """Set interval for a specific thread.
+
+        `thread_or_index` may be a Thread instance or an integer index into the
+        collection. Returns True if successful, False otherwise.
+        """
+        # find thread by index
+        t = None
+        if isinstance(thread_or_index, int):
+            try:
+                t = self.collection[thread_or_index]
+            except Exception:
+                return False
+        else:
+            # try to find the instance in collection
+            if thread_or_index in self.collection:
+                t = thread_or_index
+            else:
+                return False
+
+        try:
+            t.set_interval(interval)
+            return True
+        except Exception:
+            return False
+
+    def set_all_intervals(self, interval):
+        """Set the interval for all managed threads."""
+        for t in self.collection:
+            try:
+                t.set_interval(interval)
+            except Exception:
+                pass
 
     def stop(self):
         self.run_event.clear()

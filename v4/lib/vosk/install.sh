@@ -45,7 +45,7 @@ if [ -d "$MODEL_DIR" ]; then
 else
     echo "Model path $MODEL_DIR not found..."
 
-    Ensure dependencies
+    # Ensure dependencies
     sudo apt-get update && sudo apt-get install -y unzip
 
     echo "------------------------------------------------"

@@ -29,10 +29,12 @@ defaults.ctl.card 0
   apt-get update && apt-get install -y \
     alsa-utils \
     git \
-    procps \
+    libatomic1 \
     python3-venv \
     sudo \
     wget \
+    tzdata \
+    unzip \
     zstd
 ```
 

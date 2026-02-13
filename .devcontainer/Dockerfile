@@ -10,6 +10,7 @@ RUN apt-get update \
  && apt-get install -y \
     alsa-utils \
     git \
+    libatomic1 \
     python3-venv \
     sudo \
     wget \

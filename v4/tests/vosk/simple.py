@@ -2,7 +2,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from vosk import Model, KaldiRecognizer
 
 # Anchor to project root (v4)
 # __file__ is v4/tests/brain/main.py
@@ -14,26 +13,34 @@ if str(v4_path) not in sys.path:
 
 from config import Env
 
-LIB_VOSK_DIR = v4_path / "lib" / "vosk" / "dist"
+LIB_VOSK_DIR = v4_path / "lib" / "vosk"
 MODEL_PATH = LIB_VOSK_DIR / "models" / Env.VoskModel
-SAMPLE_RATE = Env.VOSK_SAMPLE_RATE
+DIST_PATH = LIB_VOSK_DIR / "dist" / "vosk"
+SAMPLE_RATE = Env.VoskSampleRate
 
-model = Model(MODEL_PATH)
+from vosk import Model, KaldiRecognizer
+
+model = Model(str(MODEL_PATH))
 rec = KaldiRecognizer(model, SAMPLE_RATE)
 
 print("[VOSK] Listening... (Ctrl+C to stop)")
 
 # Start arecord process
-process = subprocess.Popen(
-    [
-        "arecord",
-        "-f", "S16_LE",
-        "-r", str(SAMPLE_RATE),
-        "-c", "1",
-        "-t", "raw"
-    ],
-    stdout=subprocess.PIPE
-)
+try:
+    process = subprocess.Popen(
+        [
+            "arecord",
+            "-f", "S16_LE",
+            "-r", str(SAMPLE_RATE),
+            "-c", "1",
+            "-t", "raw"
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+except FileNotFoundError:
+    print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
+    sys.exit(1)
 
 while True:
     data = process.stdout.read(4000)

@@ -91,20 +91,17 @@ class Pip:
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
     
-    def _on_wake_word(self):
+    def _on_wake_word(self, text, conversation_history):
         """Callback triggered by the Ears class when the wake word is detected."""
         # Get the current state of the ear's memory
-        stack = self.Ears.get_stack()
-        if stack:
-            last_captured = stack[-1]
+        if text:
+            last_captured = conversation_history[-1]
             print(f"\n[EVENT] Wake Word Detected!")
+            print(f" > Message: {text}")
             print(f" > Last Captured: '{last_captured}'")
-            print(f" > Full Stack: {stack}")
             
-            # Wake Pip up if he was "asleep"
-            if not self.state.is_awake:
-                self.state.set_awake(True)
-                self.voice.say("I am listening.")
+            for item in conversation_history:
+                self.state.prompts.append(item)
 
     def run(self):
         # Create brain and logic threads and keep references so we can change

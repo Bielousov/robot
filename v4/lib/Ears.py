@@ -81,22 +81,23 @@ class Ears:
             if text:
                 self.stack.append(text)
                 if self._validate(text):
-                    self._on_wake_word_detected(text)
+                    self._on_wake_word_detected(text, list(self.stack))
+                    self.stack.clear()
         else:
             # You can handle partial results here if needed
             # partial = json.loads(self.recognizer.PartialResult())
             pass
 
 
-    def _on_wake_word_detected(self, text):
+    def _on_wake_word_detected(self, text, conversation_history):
         """Internal handler that triggers the external callback."""
         # 1. Print local debug info as requested
         print(f"\n[WAKE] Word detected: '{text}'")
-        print(f"[STACK] Current history: {list(self.stack)}")
+        print(f"[STACK] Current history: {conversation_history}")
         
-        # 2. Trigger the callback passed from main.py if it exists
+        # 3. Trigger the callback passed from main.py if it exists
         if self.__on_wake:
-            self.__on_wake()
+            self.__on_wake(text, conversation_history)
 
     def start_listening(self, on_wake_callback=None):
         """Initializes the background thread loop with an optional callback."""
@@ -114,6 +115,3 @@ class Ears:
             self.__process_handle.wait()
             self.__process_handle = None
         print("[Ears]: Stopped.")
-
-    def get_stack(self) -> list:
-        return list(self.stack)

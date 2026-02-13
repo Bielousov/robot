@@ -26,8 +26,10 @@ class Pip:
         # 2. Prefrontal Cortex (LLM)
         self.Ears = Ears(
             model_name=Env.VoskModel, 
-            wake_word=Name, 
-            sample_rate=Env.VoskSampleRate
+            sample_rate=Env.VoskSampleRate,
+            wake_word=Name,
+            wake_word_synonyms=Env.VoskSynonyms,
+            debug=Env.Debug
         )
 
         # 3. Voice Setup

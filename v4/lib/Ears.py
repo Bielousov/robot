@@ -15,8 +15,18 @@ VOSK_PATH = LIB_PATH / "vosk"
 MODELS_PATH = VOSK_PATH / "models"
 
 class Ears:
-    def __init__(self, wake_word: str, model_name: str, sample_rate: int = 16000, stack_size: int = 8):
-        SetLogLevel(-1)
+    def __init__(
+            self,
+            wake_word: str,
+            model_name: str,
+            sample_rate: int = 16000,
+            stack_size: int = 4,
+            wake_word_synonyms = [],
+            debug: bool = False
+        ):
+    
+        self.debug = debug;
+        SetLogLevel(0 if self.debug else -1)
 
         # Paths
         model_full_path = MODELS_PATH / model_name
@@ -29,8 +39,9 @@ class Ears:
         
         # Audio Config
         self.sample_rate = sample_rate
-        self.wake_word = wake_word.lower()
         self.stack = deque(maxlen=stack_size)
+        self.wake_word = wake_word.lower()
+        self.wake_word_synonyms = [synonym.lower() for synonym in wake_word_synonyms]
         
         # Threading Management
         self.__threads = Threads()
@@ -80,6 +91,8 @@ class Ears:
             
             if text:
                 self.stack.append(text)
+                if self.debug:
+                    print(f"Captured Speech: {text}")
                 if self._validate(text):
                     self._on_wake_word_detected(text, list(self.stack))
                     self.stack.clear()
@@ -91,9 +104,8 @@ class Ears:
 
     def _on_wake_word_detected(self, text, conversation_history):
         """Internal handler that triggers the external callback."""
-        # 1. Print local debug info as requested
-        print(f"\n[WAKE] Word detected: '{text}'")
-        print(f"[STACK] Current history: {conversation_history}")
+        if self.debug:
+            print(f"Wake word detected: '{text}' {conversation_history}")
         
         # 3. Trigger the callback passed from main.py if it exists
         if self.__on_wake:

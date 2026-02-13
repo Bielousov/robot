@@ -15,7 +15,7 @@ PIPER_BIN = LIB_PIPER_DIR / "piper"
 
 VOICE = "en_US-danny-low"
 VOICE_FILE = f"{VOICE}.onnx"
-VOICE_SAMPLE_RATE = 16_000
+PIPER_SAMPLE_RATE = 16_000
 MODEL_PATH = LIB_PIPER_DIR / "models" / VOICE_FILE
 
 TEST_PHRASE = "The quick brown fox jumps over the lazy dog."
@@ -37,7 +37,7 @@ def run_benchmark(threads=2, niceness=10):
         f'--model "{MODEL_PATH}" '
         f'--threads {threads} '
         f'--output_raw | '
-        f'aplay -r {VOICE_SAMPLE_RATE} -f S16_LE -t raw'
+        f'aplay -r {PIPER_SAMPLE_RATE} -f S16_LE -t raw'
     )
 
     start_time = time.perf_counter()

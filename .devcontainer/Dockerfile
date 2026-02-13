@@ -13,8 +13,9 @@ RUN apt-get update \
     python3-venv \
     sudo \
     wget \
-    zstd \
     tzdata \
+    unzip \
+    zstd \
  && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
  && echo $TZ > /etc/timezone \
  && rm -rf /var/lib/apt/lists/*

@@ -8,11 +8,13 @@ load_dotenv()
 
 Env = Enum (
   BrainConfidenceScore  = float(getenv('BRAIN_CONFIDENCE_THRESHOLD', '0.9')),
-  BrainFrequencyDelta        = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),
-  BrainFrequencyGamma        = int(getenv('BRAIN_FREQUENCY_GAMMA', '20')),
+  BrainFrequencyDelta   = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),
+  BrainFrequencyGamma   = int(getenv('BRAIN_FREQUENCY_GAMMA', '20')),
   Debug                 = bool(int(getenv('DEBUG', '0'))),
-  Voice                 = getenv('VOICE', 'en_US-danny-low'),
-  VoiceSampleRate       = int(getenv('VOICE_SAMPLE_RATE', '16000')),
+  Voice                 = getenv('PIPER_MODEL_NAME', 'en_US-danny-low'),
+  VoiceSampleRate       = int(getenv('PIPER_SAMPLE_RATE', '16000')),
+  VoskModel             = getenv('VOSK_MODEL_NAME'),
+  VoskSampleRate        = getenv('VOSK_SAMPLE_RATE'),
 )
 
 # --- Model Instance Setup ---

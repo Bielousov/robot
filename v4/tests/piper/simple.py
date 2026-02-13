@@ -16,7 +16,7 @@ LIB_PIPER_DIR = v4_path / "lib" / "piper" / "dist"
 PIPER_BIN = LIB_PIPER_DIR / "piper"
 
 VOICE_FILE = f"{Env.Voice}.onnx" if Env.Voice else "en_US-danny-low.onnx"
-VOICE_SAMPLE_RATE = Env.VoiceSampleRate or 16_000
+PIPER_SAMPLE_RATE = Env.VoiceSampleRate or 16_000
 MODEL_PATH = LIB_PIPER_DIR / "models" / VOICE_FILE
 
 def test_speech(text):
@@ -35,7 +35,7 @@ def test_speech(text):
     command = (
         f'echo "{clean_text}" | '
         f'"{PIPER_BIN}" --model "{MODEL_PATH}" --output_raw | '
-        f'aplay -r {VOICE_SAMPLE_RATE} -f S16_LE -t raw'
+        f'aplay -r {PIPER_SAMPLE_RATE} -f S16_LE -t raw'
     )
 
     try:

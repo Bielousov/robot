@@ -8,7 +8,7 @@ v4_path = Path(__file__).parent.parent.parent.resolve()
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
-from lib.LLMService import LLMService
+from v4.lib.Mind import Mind
 
 # -------- config --------
 ITERATIONS = 10
@@ -22,10 +22,10 @@ def run_once(llm):
     return time.perf_counter() - start
 
 def benchmark():
-    print("[Benchmark] Initializing LLMService...")
+    print("[Benchmark] Initializing Mind...")
     
     # Initialize service - model creation/loading is NOT timed here
-    with LLMService() as llm:
+    with Mind() as llm:
         print(f"[Benchmark] Base Model: {llm.base_model}")
         
         print(f"[Benchmark] Warming up model ({WARMUP_RUNS} runs)...")

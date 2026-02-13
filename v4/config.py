@@ -6,6 +6,8 @@ from lib.Enum import Enum
 
 load_dotenv()
 
+Name = getenv('NAME')
+
 Env = Enum (
   BrainConfidenceScore  = float(getenv('BRAIN_CONFIDENCE_THRESHOLD', '0.9')),
   BrainFrequencyDelta   = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),

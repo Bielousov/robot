@@ -1,0 +1,119 @@
+import json
+import subprocess
+import os
+import threading
+import atexit
+from collections import deque
+from pathlib import Path
+from vosk import Model, KaldiRecognizer, SetLogLevel
+
+# Use the existing Process architecture
+from .Threads import Process, Threads
+
+LIB_PATH = Path(__file__).parent.resolve()
+VOSK_PATH = LIB_PATH / "vosk"
+MODELS_PATH = VOSK_PATH / "models"
+
+class Ears:
+    def __init__(self, wake_word: str, model_name: str, sample_rate: int = 16000, stack_size: int = 8):
+        SetLogLevel(-1)
+
+        # Paths
+        model_full_path = MODELS_PATH / model_name
+        if not model_full_path.exists():
+            raise FileNotFoundError(f"Vosk model not found at {model_full_path}")
+
+        # Vosk Setup
+        self.model = Model(str(model_full_path))
+        self.recognizer = KaldiRecognizer(self.model, sample_rate)
+        
+        # Audio Config
+        self.sample_rate = sample_rate
+        self.wake_word = wake_word.lower()
+        self.stack = deque(maxlen=stack_size)
+        
+        # Threading Management
+        self.__threads = Threads()
+        self.__process_handle = None # Subprocess for arecord
+
+        # Callback handler
+        self.__on_wake = None
+        
+        # Cleanup on exit
+        atexit.register(self.stop_listening)
+
+    def _cleanup(self, text: str) -> str:
+        text = text.lower().strip()        
+        wake_word_synonyms = ["beep", "peep"]
+        for synonym in wake_word_synonyms:
+            text = text.replace(synonym, self.wake_word)
+
+        words_to_remove = ["huh"]
+        for word in words_to_remove:
+            text = text.replace(word, "").strip()
+
+        return text
+    
+    def _validate(self, text: str) -> bool:
+        return self.wake_word in text
+
+    def _capture_audio(self):
+        """The core loop called by the Threads manager."""
+        # Ensure the subprocess is alive
+        if not self.__process_handle or self.__process_handle.poll() is not None:
+            self.__process_handle = subprocess.Popen(
+                ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                bufsize=0
+            )
+
+        # Read a chunk of audio
+        data = self.__process_handle.stdout.read(4000)
+        if not data:
+            return
+
+        # Process with Vosk
+        if self.recognizer.AcceptWaveform(data):
+            result = json.loads(self.recognizer.Result())
+            text = self._cleanup(result.get("text", ""))
+            
+            if text:
+                self.stack.append(text)
+                if self._validate(text):
+                    self._on_wake_word_detected(text)
+        else:
+            # You can handle partial results here if needed
+            # partial = json.loads(self.recognizer.PartialResult())
+            pass
+
+
+    def _on_wake_word_detected(self, text):
+        """Internal handler that triggers the external callback."""
+        # 1. Print local debug info as requested
+        print(f"\n[WAKE] Word detected: '{text}'")
+        print(f"[STACK] Current history: {list(self.stack)}")
+        
+        # 2. Trigger the callback passed from main.py if it exists
+        if self.__on_wake:
+            self.__on_wake()
+
+    def start_listening(self, on_wake_callback=None):
+        """Initializes the background thread loop with an optional callback."""
+        self.__on_wake = on_wake_callback
+        
+        # interval=0 ensures the loop runs as fast as the audio stream provides data
+        self.__threads.start(interval=0, function=self._capture_audio)
+        print(f"[Ears]: Started listening for '{self.wake_word}'...")
+
+    def stop_listening(self):
+        """Stops threads and kills arecord."""
+        self.__threads.stop()
+        if self.__process_handle:
+            self.__process_handle.terminate()
+            self.__process_handle.wait()
+            self.__process_handle = None
+        print("[Ears]: Stopped.")
+
+    def get_stack(self) -> list:
+        return list(self.stack)

@@ -1,64 +1,95 @@
-import subprocess
 import os
+import subprocess
 import threading
+import atexit
+import signal
 from pathlib import Path
-from .Threads import Process
 
+# Paths (Assuming same structure)
 LIB_PATH = Path(__file__).parent.resolve()
-PIPER_DIR = LIB_PATH / "piper"
-VOICE_DIR = PIPER_DIR / "models"
-PIPER_BIN = PIPER_DIR / "dist/piper"
+PIPER_PATH = LIB_PATH / "piper"
+MODELS_PATH = PIPER_PATH / "models"
+PIPER_BIN = PIPER_PATH / "dist" / "piper"
 
 class Voice:
-    def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=22050):
-        self.__process = Process()
-        self._format = "S16_LE"
-        self._niceness = 10
-        self._threads = 2
-        
-        self._model_path = VOICE_DIR / f"{voice_model_name}.onnx"
+    def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=16000):
+        self._model_path = MODELS_PATH / f"{voice_model_name}.onnx"
         self._sample_rate = voice_sample_rate
-        
-        # Audio lock prevents multiple 'say' calls from overlapping
         self._speech_lock = threading.Lock()
         
-        if PIPER_BIN.exists():
-            os.chmod(PIPER_BIN, 0o755)
-        else:
+        # Persistent process handle
+        self._proc = None
+        self._aplay = None
+        
+        if not PIPER_BIN.exists():
             print(f"[Voice Warning]: Piper binary not found at {PIPER_BIN}")
+            return
 
-    def say(self, text, callback=None):
-        """Public method: Starts a background thread to speak."""
-        threading.Thread(
-            target=self._threaded_execution, 
-            args=(text, callback), 
-            daemon=True
-        ).start()
+        os.chmod(PIPER_BIN, 0o755)
+        self._start_engine()
+        
+        # Register cleanup to kill processes on exit
+        atexit.register(self.stop)
+        signal.signal(signal.SIGINT, self._handle_signal)
+        signal.signal(signal.SIGTERM, self._handle_signal)
 
-    def _threaded_execution(self, text, callback):
-        """Internal helper that manages the lock and subprocess."""
-        with self._speech_lock:
-            clean_text = text.replace('"', '\\"')
-            command = (
-                f'echo "{clean_text}" | '
-                f'nice -n {self._niceness} "{PIPER_BIN}" '
-                f'--model "{self._model_path}" '
-                f'--threads {self._threads} '
-                f'--output_raw | '
-                f'aplay -r {self._sample_rate} -f {self._format} -t raw'
+    def _start_engine(self):
+        """Starts Piper and aplay in a persistent pipeline."""
+        try:
+            # We start Piper in 'raw' mode, outputting to stdout
+            self._proc = subprocess.Popen(
+                [str(PIPER_BIN), "--model", str(self._model_path), "--output_raw"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                bufsize=0
             )
             
-            try:
-                process = subprocess.Popen(
-                    command, 
-                    shell=True, 
-                    stdout=subprocess.DEVNULL, 
-                    stderr=subprocess.DEVNULL
-                )
-                return_code = process.wait()
-                if callback:
-                    callback(success=(return_code == 0))
-            except Exception as e:
-                print(f"[Voice Error]: {e}")
-                if callback:
-                    callback(success=False, error=str(e))
+            # We pipe Piper's stdout directly into aplay
+            self._aplay = subprocess.Popen(
+                ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
+                stdin=self._proc.stdout,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                bufsize=0
+            )
+        except Exception as e:
+            print(f"[Voice Error]: Failed to start TTS engine: {e}")
+
+    def say(self, text, callback=None):
+        """Sends text to the existing Piper process."""
+        def task():
+            with self._speech_lock:
+                if not self._proc or self._proc.poll() is not None:
+                    self._start_engine()
+                
+                try:
+                    # Piper expects one line of text at a time
+                    input_text = f"{text.strip()}\n"
+                    self._proc.stdin.write(input_text.encode('utf-8'))
+                    self._proc.stdin.flush()
+                    
+                    # We wait a brief moment for audio to play or use a custom delay logic
+                    # Optional: monitor aplay if you need strict 'done' callbacks
+                    if callback:
+                        callback(success=True)
+                except Exception as e:
+                    print(f"[Voice Error]: {e}")
+                    if callback:
+                        callback(success=False, error=str(e))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _handle_signal(self, signum, frame):
+        self.stop()
+        exit(0)
+
+    def stop(self):
+        """Clean shutdown of subprocesses."""
+        print("[Voice]: Shutting down TTS engine...")
+        if self._proc:
+            self._proc.terminate()
+            self._proc.wait()
+        if self._aplay:
+            self._aplay.terminate()
+            self._aplay.wait()

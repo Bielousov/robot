@@ -6,13 +6,13 @@ v4_path = Path(__file__).parent.parent.parent.resolve()
 if str(v4_path) not in sys.path:
     sys.path.insert(0, str(v4_path))
 
-from lib.LLMService import LLMService 
+from v4.lib.Mind import Mind 
 
 def run_test():
     print("[Test] Initializing Robot Brain Service...")
     
     # Init happens HERE (Server start + Model Create) - excluded from timer
-    with LLMService() as llm:
+    with Mind() as llm:
         
         # --- WARM-UP (Optional but recommended for Pi 5) ---
         # This ensures the model is fully resident in RAM before we time it

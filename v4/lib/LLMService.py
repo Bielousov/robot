@@ -145,7 +145,7 @@ class LLMService:
                     sys.stdout.flush()
 
                 if status == "success" or chunk.get('done'):
-                    print(f"\n[-] Personality '{self.model_name}' locked in. Pip is online.")
+                    print(f"\n[-] Loading personality in to the memory…")
 
                     self.client.generate(
                         model=self.model_name,

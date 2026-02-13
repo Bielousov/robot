@@ -14,7 +14,8 @@ ENV_FILE="$(dirname "$PROJECT_ROOT")/.env"
 # Load Environment Variables
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
-    PIPER_VOICES=$(echo $PIPER_VOICES | tr -d '\r')
+    VOICE_NAME=$(echo $VOICE_NAME | tr -d '\r')
+    VOICE_MODEL=$(echo $VOICE_MODEL | tr -d '\r')
 else
     echo "[Fatal] .env file not found at $ENV_FILE"
     exit 1
@@ -41,35 +42,32 @@ else
     echo "[Engine] Piper engine exists. Skipping."
 fi
 
-# 2. Download Voices directly to /models
-for entry in $PIPER_VOICES; do
-    [ -z "$entry" ] && continue
-    IFS="|" read -r VOICE_NAME VOICE_BASE_URL <<< "$entry"
-    ONNX_FILE="$MODELS_DIR/$VOICE_NAME.onnx"
-    
-    if [ -f "$ONNX_FILE" ]; then
-        echo "[Voice] $VOICE_NAME exists. Skipping."
-        continue
-    fi
+# 2. Download Voice model
+if [ -z "$VOICE_NAME" ] || [ -z "$VOICE_MODEL" ]; then
+    echo "[Fatal] VOICE_NAME or VOICE_MODEL not set in .env"
+    exit 1
+fi
 
+ONNX_FILE="$MODELS_DIR/$VOICE_NAME.onnx"
+
+if [ -f "$ONNX_FILE" ]; then
+    echo "[Voice] $VOICE_NAME exists. Skipping."
+else
     echo "------------------------------------------------"
-    if [[ "$VOICE_BASE_URL" == *.zip ]]; then
+    if [[ "$VOICE_MODEL" == *.zip ]]; then
         echo "[Voice] Downloading and Extracting ZIP: $VOICE_NAME"
         
-        # Download ZIP to voices folder
         TEMP_ZIP="$MODELS_DIR/$VOICE_NAME.zip"
-        wget -q --show-progress -L -O "$TEMP_ZIP" "$VOICE_BASE_URL"
-        
-        # Unzip directly into voices folder (junking paths to keep it flat)
+        wget -q --show-progress -L -O "$TEMP_ZIP" "$VOICE_MODEL"
         unzip -q -j "$TEMP_ZIP" -d "$MODELS_DIR"
-        
         rm "$TEMP_ZIP"
     else
         echo "[Voice] Downloading Files: $VOICE_NAME"
-        wget -nc -q --show-progress -L -O "$MODELS_DIR/$VOICE_NAME.onnx" "${VOICE_BASE_URL}/$VOICE_NAME.onnx"
-        wget -nc -q --show-progress -L -O "$MODELS_DIR/$VOICE_NAME.onnx.json" "${VOICE_BASE_URL}/$VOICE_NAME.onnx.json"
+        wget -nc -q --show-progress -L -O "$ONNX_FILE" "${VOICE_MODEL}/$VOICE_NAME.onnx"
+        wget -nc -q --show-progress -L -O "$MODELS_DIR/$VOICE_NAME.onnx.json" "${VOICE_MODEL}/$VOICE_NAME.onnx.json"
     fi
-done
+fi
+
 
 echo "------------------------------------------------"
 echo "[Success] Piper setup complete."

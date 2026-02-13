@@ -6,7 +6,5 @@
 **/*.tar.gz
 **/*.tar.zst
 **/*.zip
-**/lib/ollama/dist
-**/lib/ollama/models
-**/lib/piper/dist
-**/lib/piper/models
+**/lib/**/dist
+**/lib/**/models

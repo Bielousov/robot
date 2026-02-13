@@ -29,7 +29,9 @@ class Pip:
             sample_rate=Env.VoskSampleRate,
             wake_word=Name,
             wake_word_synonyms=Env.VoskSynonyms,
-            debug=Env.Debug
+            debug=Env.Debug,
+            on_record=self._check_silence,
+            on_wake=self._on_wake_word,
         )
 
         # 3. Voice Setup
@@ -92,6 +94,9 @@ class Pip:
                 self.threads.set_interval(self.brain_thread, interval)
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
+
+    def _check_silence(self):
+        return not self.state.is_speaking
     
     def _on_wake_word(self, text, conversation_history):
         """Callback triggered by the Ears class when the wake word is detected."""
@@ -115,7 +120,7 @@ class Pip:
         self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
 
         # Start the Ears background process
-        self.Ears.start_listening(self._on_wake_word)
+        self.Ears.start_listening()
         
         print("[System] All robot systems initialized")
     
@@ -123,10 +128,10 @@ class Pip:
         self.state.set_awake(False)
         print("[System] Shutting down...")
         time.sleep(1)
+        self.threads.stop()
         self.Ears.stop_listening()
         self.voice.stop()
         self.mind.stop()
-        self.threads.stop()
 
 if __name__ == "__main__":
     robot = Pip()

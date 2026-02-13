@@ -22,7 +22,9 @@ class Ears:
             sample_rate: int = 16000,
             stack_size: int = 4,
             wake_word_synonyms = [],
-            debug: bool = False
+            debug: bool = False,
+            on_record = None,
+            on_wake = None,
         ):
     
         self.debug = debug;
@@ -47,8 +49,9 @@ class Ears:
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
 
-        # Callback handler
-        self.__on_wake = None
+        # Callback handlers
+        self.__on_record = on_record
+        self.__on_wake = on_wake
         
         # Cleanup on exit
         atexit.register(self.stop_listening)
@@ -81,6 +84,11 @@ class Ears:
 
         # Read a chunk of audio
         data = self.__process_handle.stdout.read(4000)
+
+        if self.__on_record and not self.__on_record():
+            self.recognizer.Reset()
+            return
+        
         if not data:
             return
 
@@ -111,10 +119,8 @@ class Ears:
         if self.__on_wake:
             self.__on_wake(text, conversation_history)
 
-    def start_listening(self, on_wake_callback=None):
-        """Initializes the background thread loop with an optional callback."""
-        self.__on_wake = on_wake_callback
-        
+    def start_listening(self):
+        """Initializes the background thread loop."""
         # interval=0 ensures the loop runs as fast as the audio stream provides data
         self.__threads.start(interval=0, function=self._capture_audio)
         print(f"[Ears]: Started listening for '{self.wake_word}'...")

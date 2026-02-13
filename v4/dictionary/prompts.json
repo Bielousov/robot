@@ -30,7 +30,6 @@
         "Tell me a short joke about robots.",
         "Share a surprising fact about artificial intelligence.",
         "Explain a recent breakthrough in AI in simple terms.",
-        "Ask me an interesting question to restart our conversation.",
         "Give me a random science fact.",
         "Offer a productivity tip I can use today.",
         "Describe a futuristic technology that might exist in 50 years.",
@@ -45,7 +44,6 @@
         "Summarize a trending topic in technology.",
         "Give me a quick brain teaser.",
         "Suggest a book related to science or technology.",
-        "Tell me a historical milestone in computing.",
-        "Ask me what I’d like to explore next and suggest three options."
+        "Tell me a historical milestone in computing."
     ]
 }

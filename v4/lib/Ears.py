@@ -60,7 +60,7 @@ class Ears:
 
     def _cleanup(self, text: str) -> str:
         text = text.lower().strip()        
-        wake_word_synonyms = ["beep", "peep"]
+        wake_word_synonyms = self.wake_word_synonyms
         for synonym in wake_word_synonyms:
             text = text.replace(synonym, self.wake_word)
 

@@ -21,7 +21,7 @@ class Ears:
             model_name: str,
             sample_rate: int = 16000,
             stack_size: int = 4,
-            wake_word_synonyms = [],
+            wake_word_synonyms = '',
             debug: bool = False,
             on_record = None,
             on_wake = None,
@@ -43,7 +43,9 @@ class Ears:
         self.sample_rate = sample_rate
         self.stack = deque(maxlen=stack_size)
         self.wake_word = wake_word.lower()
-        self.wake_word_synonyms = [synonym.lower() for synonym in wake_word_synonyms]
+        self.wake_word_synonyms = [word.strip().lower() for word in wake_word_synonyms.split(',')]
+
+        print (f"SYNONYMS: {self.wake_word_synonyms}")
         
         # Threading Management
         self.__threads = Threads()

@@ -17,7 +17,7 @@ Env = Enum (
   VoiceSampleRate       = int(getenv('PIPER_SAMPLE_RATE', '16000')),
   VoskModel             = getenv('VOSK_MODEL_NAME'),
   VoskSampleRate        = int(getenv('VOSK_SAMPLE_RATE', '16000')),
-  VoskSynonyms          = getenv('VOSK_SAMPLE_RATE').split(',')
+  VoskSynonyms          = getenv('VOSK_SYNONYMS').split(',')
 )
 
 # --- Model Instance Setup ---

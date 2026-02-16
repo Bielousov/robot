@@ -6,10 +6,9 @@ import signal
 from pathlib import Path
 
 # Paths (Assuming same structure)
-LIB_PATH = Path(__file__).parent.resolve()
-PIPER_PATH = LIB_PATH / "piper"
-MODELS_PATH = PIPER_PATH / "models"
-PIPER_BIN = PIPER_PATH / "dist" / "piper"
+LIB_PATH = Path(__file__).parent.resolve() / "piper"
+MODELS_PATH = LIB_PATH / "models"
+PIPER_BIN = LIB_PATH / "dist" / "piper"
 
 class Voice:
     def __init__(self, voice_model_name="en_US-danny-low.onnx", voice_sample_rate=16000):

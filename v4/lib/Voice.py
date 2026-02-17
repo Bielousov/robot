@@ -56,27 +56,32 @@ class Voice:
             print(f"[Voice Error]: Failed to start TTS engine: {e}")
 
     def say(self, text, callback=None):
+        """Speak text and call callback after audio finishes playing."""
         def task():
             with self._speech_lock:
                 try:
-                    # Run Piper just for this text
+                    # Start a Piper process for this utterance
                     proc = subprocess.Popen(
                         [str(PIPER_BIN), "--model", str(self._model_path), "--output_raw"],
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.DEVNULL
+                        stderr=subprocess.PIPE,
                     )
+
+                    # Send text and close stdin so Piper starts generating audio
                     proc.stdin.write(f"{text.strip()}\n".encode("utf-8"))
                     proc.stdin.close()
 
-                    # Play Piper's stdout via aplay
+                    # Play Piper's output via aplay
                     aplay_proc = subprocess.Popen(
                         ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
                         stdin=proc.stdout,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL
                     )
-                    aplay_proc.wait()  # wait until playback finished
+
+                    # Wait for playback to finish
+                    aplay_proc.wait()
                     proc.wait()
 
                     if callback:
@@ -88,8 +93,6 @@ class Voice:
                         callback(success=False, error=str(e))
 
         threading.Thread(target=task, daemon=True).start()
-
-
 
     def _handle_signal(self, signum, frame):
         self.stop()

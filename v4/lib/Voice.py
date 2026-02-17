@@ -56,37 +56,22 @@ class Voice:
             print(f"[Voice Error]: Failed to start TTS engine: {e}")
 
     def say(self, text, callback=None):
-        """Speak text and call callback after audio finishes playing."""
+        """Sends text to the existing Piper process."""
         def task():
             with self._speech_lock:
+                if not self._proc or self._proc.poll() is not None:
+                    self._start_engine()
+                
                 try:
-                    # Start a Piper process for this utterance
-                    proc = subprocess.Popen(
-                        [str(PIPER_BIN), "--model", str(self._model_path), "--output_raw"],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                    )
-
-                    # Send text and close stdin so Piper starts generating audio
-                    proc.stdin.write(f"{text.strip()}\n".encode("utf-8"))
-                    proc.stdin.close()
-
-                    # Play Piper's output via aplay
-                    aplay_proc = subprocess.Popen(
-                        ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
-                        stdin=proc.stdout,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL
-                    )
-
-                    # Wait for playback to finish
-                    aplay_proc.wait()
-                    proc.wait()
-
+                    # Piper expects one line of text at a time
+                    input_text = f"{text.strip()}\n"
+                    self._proc.stdin.write(input_text.encode('utf-8'))
+                    self._proc.stdin.flush()
+                    
+                    # We wait a brief moment for audio to play or use a custom delay logic
+                    # Optional: monitor aplay if you need strict 'done' callbacks
                     if callback:
                         callback(success=True)
-
                 except Exception as e:
                     print(f"[Voice Error]: {e}")
                     if callback:

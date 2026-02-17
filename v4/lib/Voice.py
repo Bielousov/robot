@@ -56,28 +56,44 @@ class Voice:
             print(f"[Voice Error]: Failed to start TTS engine: {e}")
 
     def say(self, text, callback=None):
-        """Sends text to the existing Piper process."""
+        """Sends text to Piper and executes callback after audio finishes playing."""
         def task():
             with self._speech_lock:
-                if not self._proc or self._proc.poll() is not None:
-                    self._start_engine()
-                
                 try:
-                    # Piper expects one line of text at a time
-                    input_text = f"{text.strip()}\n"
-                    self._proc.stdin.write(input_text.encode('utf-8'))
-                    self._proc.stdin.flush()
+                    if not self._proc or self._proc.poll() is not None:
+                        self._start_engine()
                     
-                    # We wait a brief moment for audio to play or use a custom delay logic
-                    # Optional: monitor aplay if you need strict 'done' callbacks
+                    # Send text to Piper
+                    input_text = f"{text.strip()}\n"
+                    self._proc.stdin.write(input_text.encode("utf-8"))
+                    self._proc.stdin.flush()
+
+                    # Launch a temporary aplay to play Piper's current stdout
+                    # Use a pipe to read Piper's output until it's done
+                    piper_output = self._proc.stdout.read()  # blocks until audio ready
+                    if not piper_output:
+                        raise RuntimeError("No audio produced by Piper.")
+
+                    # Play the captured audio and wait for it to finish
+                    aplay_proc = subprocess.Popen(
+                        ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                    aplay_proc.communicate(input=piper_output)  # blocks until playback ends
+
+                    # Audio finished, call callback
                     if callback:
                         callback(success=True)
+
                 except Exception as e:
                     print(f"[Voice Error]: {e}")
                     if callback:
                         callback(success=False, error=str(e))
 
         threading.Thread(target=task, daemon=True).start()
+
 
     def _handle_signal(self, signum, frame):
         self.stop()

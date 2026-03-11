@@ -21,7 +21,7 @@ class Ears:
             model_name: str,
             sample_rate: int = 16000,
             stack_size: int = 4,
-            wake_word_synonyms = '',
+            wake_aliases = '',
             debug: bool = False,
             on_record = None,
             on_wake = None,
@@ -43,9 +43,9 @@ class Ears:
         self.sample_rate = sample_rate
         self.stack = deque(maxlen=stack_size)
         self.wake_word = wake_word.lower()
-        self.wake_word_synonyms = [word.strip().lower() for word in wake_word_synonyms.split(',')]
+        self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
 
-        print (f"SYNONYMS: {self.wake_word_synonyms}")
+        print (f"SYNONYMS: {self.wake_aliases}")
         
         # Threading Management
         self.__threads = Threads()
@@ -60,9 +60,9 @@ class Ears:
 
     def _cleanup(self, text: str) -> str:
         text = text.lower().strip()        
-        wake_word_synonyms = self.wake_word_synonyms
-        for synonym in wake_word_synonyms:
-            text = text.replace(synonym, self.wake_word)
+        wake_aliases = self.wake_aliases
+        for alias in wake_aliases:
+            text = text.replace(alias, self.wake_word)
 
         words_to_remove = ["huh"]
         for word in words_to_remove:

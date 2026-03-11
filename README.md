@@ -27,7 +27,6 @@ On-board offline AI-powered robot / assistant
 - Open the Command Palette (Command + Shift + P)
 - Select `Dev Containers: Rebuild and Reopen in Container`
 - Wait for VSCode to re-open in Docker environment and have Docker container running
-- in command line run `bash install.rc` to install AI libs and models
 - run `python .` to start the robot
 
 ### Known limitations

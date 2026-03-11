@@ -28,7 +28,7 @@ class Robot:
             model_name=Env.VoskModel, 
             sample_rate=Env.VoskSampleRate,
             wake_word=Name,
-            wake_word_synonyms=Env.VoskSynonyms,
+            wake_aliases=Env.VoskAliases,
             debug=Env.Debug,
             on_record=self._check_silence,
             on_wake=self._on_wake_word,

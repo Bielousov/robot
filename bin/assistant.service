@@ -1,0 +1,13 @@
+[Unit]
+Description=RobWeb Assistantot
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/workspaces/robot/bin/server.sh
+User=pi
+Group=pi
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

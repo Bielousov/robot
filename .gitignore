@@ -3,6 +3,7 @@
 **/build/*.npy
 **/*.db
 **/.env
+**/.venv
 **/*.tar.gz
 **/*.tar.zst
 **/*.zip

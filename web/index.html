@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ollama Chat</title>
     <link rel="stylesheet" href="styles.css">
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="dist/react.production.min.js"></script>
+    <script src="dist/react-dom.production.min.js"></script>
+    <script src="dist/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
@@ -24,6 +24,30 @@
             const [systemPrompt, setSystemPrompt] = useState('You are a helpful robot assistant.');
             const messagesEndRef = useRef(null);
 
+            const STORAGE_KEY = 'robot_chat_history';
+            const CONTEXT_LENGTH = 8;
+
+            // Load messages from localStorage on mount
+            useEffect(() => {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        setMessages(JSON.parse(stored));
+                    }
+                } catch (error) {
+                    console.error('Failed to load chat history:', error);
+                }
+            }, []);
+
+            // Save messages to localStorage whenever they change
+            useEffect(() => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+                } catch (error) {
+                    console.error('Failed to save chat history:', error);
+                }
+            }, [messages]);
+
             const scrollToBottom = () => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             };
@@ -31,6 +55,13 @@
             useEffect(() => {
                 scrollToBottom();
             }, [messages]);
+
+            const getContextMessages = () => {
+                // Get last 8 non-error messages for Ollama context
+                const nonErrorMessages = messages.filter(m => m.role !== 'error');
+                const recentMessages = nonErrorMessages.slice(-CONTEXT_LENGTH);
+                return recentMessages;
+            };
 
             const sendMessage = async (e) => {
                 e.preventDefault();
@@ -42,6 +73,7 @@
                 setLoading(true);
 
                 try {
+                    const contextMessages = getContextMessages();
                     const response = await fetch(`${ollamaUrl}/api/chat`, {
                         method: 'POST',
                         headers: {
@@ -51,7 +83,7 @@
                             model: model,
                             system: systemPrompt,
                             messages: [
-                                ...messages.filter(m => m.role !== 'error'),
+                                ...contextMessages,
                                 { role: 'user', content: userMessage }
                             ],
                             stream: false,
@@ -74,14 +106,27 @@
                 }
             };
 
+            const clearHistory = () => {
+                if (window.confirm('Clear chat history?')) {
+                    setMessages([]);
+                }
+            };
+
             return (
                 <main className="container">
                     <header className="header">
                         <h1>{model}...</h1>
+                        <button onClick={clearHistory} className="clear-button">Clear History</button>
                     </header>
 
                     <div className="chat-container">
                         <div className="messages">
+                            {!messages.length && !loading && (
+                                <div className="intro">
+                                    What’s on the agenda today?
+                                </div>
+                            )}
+
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`message ${msg.role}`}>
                                     <div className="message-role">

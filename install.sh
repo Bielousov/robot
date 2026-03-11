@@ -11,6 +11,7 @@ echo "[Main] Detected Script Directory: $SCRIPT_DIR"
 OLLAMA_INSTALLER="$SCRIPT_DIR/src/lib/ollama/install.sh"
 PIPER_INSTALLER="$SCRIPT_DIR/src/lib/piper/install.sh"
 VOSK_INSTALLER="$SCRIPT_DIR/src/lib/vosk/install.sh"
+WEB_INSTALLER="$SCRIPT_DIR/web/install.sh"
 
 
 # --- Run Ollama Installer ---
@@ -42,6 +43,15 @@ if [ -f "$VOSK_INSTALLER" ]; then
     bash "$VOSK_INSTALLER"
 else
     echo "[Error] Could not find Vosk installer at: $VOSK_INSTALLER"
+fi
+
+# --- Run Web Installer ---
+if [ -f "$WEB_INSTALLER" ]; then
+    echo "[Main] Launching Web UI Installer..."
+    chmod +x "$WEB_INSTALLER"
+    bash "$WEB_INSTALLER"
+else
+    echo "[Error] Could not find Web installer at: $WEB_INSTALLER"
 fi
 
 echo "[Main] Installation sequence finished."

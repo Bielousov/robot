@@ -9,3 +9,4 @@
 **/*.zip
 **/lib/**/dist
 **/lib/**/models
+**/web/**/dist

@@ -4,7 +4,7 @@
     --primary-color: #333;
     --secondary-color: #ff5c00;
     --background-color: #f8f8f8;
-    --error-color: #c72d04;
+    --danger-color: #c72d04;
     --text-primary-color: var(--primary-color);
     --text-secondary-color: #fff;
     --text-tertiary-color: #999;
@@ -43,18 +43,21 @@ body {
     width: 100vw;
     height: 100vh;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows:  auto 1fr auto;
     overflow: hidden;
     color: var(--text-primary-color);
 }
 
 .header {
     padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .header h1 {
     font-size: 1.75rem;
-    letter-spacing: -0.05em;;
+    letter-spacing: -0.05em;
     text-transform: capitalize;
 }
 
@@ -63,6 +66,11 @@ body {
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+}
+
+.intro {
+    margin: auto;
+    font-size: 2rem;
 }
 
 .messages {
@@ -134,8 +142,8 @@ body {
 
 .message.error .message-content {
     background-color: var(--role-user-color);
-    color: var(--error-color);
-    border: 1px solid var(--error-color);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
 }
 
 .message-content.typing {
@@ -199,6 +207,22 @@ body {
 .send-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.clear-button {
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    border: 1.5px solid var(--danger-color);
+    border-radius: 0.5rem;
+    color: var(--danger-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.clear-button:hover {
+    opacity: 0.8;
 }
 
 /* Scrollbar styling */

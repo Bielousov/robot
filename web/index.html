@@ -75,46 +75,17 @@
             };
 
             return (
-                <div className="container">
-                    <div className="settings">
-                        <div className="setting-group">
-                            <label htmlFor="url">Ollama URL:</label>
-                            <input
-                                id="url"
-                                type="text"
-                                value={ollamaUrl}
-                                onChange={(e) => setOllamaUrl(e.target.value)}
-                                placeholder="http://localhost:11435"
-                            />
-                        </div>
-                        <div className="setting-group">
-                            <label htmlFor="model">Model:</label>
-                            <input
-                                id="model"
-                                type="text"
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                                placeholder="pip"
-                            />
-                        </div>
-                        <div className="setting-group">
-                            <label htmlFor="system">System Prompt:</label>
-                            <input
-                                id="system"
-                                type="text"
-                                value={systemPrompt}
-                                onChange={(e) => setSystemPrompt(e.target.value)}
-                                placeholder="You are a helpful robot assistant."
-                            />
-                        </div>
-                    </div>
+                <main className="container">
+                    <header className="header">
+                        <h1>{model}...</h1>
+                    </header>
 
                     <div className="chat-container">
                         <div className="messages">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`message ${msg.role}`}>
                                     <div className="message-role">
-                                        {msg.role === 'user' ? '👤 You' : msg.role === 'assistant' ? '🤖 Assistant' : '⚠️ Error'}
+                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? 'Assistant' : 'Error'}
                                     </div>
                                     <div className="message-content">{msg.content}</div>
                                 </div>
@@ -142,7 +113,7 @@
                             </button>
                         </form>
                     </div>
-                </div>
+                </main>
             );
         }
 

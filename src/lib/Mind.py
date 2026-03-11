@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
+from .MindProxy import OllamaAPIServer
+
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
 PROJECT_ROOT = LIB_PATH.parent
@@ -24,6 +26,10 @@ BASE_URL = "http://localhost:11434"
 class Mind:
     def __init__(self):
         load_dotenv()
+        
+        # Ollama API server configuration
+        ollama_proxy_port = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
+        self.api_server = OllamaAPIServer(proxy_port=ollama_proxy_port, ollama_base_url=BASE_URL)
         
         # Identity settings
         self.base_model = os.getenv("OLLAMA_BASE_MODEL", "gemma3:270m")
@@ -73,6 +79,7 @@ class Mind:
         self._prepare_environment()
         self._force_stop_server()
         self.start_server()
+        self.api_server.start()
         self.load_model()
         
         while not self.is_ready:
@@ -272,6 +279,7 @@ class Mind:
         print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
     
     def stop(self):
+        self.api_server.stop()
         if self.process:
             print("[-] Stopping server...")
             os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)

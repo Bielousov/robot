@@ -1,3 +1,152 @@
-<html>
-    <body>TEST</body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        function ChatApp() {
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11435');
+            const [model, setModel] = useState('pip');
+            const [systemPrompt, setSystemPrompt] = useState('You are a helpful robot assistant.');
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const sendMessage = async (e) => {
+                e.preventDefault();
+                if (!input.trim()) return;
+
+                const userMessage = input;
+                setInput('');
+                setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`${ollamaUrl}/api/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            system: systemPrompt,
+                            messages: [
+                                ...messages.filter(m => m.role !== 'error'),
+                                { role: 'user', content: userMessage }
+                            ],
+                            stream: false,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Ollama error: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    setMessages(prev => [...prev, { role: 'assistant', content: data.message.content }]);
+                } catch (error) {
+                    setMessages(prev => [...prev, { 
+                        role: 'error', 
+                        content: `Error: ${error.message}. Make sure Ollama is running at ${ollamaUrl}` 
+                    }]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="settings">
+                        <div className="setting-group">
+                            <label htmlFor="url">Ollama URL:</label>
+                            <input
+                                id="url"
+                                type="text"
+                                value={ollamaUrl}
+                                onChange={(e) => setOllamaUrl(e.target.value)}
+                                placeholder="http://localhost:11435"
+                            />
+                        </div>
+                        <div className="setting-group">
+                            <label htmlFor="model">Model:</label>
+                            <input
+                                id="model"
+                                type="text"
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                placeholder="pip"
+                            />
+                        </div>
+                        <div className="setting-group">
+                            <label htmlFor="system">System Prompt:</label>
+                            <input
+                                id="system"
+                                type="text"
+                                value={systemPrompt}
+                                onChange={(e) => setSystemPrompt(e.target.value)}
+                                placeholder="You are a helpful robot assistant."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="chat-container">
+                        <div className="messages">
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`message ${msg.role}`}>
+                                    <div className="message-role">
+                                        {msg.role === 'user' ? '👤 You' : msg.role === 'assistant' ? '🤖 Assistant' : '⚠️ Error'}
+                                    </div>
+                                    <div className="message-content">{msg.content}</div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="message assistant">
+                                    <div className="message-role">🤖 Assistant</div>
+                                    <div className="message-content typing">Thinking...</div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <form onSubmit={sendMessage} className="input-form">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Type your message..."
+                                disabled={loading}
+                                className="message-input"
+                            />
+                            <button type="submit" disabled={loading} className="send-button">
+                                {loading ? 'Sending...' : 'Send'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<ChatApp />);
+    </script>
+</body>
 </html>

@@ -1,65 +1,95 @@
-This is a PI AI Robot
+# AI Robot
+On-board offline AI-powered robot / assistant
 
-## v1 (historic)
+## Tech Stack
+- Hradware:
+  - Raspberry Pi (optimized for 4GB version)
+    - Raspbian OS
+    - Python 3
+    - I2S or USB Sound
+    - I2S or USB Mic
 
-This version has been running on Arduino Nano (C), it use onboard neural network that accepted a pre-trained model to make simple decisions (i.e. blink, wonder eyes).
+- Text to Speech: [Piper](https://github.com/OHF-Voice/piper1-gpl)
+  - `low` model is fast enough, `medium` has some noticeable latency on RPi5
 
-## v2 (depricated)
+- Speech to Text: [Vosk](https://alphacephei.com/vosk/)
 
-The v1 has been ported to python and runs on Raspberry/Orange/Banana PI m2 Zero. It also runs the on-board neural network (ported the same C library from v1), but it now checks if a model exists on start, and if not, trains a new model up to a threshold. Then the model accuracy, inactivity on sensors and even CPU temp were used as input paramters for the decision model, that besides making same simple decisions as v1, also occasionally ran another training epoch.
+- GPT Model: [Ollama](https://docs.ollama.com/)
+  - [models](https://ollama.com/library) up to 1.5B run ok-ish on RPi5 with 4GB RAM
+  - TODO: RPi AI Hailo-10H (8GB) module support to increase the supported model context, to offload LLM service and also to include web chat access to it.
 
-## v3 (2025)
+## Local Setup
 
-Moving away from (a bit useless and fragile) decision making model towards network connected assistant. Now robot connects to a remote ChatGPT 4 model. It will use pvrecorder/pvcobra/pvleopard stack to catch voice commands, process them and generate the voice reposnse with OpenAI API.
+- Create `.env` alias to `src/.env.example`:
+    `ln -s src/.env.example .env`
+- Install Docker
+- In VSCode install Dev Containers extension
+- Open the Command Palette (Command + Shift + P)
+- Select `Dev Containers: Rebuild and Reopen in Container`
+- Wait for VSCode to re-open in Docker environment and have Docker container running
+- in command line run `bash install.rc` to install AI libs and models
+- run `python .` to start the robot
 
-The eyes now would only rely on the state to indicate:
+### Known limitations
 
-- idle state
-- detecting prompt
-- listening and parsing
-- requesting API model
+- TTS and STT are not supported in local setup
 
-## Dependencies
 
-1. `sudo apt install python3-pip python3-dev`
-1. `sudo apt install libjpeg-dev zlib1g-dev`
-1. `sudo apt install rpi.gpio-common`
-1. `sudo apt install sqlite3`
-1. `sudo apt install flite`
-1. `pip install --upgrade pip setuptools`
-1. `pip install python-dotenv`
-1. `pip install numpy`
-1. `pip install spidev`
-1. `pip install luma.core`
-1. `pip install luma.led_matrix`
-1. `pip install OPi.GPIO`
-1. `pip install openai`
+## Board Configuration
 
-## SPI and GPIO Permissions
+### Enable I2S Sound:
 
-1. `sudo apt install rpi.gpio-common`
-1. `sudo nano /boot/armbianEnv.txt`
-   > overlays=spi-spidev
-   > param_spidev_spi_bus=0
-1. `sudo groupadd spi`
-1. `sudo usermod -aG spi pi`
-1. `sudo usermod -aG dialout pi`
-1. `sudo nano /etc/udev/rules.d/99-spi-permissions.rules`
-   > SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"
-1. `sudo udevadm control --reload-rules`
-1. `sudo reboot`
+##### /boot/coonfig.txt
+```
+# Enable I2S
+dtparam=i2s=on
+dtparam=audio=off
 
-## Autostart Daemon
+# Generic I2S DAC overlay for Class D amps (works with NS4168)
+dtoverlay=max98357a
 
-1. `sudo cp ./bin/robot.service  /etc/systemd/system/robot.service`
-1. `sudo systemctl daemon-reload`
-1. `sudo systemctl enable robot.service`
-1. `sudo systemctl status robot.service`
-1. `sudo systemctl restart robot.service`
+# Optional headless setup: disable HDMI
+hdmi_blanking=2
+hdmi_force_hotplug=0
+hdmi_ignore_edid=1
+hdmi_ignore_edid_audio=1
+```
 
-## Git Performance on board
+##### /etc/asound.conf
+```
+defaults.pcm.card 0
+defaults.ctl.card 0
+```
 
-- Enable git parallel index preload: `git config --global core.preloadindex true`
-- Minimize the number of files in .git folder: `git config --global gc.auto 256`
-- Run git garbage collector: `git gc`
-- Remove untracked files `git clean -xf`. Use `git clean -xfn` for a dry-run to check that everything is ok.
+### System dependencies install
+```bash
+  apt-get update && apt-get install -y \
+    alsa-utils \
+    git \
+    libatomic1 \
+    python3-venv \
+    sudo \
+    wget \
+    tzdata \
+    unzip \
+    zstd
+```
+
+### Python dependencies install
+```
+pip install -r requirements.txt
+```
+
+### Project dependency install:
+Run:
+```
+bash install.sh
+```
+
+## State
+
+### Awake status
+0	Steady Sleep	Was asleep, still asleep.
+1	Steady Awake	Was awake, still awake.
+2	Falling Asleep	Was awake, now asleep (Trigger "Goodbye").
+-1	Waking Up	Was asleep, now awake (Trigger "Hello").

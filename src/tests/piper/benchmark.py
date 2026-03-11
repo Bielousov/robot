@@ -4,13 +4,13 @@ from pathlib import Path
 # Anchor to project root (src)
 # __file__ is src/tests/brain/main.py
 # .parent.parent.parent is /home/pip/projects/robot/src/
-v4_path = Path(__file__).parent.parent.parent.resolve()
+project_path = Path(__file__).parent.parent.parent.resolve()
 
-if str(v4_path) not in sys.path:
-    sys.path.insert(0, str(v4_path))
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
 
 # Configuration - Update these to your actual paths
-LIB_PIPER_DIR = v4_path / "lib" / "piper"
+LIB_PIPER_DIR = project_path / "lib" / "piper"
 PIPER_BIN = LIB_PIPER_DIR / "dist" / "piper"
 
 VOICE = "en_US-danny-low"

@@ -13,9 +13,9 @@ ACCURACY_TRESHOLD = 0.9
 total_start_time = time.perf_counter()
 
 # --- INITIALIZATION ---
-v4_path = Path(__file__).parent.parent.resolve()
-if str(v4_path) not in sys.path:
-    sys.path.insert(0, str(v4_path))
+project_path = Path(__file__).parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
 
 from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager

@@ -2,9 +2,9 @@ import sys, threading, time
 from pathlib import Path
 
 # Path Logic
-v4_path = Path(__file__).parent.parent.parent.resolve()
-if str(v4_path) not in sys.path:
-    sys.path.insert(0, str(v4_path))
+project_path = Path(__file__).parent.parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
 
 from lib.Voice import Voice
 from config import Env

@@ -58,6 +58,8 @@ def start_app():
 
     except KeyboardInterrupt:
         print("\n[System] Shutdown signal received (Ctrl+C)...")
+        time.sleep(2)
+        print("[System] Shutting down.")
 
     finally:
         # This 'finally' block ensures the robot stops even if 

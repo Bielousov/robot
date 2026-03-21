@@ -27,23 +27,14 @@
     ],
     
     "utter":[
-        "Tell me a short joke about robots.",
-        "Share a surprising fact about artificial intelligence.",
-        "Explain a recent breakthrough in AI in simple terms.",
-        "Give me a random science fact.",
-        "Offer a productivity tip I can use today.",
-        "Describe a futuristic technology that might exist in 50 years.",
-        "Tell me a fun fact about space.",
-        "Share an inspiring quote about innovation.",
-        "Suggest a small coding challenge I can try.",
-        "Explain a complex concept in one simple sentence.",
-        "Give me a cybersecurity tip.",
-        "Tell me something fascinating about the human brain.",
-        "Describe an unusual real-world robot application.",
-        "Offer a creative writing prompt.",
-        "Summarize a trending topic in technology.",
-        "Give me a quick brain teaser.",
-        "Suggest a book related to science or technology.",
-        "Tell me a historical milestone in computing."
+        "Based on what I've just heard, tell me a related fun fact.",
+        "Given the recent conversation, share an interesting piece of information.",
+        "Considering the context of our discussion, provide a relevant joke or fact.",
+        "In light of what was just said, offer a related insight or tip.",
+        "Reflecting on the recent dialogue, share something intriguing.",
+        "Taking into account the current conversation, give me a related fact or joke.",
+        "With the recent context in mind, provide a relevant piece of information.",
+        "Based on our discussion so far, tell me something interesting.",
+        "Given the flow of our conversation, share a related fun fact or tip."
     ]
 }

@@ -49,8 +49,8 @@ class IntentHandler:
             self._unhandled_intent(action)
     
     def _handle_sleep_intent(self): 
+        self._handle_speak_intent(self.robot.quick_responses.pick("goodbye", default="Goodbye"))
         self.robot.state.is_awake = False
-        self.robot.state.prompts.append("goodbye")
 
     def _handle_wake_up_intent(self): 
         self.robot.state.is_awake = True
@@ -70,17 +70,25 @@ class IntentHandler:
                 self._debug(f"LLM Error: {error}", tag="Error")
 
         processed_prompts = []
+        heard_context = []
+        
         for p in raw_prompts:
             if self.robot.prompts.has(p):
+                # Flush the overheard conversation history for context
+                heard_context = self.robot.ears.get_stack()
+                if heard_context:
+                    self.robot.ears.clear_stack()
+
                 # Replace key with a specific prompt from the dictionary category
                 processed_prompts.append(self.robot.prompts.pick(p))
             else:
                 processed_prompts.append(p)
 
-        self.robot.mind.think(processed_prompts, callback)
+        self._debug(f"Processing Prompts: {processed_prompts}", tag="ROBOT")
+        self.robot.mind.think(processed_prompts, callback, context=heard_context)
 
     def _handle_utterance_intent(self):
-         self.robot.state.prompts.append('utter')
+        self.robot.state.prompts.append('utter')
 
     def _handle_speak_intent(self, phrase):
         if not phrase:
@@ -99,5 +107,5 @@ class IntentHandler:
         self._debug(f"Saying: {phrase}", tag="ROBOT")
 
     def _unhandled_intent(self, intent):
-        self._debug(f"Unhandled Intent $intent")
+        self._debug(f"Unhandled Intent {intent}", tag="ROBOT")
         return

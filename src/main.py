@@ -18,19 +18,23 @@ class Robot:
         self.manager = ModelManager(Paths)
         self.model, self.scaler = self.manager.load()
         self.prompts = Dictionary(Paths.Prompts)
+        self.quick_responses = Dictionary(Paths.Responses)
         self.state = State()
         
         # 2. Prefrontal Cortex (LLM)
-        self.mind = Mind()
+        self.mind = Mind(
+            conversation_history_length=Env.ContextHistoryLength
+        )
 
         # 2. Prefrontal Cortex (LLM)
-        self.Ears = Ears(
+        self.ears = Ears(
             model_name=Env.VoskModel, 
             sample_rate=Env.VoskSampleRate,
+            stack_size=Env.ContextHistoryLength,
             wake_word=Name,
             wake_aliases=Env.VoskAliases,
             debug=Env.Debug,
-            on_record=self._check_silence,
+            on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
         )
 
@@ -95,10 +99,11 @@ class Robot:
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
 
-    def _check_silence(self):
+    def _on_hear_speach(self):
+        self.state.set_last_spoke()
         return not self.state.is_speaking
     
-    def _on_wake_word(self, text, conversation_history):
+    def _on_wake_word(self, text: str, conversation_history: list[str]):
         """Callback triggered by the Ears class when the wake word is detected."""
         # Get the current state of the ear's memory
         if text:
@@ -120,7 +125,7 @@ class Robot:
         self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
 
         # Start the Ears background process
-        self.Ears.start_listening()
+        self.ears.start_listening()
         
         print("[System] All robot systems initialized")
     
@@ -129,7 +134,7 @@ class Robot:
         print("[System] Shutting down...")
         time.sleep(1)
         self.threads.stop()
-        self.Ears.stop_listening()
+        self.ears.stop_listening()
         self.voice.stop()
         self.mind.stop()
 

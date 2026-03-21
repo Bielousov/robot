@@ -104,8 +104,8 @@ class Ears:
                 if self.debug:
                     print(f"Captured Speech: {text}")
                 if self._validate(text):
-                    self._on_wake_word_detected(text, list(self.stack))
-                    self.stack.clear()
+                    self._on_wake_word_detected(text, self.get_stack())
+                    self.clear_stack()
         else:
             # You can handle partial results here if needed
             # partial = json.loads(self.recognizer.PartialResult())
@@ -120,6 +120,14 @@ class Ears:
         # 3. Trigger the callback passed from main.py if it exists
         if self.__on_wake:
             self.__on_wake(text, conversation_history)
+    
+    def get_stack(self):
+        """Returns the current stack as a list."""
+        return list(self.stack)
+    
+    def clear_stack(self):
+        """Clears the stack."""
+        self.stack.clear()
 
     def start_listening(self):
         """Initializes the background thread loop."""

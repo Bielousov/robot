@@ -24,9 +24,11 @@ LOGS_PATH = OLLAMA_PATH / "server.log"
 BASE_URL = "http://localhost:11434"
 
 class Mind:
-    def __init__(self):
-        load_dotenv()
-        
+    def __init__(
+            self,
+            conversation_history_length: int = 4,
+        ):
+
         # Ollama API server configuration
         ollama_proxy_port = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
         self.api_server = OllamaAPIServer(proxy_port=ollama_proxy_port, ollama_base_url=BASE_URL)
@@ -39,15 +41,18 @@ class Mind:
         self.is_ready = False
 
         # Context history
-        self.history_limit = int(os.getenv("OLLAMA_HISTORY_LIMIT", 2))
+        self.history_limit = conversation_history_length
         self.history = []
         
         self.process = None
         self.client = ollama.Client(host=BASE_URL)
 
         self.context = {
+            "hardware": "Raspberry Pi 5",
+            "language": os.getenv("LANGUAGE", "English"),
             "location": os.getenv("CONTEXT_LOCATION", "Planet Earth"),
             "name": os.getenv("NAME", "Robot"),
+            "role": os.getenv("ROBOT_ROLE", "Robot"),
         }
 
         # Hardware profile for RPi5
@@ -168,7 +173,8 @@ class Mind:
     def think(
         self,
         prompt: Union[str, List[str]],
-        callback: Optional[Callable[[Optional[str], Optional[Exception]], None]] = None
+        callback: Optional[Callable[[Optional[str], Optional[Exception]], None]] = None,
+        context: Optional[List[str]] = None
     ) -> Optional[str]:
 
         # Normalize prompt to a list for consistent processing
@@ -182,6 +188,11 @@ class Mind:
         for p in prompts:
             if p: # Ensure we don't send empty strings in the array
                 self.add_to_history('user', p)
+        
+        # Inject overheard context as a system message if provided
+        if context:
+            context_str = "OVERHEARD CONTEXT: " + " | ".join(context)
+            self.add_to_history('user', context_str)
 
         try:
             response = self.client.chat(
@@ -193,7 +204,7 @@ class Mind:
             self._response_metrics(response)
             
             answer = self._response_format(response['message']['content'])
-            self.add_to_history('assistant', answer)
+            self.add_to_history('robot', answer)
 
             if callback:
                 callback(answer, None)
@@ -235,8 +246,10 @@ class Mind:
         now = datetime.now()
         unified_system = (
             f"{self.system_prompt}\n\n"
-            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%I:%M %p')}, Location: {self.context['location']}]"
-            f"ACTIVE_ID: {self.context['name']}"
+            f"IDENTITY: Name={self.context['name']}, Role={self.context['role']}, Hardware={self.context['hardware']}\n"
+            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%I:%M %p')}, Location: {self.context['location']}]\n"
+            f"CONFIG: Language={self.context['language']}\n\n"
+            f"INSTRUCTIONS: Always use any provided OVERHEARD CONTEXT to inform your responses. Consider it as relevant information that was heard in the environment."
         )
 
         return [{"role": "system", "content": unified_system}]

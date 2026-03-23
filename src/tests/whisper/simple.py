@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import io
+import struct
 import tempfile
 from pathlib import Path
 
@@ -19,6 +20,10 @@ MODEL_PATH = LIB_WHISPER_DIR / "models" / f"{Env.WhisperModel}.bin"
 WHISPER_BIN = LIB_WHISPER_DIR / "dist" / "build" / "bin" / "whisper-cli"
 
 SAMPLE_RATE = Env.WhisperSampleRate
+CHUNK_SIZE = 4096  # bytes per chunk (~256ms at 16kHz, 16-bit mono)
+SILENCE_THRESHOLD = 500  # amplitude threshold for silence detection
+SILENCE_DURATION = 2.0  # seconds of silence to trigger stop
+SILENCE_CHUNKS = int(SILENCE_DURATION * SAMPLE_RATE * 2 / CHUNK_SIZE)  # 2 sec worth of chunks
 
 # Verify model and binary exist
 if not WHISPER_BIN.exists():
@@ -31,48 +36,83 @@ if not MODEL_PATH.exists():
     print("[INFO] Run: bash src/lib/whisper/install.sh")
     sys.exit(1)
 
-RECORD_DURATION = 5  # seconds
-
-print(f"[WHISPER] Listening for {RECORD_DURATION} seconds... (Ctrl+C to stop)")
+print(f"[WHISPER] Listening for speech (stop after 2s silence)... (Ctrl+C to stop)")
 print(f"[CONFIG] Model: {Env.WhisperModel}")
 print(f"[CONFIG] Sample Rate: {SAMPLE_RATE}")
+
+def is_silence(chunk, threshold=SILENCE_THRESHOLD):
+    """Check if audio chunk is silent (low amplitude)"""
+    if len(chunk) < 2:
+        return True
+    try:
+        # Unpack as 16-bit signed integers
+        samples = struct.unpack(f'<{len(chunk)//2}h', chunk)
+        # Calculate RMS (root mean square) amplitude
+        rms = (sum(s**2 for s in samples) / len(samples)) ** 0.5
+        return rms < threshold
+    except:
+        return False
 
 # Create a buffer for audio data (stays in RAM)
 audio_buffer = io.BytesIO()
 
 try:
-    # 1. Record audio to buffer with arecord
-    print(f"[RECORD] Capturing audio to memory buffer...")
+    # 1. Record audio with silence detection
+    print(f"[RECORD] Capturing audio (waiting for speech)...")
     record_cmd = [
         "arecord",
         "-f", "S16_LE",
         "-r", str(SAMPLE_RATE),
         "-c", "1",
-        "-d", str(RECORD_DURATION),
-        "-t", "wav"
+        "-t", "raw"
     ]
     
     try:
-        # Use PIPE to capture output, then write to buffer
-        result = subprocess.run(record_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-        audio_buffer.write(result.stdout)
-        audio_buffer.seek(0)
+        process = subprocess.Popen(record_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
         print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
         sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        print(f"[ERROR] Recording failed: {e.stderr.decode() if e.stderr else e}")
-        sys.exit(1)
     
-    # 2. Write buffer to temporary file for whisper.cpp (stays in RAM until size limit)
-    # SpooledTemporaryFile keeps data in memory up to max_size, then spills to disk
+    silent_chunk_count = 0
+    audio_started = False
+    
+    while True:
+        chunk = process.stdout.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        
+        audio_buffer.write(chunk)
+        
+        # Detect silence
+        if is_silence(chunk):
+            if audio_started:
+                silent_chunk_count += 1
+                print(f"[SILENCE] {silent_chunk_count}/{SILENCE_CHUNKS} chunks", end='\r')
+                
+                # Stop after 2 seconds of silence
+                if silent_chunk_count >= SILENCE_CHUNKS:
+                    print(f"\n[SILENCE] Detected 2s of silence. Stopping recording.")
+                    process.terminate()
+                    break
+        else:
+            if not audio_started:
+                print(f"[SPEECH] Speech detected, recording...")
+                audio_started = True
+            silent_chunk_count = 0
+    
+    # Wait for process to finish
+    process.wait(timeout=2)
+    
+    # Reset buffer position
+    audio_buffer.seek(0)
+    
+    # 2. Write buffer to temporary file for whisper.cpp
     with tempfile.SpooledTemporaryFile(max_size=5*1024*1024, suffix=".wav") as tmp:
         tmp.write(audio_buffer.getvalue())
         tmp.flush()
         tmp.seek(0)
         
         # Write to a temporary named file that whisper.cpp can access
-        # (spooled file may not have a real path, so we need a named file)
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as named_tmp:
             named_tmp.write(tmp.getvalue())
             named_tmp.flush()
@@ -105,4 +145,7 @@ except KeyboardInterrupt:
     print("\n[STOPPED]")
 except Exception as e:
     print(f"[ERROR] {e}")
+    import traceback
+    traceback.print_exc()
+
 

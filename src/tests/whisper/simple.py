@@ -91,7 +91,12 @@ try:
     ]
     
     try:
-        process = subprocess.Popen(record_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(
+            record_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,  # Discard stderr to prevent buffer blocking
+            bufsize=0  # Unbuffered
+        )
     except FileNotFoundError:
         print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
         sys.exit(1)

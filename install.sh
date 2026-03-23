@@ -11,6 +11,7 @@ echo "[Main] Detected Script Directory: $SCRIPT_DIR"
 OLLAMA_INSTALLER="$SCRIPT_DIR/src/lib/ollama/install.sh"
 PIPER_INSTALLER="$SCRIPT_DIR/src/lib/piper/install.sh"
 VOSK_INSTALLER="$SCRIPT_DIR/src/lib/vosk/install.sh"
+WHISPER_INSTALLER="$SCRIPT_DIR/src/lib/whisper/install.sh"
 WEB_INSTALLER="$SCRIPT_DIR/web/install.sh"
 
 
@@ -43,6 +44,15 @@ if [ -f "$VOSK_INSTALLER" ]; then
     bash "$VOSK_INSTALLER"
 else
     echo "[Error] Could not find Vosk installer at: $VOSK_INSTALLER"
+fi
+
+# --- Run Whisper Installer ---
+if [ -f "$WHISPER_INSTALLER" ]; then
+    echo "[Main] Launching Whisper (STT) Installer..."
+    chmod +x "$WHISPER_INSTALLER"
+    bash "$WHISPER_INSTALLER"
+else
+    echo "[Error] Could not find Whisper installer at: $WHISPER_INSTALLER"
 fi
 
 # --- Run Web Installer ---

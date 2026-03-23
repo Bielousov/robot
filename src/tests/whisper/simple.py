@@ -52,6 +52,33 @@ def is_silence(chunk, threshold=SILENCE_THRESHOLD):
     except:
         return False
 
+def create_wav_header(sample_rate, num_samples):
+    """Create a WAV file header for PCM audio"""
+    import struct as st
+    
+    num_channels = 1
+    sample_width = 2  # 16-bit
+    byte_rate = sample_rate * num_channels * sample_width
+    block_align = num_channels * sample_width
+    subchunk2_size = num_samples * num_channels * sample_width
+    chunk_size = 36 + subchunk2_size
+    
+    header = b'RIFF'
+    header += st.pack('<I', chunk_size)
+    header += b'WAVE'
+    header += b'fmt '
+    header += st.pack('<I', 16)  # Subchunk1Size
+    header += st.pack('<H', 1)   # AudioFormat (PCM)
+    header += st.pack('<H', num_channels)
+    header += st.pack('<I', sample_rate)
+    header += st.pack('<I', byte_rate)
+    header += st.pack('<H', block_align)
+    header += st.pack('<H', sample_width * 8)  # BitsPerSample
+    header += b'data'
+    header += st.pack('<I', subchunk2_size)
+    
+    return header
+
 try:
     # Start recording process continuously
     print(f"[RECORD] Capturing audio (waiting for speech)...")
@@ -95,7 +122,7 @@ try:
                     
                     # Chunk the audio when silence is detected
                     if silent_chunk_count >= SILENCE_CHUNKS:
-                        print(f"\n[CHUNK] Utterance #{utterance_num} complete")
+                        print(f"\n[CHUNK] Utterance #{utterance_num} complete ({audio_buffer.tell()} bytes)")
                         break
             else:
                 if not audio_started:
@@ -105,8 +132,11 @@ try:
         
         # Only process if we captured speech
         if audio_started and audio_buffer.tell() > 0:
-            # Reset buffer position
-            audio_buffer.seek(0)
+            # Prepare audio with WAV header
+            audio_data = audio_buffer.getvalue()
+            num_samples = len(audio_data) // 2  # 16-bit samples
+            wav_header = create_wav_header(SAMPLE_RATE, num_samples)
+            wav_data = wav_header + audio_data
             
             # Transcribe this chunk
             print(f"[TRANSCRIBE] Processing utterance #{utterance_num}...")
@@ -121,13 +151,14 @@ try:
             try:
                 result = subprocess.run(
                     whisper_cmd,
-                    input=audio_buffer.getvalue(),
+                    input=wav_data,
                     capture_output=True,
                     timeout=30
                 )
                 
                 if result.returncode != 0:
-                    print(f"[ERROR] Whisper failed: {result.stderr.decode()}")
+                    stderr = result.stderr.decode()
+                    print(f"[ERROR] Whisper failed: {stderr}")
                 else:
                     # Display results
                     output = result.stdout.decode().strip()
@@ -139,6 +170,9 @@ try:
             
             except subprocess.TimeoutExpired:
                 print(f"[ERROR] Whisper transcription timed out for utterance #{utterance_num}")
+        else:
+            if not audio_started:
+                print(f"[WAITING] Utterance #{utterance_num}: No speech detected")
         
         print()  # Blank line for readability
 

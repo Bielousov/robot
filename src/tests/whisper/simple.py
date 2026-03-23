@@ -120,16 +120,15 @@ try:
             whisper_cmd,
             input=audio_buffer.getvalue(),
             capture_output=True,
-            text=True,
             timeout=30
         )
         
         if result.returncode != 0:
-            print(f"[ERROR] Whisper failed: {result.stderr}")
+            print(f"[ERROR] Whisper failed: {result.stderr.decode()}")
             sys.exit(1)
         
         # 3. Display results
-        output = result.stdout.strip()
+        output = result.stdout.decode().strip()
         if output:
             print("\n[RESULT]")
             print(output)

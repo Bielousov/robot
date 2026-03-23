@@ -16,7 +16,7 @@ from config import Env
 
 LIB_WHISPER_DIR = project_path / "lib" / "whisper"
 MODEL_PATH = LIB_WHISPER_DIR / "models" / f"{Env.WhisperModel}.bin"
-WHISPER_BIN = LIB_WHISPER_DIR / "dist" / "whisper" / "build" / "bin" / "whisper-cli"
+WHISPER_BIN = LIB_WHISPER_DIR / "dist" / "build" / "bin" / "whisper-cli"
 
 SAMPLE_RATE = Env.WhisperSampleRate
 

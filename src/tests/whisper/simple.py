@@ -2,7 +2,6 @@ import subprocess
 import sys
 import io
 import struct
-import tempfile
 from pathlib import Path
 
 # Anchor to project root (src)
@@ -106,40 +105,40 @@ try:
     # Reset buffer position
     audio_buffer.seek(0)
     
-    # 2. Write buffer to temporary file for whisper.cpp
-    with tempfile.SpooledTemporaryFile(max_size=5*1024*1024, suffix=".wav") as tmp:
-        tmp.write(audio_buffer.getvalue())
-        tmp.flush()
-        tmp.seek(0)
+    # 2. Pass buffer to whisper.cpp via stdin (no file I/O, stays in memory)
+    print("[TRANSCRIBE] Running whisper.cpp...")
+    whisper_cmd = [
+        str(WHISPER_BIN),
+        "-m", str(MODEL_PATH),
+        "-f", "/dev/stdin",
+        "--no-prints",
+        "-t", "1"  # single thread for consistency
+    ]
+    
+    try:
+        result = subprocess.run(
+            whisper_cmd,
+            input=audio_buffer.getvalue(),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
         
-        # Write to a temporary named file that whisper.cpp can access
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as named_tmp:
-            named_tmp.write(tmp.getvalue())
-            named_tmp.flush()
-            
-            # 3. Run whisper.cpp on the buffered audio
-            print("[TRANSCRIBE] Running whisper.cpp...")
-            whisper_cmd = [
-                str(WHISPER_BIN),
-                "-m", str(MODEL_PATH),
-                "-f", named_tmp.name,
-                "--no-prints",
-                "-t", "1"  # single thread for consistency
-            ]
-            
-            result = subprocess.run(whisper_cmd, capture_output=True, text=True)
-            
-            if result.returncode != 0:
-                print(f"[ERROR] Whisper failed: {result.stderr}")
-                sys.exit(1)
-            
-            # 4. Display results
-            output = result.stdout.strip()
-            if output:
-                print("\n[RESULT]")
-                print(output)
-            else:
-                print("[RESULT] No speech detected")
+        if result.returncode != 0:
+            print(f"[ERROR] Whisper failed: {result.stderr}")
+            sys.exit(1)
+        
+        # 3. Display results
+        output = result.stdout.strip()
+        if output:
+            print("\n[RESULT]")
+            print(output)
+        else:
+            print("[RESULT] No speech detected")
+    
+    except subprocess.TimeoutExpired:
+        print("[ERROR] Whisper transcription timed out")
+        sys.exit(1)
 
 except KeyboardInterrupt:
     print("\n[STOPPED]")

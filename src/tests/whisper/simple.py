@@ -53,12 +53,15 @@ try:
     ]
     
     try:
-        subprocess.run(record_cmd, stdout=audio_buffer, check=True, stderr=subprocess.PIPE)
+        # Use PIPE to capture output, then write to buffer
+        result = subprocess.run(record_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        audio_buffer.write(result.stdout)
+        audio_buffer.seek(0)
     except FileNotFoundError:
         print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
         sys.exit(1)
     except subprocess.CalledProcessError as e:
-        print(f"[ERROR] Recording failed: {e}")
+        print(f"[ERROR] Recording failed: {e.stderr.decode() if e.stderr else e}")
         sys.exit(1)
     
     # 2. Write buffer to temporary file for whisper.cpp (stays in RAM until size limit)

@@ -2,7 +2,14 @@ import subprocess
 import sys
 import io
 import struct
+import tempfile
 from pathlib import Path
+
+try:
+    import webrtcvad
+except ImportError:
+    print("[ERROR] webrtcvad not installed. Run: pip install webrtcvad")
+    sys.exit(1)
 
 # Anchor to project root (src)
 # __file__ is src/tests/whisper/simple.py
@@ -35,22 +42,30 @@ if not MODEL_PATH.exists():
     print("[INFO] Run: bash src/lib/whisper/install.sh")
     sys.exit(1)
 
-print(f"[WHISPER] Listening for speech (continuous mode)... (Ctrl+C to stop)")
+print(f"[WHISPER] Listening for speech (continuous mode, VAD enabled)... (Ctrl+C to stop)")
 print(f"[CONFIG] Model: {Env.WhisperModel}")
 print(f"[CONFIG] Sample Rate: {SAMPLE_RATE}")
 
-def is_silence(chunk, threshold=SILENCE_THRESHOLD):
-    """Check if audio chunk is silent (low amplitude)"""
+# Initialize VAD with aggressiveness level (0-3, higher=more aggressive)
+vad = webrtcvad.Vad(3)
+
+def is_speech(chunk, vad_instance, sample_rate=SAMPLE_RATE):
+    """Check if audio chunk contains speech using WebRTC VAD"""
     if len(chunk) < 2:
-        return True
-    try:
-        # Unpack as 16-bit signed integers
-        samples = struct.unpack(f'<{len(chunk)//2}h', chunk)
-        # Calculate RMS (root mean square) amplitude
-        rms = (sum(s**2 for s in samples) / len(samples)) ** 0.5
-        return rms < threshold
-    except:
         return False
+    try:
+        # WebRTC VAD requires 16-bit PCM audio
+        # Frame size must be 10, 20, or 30ms
+        # At 16kHz: 160 (10ms), 320 (20ms), 480 (30ms) samples = 320, 640, 960 bytes
+        return vad_instance.is_speech(chunk, sample_rate)
+    except Exception as e:
+        # Fallback to RMS if VAD fails
+        try:
+            samples = struct.unpack(f'<{len(chunk)//2}h', chunk)
+            rms = (sum(s**2 for s in samples) / len(samples)) ** 0.5
+            return rms > 500
+        except:
+            return False
 
 def create_wav_header(sample_rate, num_samples):
     """Create a WAV file header for PCM audio"""
@@ -94,8 +109,8 @@ try:
         process = subprocess.Popen(
             record_cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,  # Discard stderr to prevent buffer blocking
-            bufsize=0  # Unbuffered
+            stderr=subprocess.DEVNULL,
+            bufsize=1024
         )
     except FileNotFoundError:
         print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
@@ -112,26 +127,39 @@ try:
         
         # Record until silence is detected
         while True:
-            chunk = process.stdout.read(CHUNK_SIZE)
+            # Read 20ms frames (320 bytes at 16kHz 16-bit mono)
+            chunk = process.stdout.read(320)
             if not chunk:
                 break
             
-            audio_buffer.write(chunk)
+            # Detect speech using VAD
+            has_speech = is_speech(chunk, vad)
             
-            # Detect silence
-            if is_silence(chunk):
+            # Only write to buffer if speech has been detected
+            if audio_started:
+                audio_buffer.write(chunk)
+            
+            # Track silence periods
+            if not has_speech:
                 if audio_started:
                     silent_chunk_count += 1
-                    if silent_chunk_count % 5 == 0:
+                    if silent_chunk_count % 10 == 0:
                         print(f"[SILENCE] {silent_chunk_count}/{SILENCE_CHUNKS} chunks", end='\r')
                     
                     # Chunk the audio when silence is detected
                     if silent_chunk_count >= SILENCE_CHUNKS:
                         print(f"\n[CHUNK] Utterance #{utterance_num} complete ({audio_buffer.tell()} bytes)")
+                        # Remove trailing silence from buffer
+                        audio_data = audio_buffer.getvalue()
+                        bytes_to_remove = SILENCE_CHUNKS * 320  # 320 is our frame size
+                        if len(audio_data) > bytes_to_remove:
+                            audio_data = audio_data[:-bytes_to_remove]
+                            audio_buffer = io.BytesIO()
+                            audio_buffer.write(audio_data)
                         break
             else:
                 if not audio_started:
-                    print(f"[SPEECH] Speech detected, recording utterance #{utterance_num}...")
+                    print(f"[SPEECH] Speech detected (VAD), recording utterance #{utterance_num}...")
                     audio_started = True
                 silent_chunk_count = 0
         
@@ -143,38 +171,53 @@ try:
             wav_header = create_wav_header(SAMPLE_RATE, num_samples)
             wav_data = wav_header + audio_data
             
-            # Transcribe this chunk
-            print(f"[TRANSCRIBE] Processing utterance #{utterance_num}...")
-            whisper_cmd = [
-                str(WHISPER_BIN),
-                "-m", str(MODEL_PATH),
-                "-f", "/dev/stdin",
-                "--no-prints",
-                "-t", "1"  # single thread for consistency
-            ]
+            # Write to temp file in /dev/shm (RAM-based, stays in memory)
+            temp_wav = tempfile.NamedTemporaryFile(
+                dir="/dev/shm",
+                suffix=".wav",
+                delete=False
+            )
+            temp_wav.write(wav_data)
+            temp_wav.close()
             
             try:
-                result = subprocess.run(
-                    whisper_cmd,
-                    input=wav_data,
-                    capture_output=True,
-                    timeout=30
-                )
+                # Transcribe this chunk with quantization
+                print(f"[TRANSCRIBE] Processing utterance #{utterance_num} (with quantization)...")
+                whisper_cmd = [
+                    str(WHISPER_BIN),
+                    "-m", str(MODEL_PATH),
+                    "-f", temp_wav.name,
+                    "--no-prints",
+                    "-t", "1",  # single thread for consistency
+                    "-q",  # Enable quantization for faster inference
+                    "-nf"  # No filters (keep output clean)
+                ]
                 
-                if result.returncode != 0:
-                    stderr = result.stderr.decode()
-                    print(f"[ERROR] Whisper failed: {stderr}")
-                else:
-                    # Display results
-                    output = result.stdout.decode().strip()
-                    if output:
-                        print(f"[RESULT #{utterance_num}]")
-                        print(output)
+                try:
+                    result = subprocess.run(
+                        whisper_cmd,
+                        capture_output=True,
+                        timeout=30
+                    )
+                    
+                    if result.returncode != 0:
+                        stderr = result.stderr.decode()
+                        print(f"[ERROR] Whisper failed: {stderr}")
                     else:
-                        print(f"[RESULT #{utterance_num}] No speech detected")
+                        # Display results
+                        output = result.stdout.decode().strip()
+                        if output:
+                            print(f"[RESULT #{utterance_num}]")
+                            print(output)
+                        else:
+                            print(f"[RESULT #{utterance_num}] No speech detected")
+                
+                except subprocess.TimeoutExpired:
+                    print(f"[ERROR] Whisper transcription timed out for utterance #{utterance_num}")
             
-            except subprocess.TimeoutExpired:
-                print(f"[ERROR] Whisper transcription timed out for utterance #{utterance_num}")
+            finally:
+                # Clean up temp file
+                Path(temp_wav.name).unlink(missing_ok=True)
         else:
             if not audio_started:
                 print(f"[WAITING] Utterance #{utterance_num}: No speech detected")

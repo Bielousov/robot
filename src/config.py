@@ -10,6 +10,7 @@ Name = getenv('NAME')
 
 Env = Enum (
   BrainConfidenceScore      = float(getenv('BRAIN_CONFIDENCE_THRESHOLD', '0.9')),
+  BrainContextLimit         = int(getenv('OLLAMA_HISTORY_LIMIT', '4')),
   BrainFrequencyDelta       = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),
   BrainFrequencyGamma       = int(getenv('BRAIN_FREQUENCY_GAMMA', '20')),
   ContextHistoryLength      = int(getenv('CONTEXT_HISTORY_LENGTH', '8')),

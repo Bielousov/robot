@@ -23,7 +23,7 @@ class Robot:
         
         # 2. Prefrontal Cortex (LLM)
         self.mind = Mind(
-            conversation_history_length=Env.ContextHistoryLength
+            conversation_history_length=Env.BrainContextLimit
         )
 
         # 2. Prefrontal Cortex (LLM)

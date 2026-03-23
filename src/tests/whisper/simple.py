@@ -35,7 +35,7 @@ if not MODEL_PATH.exists():
     print("[INFO] Run: bash src/lib/whisper/install.sh")
     sys.exit(1)
 
-print(f"[WHISPER] Listening for speech (stop after 2s silence)... (Ctrl+C to stop)")
+print(f"[WHISPER] Listening for speech (continuous mode)... (Ctrl+C to stop)")
 print(f"[CONFIG] Model: {Env.WhisperModel}")
 print(f"[CONFIG] Sample Rate: {SAMPLE_RATE}")
 
@@ -52,11 +52,8 @@ def is_silence(chunk, threshold=SILENCE_THRESHOLD):
     except:
         return False
 
-# Create a buffer for audio data (stays in RAM)
-audio_buffer = io.BytesIO()
-
 try:
-    # 1. Record audio with silence detection
+    # Start recording process continuously
     print(f"[RECORD] Capturing audio (waiting for speech)...")
     record_cmd = [
         "arecord",
@@ -72,78 +69,93 @@ try:
         print("[ERROR] arecord not found. Install alsa-utils: apt install alsa-utils")
         sys.exit(1)
     
-    silent_chunk_count = 0
-    audio_started = False
+    utterance_num = 0
     
     while True:
-        chunk = process.stdout.read(CHUNK_SIZE)
-        if not chunk:
-            break
+        # Reset buffer for each utterance
+        audio_buffer = io.BytesIO()
+        silent_chunk_count = 0
+        audio_started = False
+        utterance_num += 1
         
-        audio_buffer.write(chunk)
+        # Record until silence is detected
+        while True:
+            chunk = process.stdout.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            
+            audio_buffer.write(chunk)
+            
+            # Detect silence
+            if is_silence(chunk):
+                if audio_started:
+                    silent_chunk_count += 1
+                    if silent_chunk_count % 5 == 0:
+                        print(f"[SILENCE] {silent_chunk_count}/{SILENCE_CHUNKS} chunks", end='\r')
+                    
+                    # Chunk the audio when silence is detected
+                    if silent_chunk_count >= SILENCE_CHUNKS:
+                        print(f"\n[CHUNK] Utterance #{utterance_num} complete")
+                        break
+            else:
+                if not audio_started:
+                    print(f"[SPEECH] Speech detected, recording utterance #{utterance_num}...")
+                    audio_started = True
+                silent_chunk_count = 0
         
-        # Detect silence
-        if is_silence(chunk):
-            if audio_started:
-                silent_chunk_count += 1
-                print(f"[SILENCE] {silent_chunk_count}/{SILENCE_CHUNKS} chunks", end='\r')
+        # Only process if we captured speech
+        if audio_started and audio_buffer.tell() > 0:
+            # Reset buffer position
+            audio_buffer.seek(0)
+            
+            # Transcribe this chunk
+            print(f"[TRANSCRIBE] Processing utterance #{utterance_num}...")
+            whisper_cmd = [
+                str(WHISPER_BIN),
+                "-m", str(MODEL_PATH),
+                "-f", "/dev/stdin",
+                "--no-prints",
+                "-t", "1"  # single thread for consistency
+            ]
+            
+            try:
+                result = subprocess.run(
+                    whisper_cmd,
+                    input=audio_buffer.getvalue(),
+                    capture_output=True,
+                    timeout=30
+                )
                 
-                # Stop after 2 seconds of silence
-                if silent_chunk_count >= SILENCE_CHUNKS:
-                    print(f"\n[SILENCE] Detected 2s of silence. Stopping recording.")
-                    process.terminate()
-                    break
-        else:
-            if not audio_started:
-                print(f"[SPEECH] Speech detected, recording...")
-                audio_started = True
-            silent_chunk_count = 0
-    
-    # Wait for process to finish
-    process.wait(timeout=2)
-    
-    # Reset buffer position
-    audio_buffer.seek(0)
-    
-    # 2. Pass buffer to whisper.cpp via stdin (no file I/O, stays in memory)
-    print("[TRANSCRIBE] Running whisper.cpp...")
-    whisper_cmd = [
-        str(WHISPER_BIN),
-        "-m", str(MODEL_PATH),
-        "-f", "/dev/stdin",
-        "--no-prints",
-        "-t", "1"  # single thread for consistency
-    ]
-    
-    try:
-        result = subprocess.run(
-            whisper_cmd,
-            input=audio_buffer.getvalue(),
-            capture_output=True,
-            timeout=30
-        )
+                if result.returncode != 0:
+                    print(f"[ERROR] Whisper failed: {result.stderr.decode()}")
+                else:
+                    # Display results
+                    output = result.stdout.decode().strip()
+                    if output:
+                        print(f"[RESULT #{utterance_num}]")
+                        print(output)
+                    else:
+                        print(f"[RESULT #{utterance_num}] No speech detected")
+            
+            except subprocess.TimeoutExpired:
+                print(f"[ERROR] Whisper transcription timed out for utterance #{utterance_num}")
         
-        if result.returncode != 0:
-            print(f"[ERROR] Whisper failed: {result.stderr.decode()}")
-            sys.exit(1)
-        
-        # 3. Display results
-        output = result.stdout.decode().strip()
-        if output:
-            print("\n[RESULT]")
-            print(output)
-        else:
-            print("[RESULT] No speech detected")
-    
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Whisper transcription timed out")
-        sys.exit(1)
+        print()  # Blank line for readability
 
 except KeyboardInterrupt:
-    print("\n[STOPPED]")
+    print("\n[STOPPED] Terminating recording...")
+    try:
+        process.terminate()
+        process.wait(timeout=2)
+    except:
+        process.kill()
 except Exception as e:
     print(f"[ERROR] {e}")
     import traceback
     traceback.print_exc()
+    try:
+        process.kill()
+    except:
+        pass
 
 

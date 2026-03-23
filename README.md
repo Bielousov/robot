@@ -76,6 +76,15 @@ defaults.ctl.card 0
     zstd
 ```
 
+### Setup `asound`
+
+```bash
+sudo ln -s robot/system/asound.conf /etc/asound.conf
+sudo reboot
+speaker-test -t wav -c 2
+```
+
+
 ### Clone Git repo
 
 ```bash

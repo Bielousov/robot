@@ -38,7 +38,7 @@ On-board offline AI-powered robot / assistant
 
 ### Enable I2S Sound:
 
-##### /boot/coonfig.txt
+##### /boot/firmware/config.txt
 ```
 # Enable I2S
 dtparam=i2s=on
@@ -62,10 +62,12 @@ defaults.ctl.card 0
 
 ### System dependencies install
 ```bash
-  apt-get update && apt-get install -y \
+  sudo apt-get update &&
+  sudo apt-get install -y \
     alsa-utils \
     git \
     libatomic1 \
+    python3-pip \
     python3-venv \
     sudo \
     wget \
@@ -74,15 +76,35 @@ defaults.ctl.card 0
     zstd
 ```
 
+### Clone Git repo
+
+```bash
+  git clone https://github.com/Bielousov/robot.git
+  cd robot
+```
+
+### Enable python virtula environment
+```bash
+  python3 -m venv .venv --upgrade-deps
+  source .venv/bin/activate  
+```  
+
 ### Python dependencies install
 ```
-pip install -r requirements.txt
+  pip install -r requirements.txt
+```
+
+
+### Create ENV file:
+Run:
+```
+  cp .env.example .env
 ```
 
 ### Project dependency install:
 Run:
 ```
-bash install.sh
+  bash install.sh
 ```
 
 ## State

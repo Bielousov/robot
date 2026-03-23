@@ -11,6 +11,7 @@ RUN apt-get update \
     alsa-utils \
     git \
     libatomic1 \
+    python3-pip \
     python3-venv \
     sudo \
     wget \

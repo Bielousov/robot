@@ -3,13 +3,8 @@ import sys
 import io
 import struct
 import tempfile
+import webrtcvad
 from pathlib import Path
-
-try:
-    import webrtcvad
-except ImportError:
-    print("[ERROR] webrtcvad not installed. Run: pip install webrtcvad")
-    sys.exit(1)
 
 # Anchor to project root (src)
 # __file__ is src/tests/whisper/simple.py

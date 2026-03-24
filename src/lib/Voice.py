@@ -46,7 +46,7 @@ class Voice:
             
             # We pipe Piper's stdout directly into aplay
             self._aplay = subprocess.Popen(
-                ["aplay", "-r", str(self._sample_rate), "-D", "capture", "-f", "S16_LE", "-t", "raw"],
+                ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
                 stdin=self._proc.stdout,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

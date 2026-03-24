@@ -94,6 +94,7 @@ try:
     print(f"[RECORD] Capturing audio (waiting for speech)...")
     record_cmd = [
         "arecord",
+        "-D", "capture",
         "-f", "S16_LE",
         "-r", str(SAMPLE_RATE),
         "-c", "1",

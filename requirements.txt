@@ -7,5 +7,8 @@ psutil
 python-dotenv
 scikit-learn
 silero_vad
-torch==2.3.1+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
 vosk
+
+# Use PyTorch CPU wheels for ARM64 / Raspberry Pi 5
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch

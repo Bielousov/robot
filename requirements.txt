@@ -6,6 +6,6 @@ pandas
 psutil
 python-dotenv
 scikit-learn
-setuptools
-webrtcvad
+silero_vad
+torch
 vosk

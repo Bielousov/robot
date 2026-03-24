@@ -3,8 +3,9 @@ import sys
 import io
 import struct
 import tempfile
-import webrtcvad
+import torch
 from pathlib import Path
+from silero_vad import load_silero_vad
 
 # Anchor to project root (src)
 # __file__ is src/tests/whisper/simple.py
@@ -37,24 +38,29 @@ if not MODEL_PATH.exists():
     print("[INFO] Run: bash src/lib/whisper/install.sh")
     sys.exit(1)
 
-print(f"[WHISPER] Listening for speech (continuous mode, VAD enabled)... (Ctrl+C to stop)")
+print(f"[WHISPER] Listening for speech (continuous mode, Silero VAD enabled)... (Ctrl+C to stop)")
 print(f"[CONFIG] Model: {Env.WhisperModel}")
 print(f"[CONFIG] Sample Rate: {SAMPLE_RATE}")
 
-# Initialize VAD with aggressiveness level (0-3, higher=more aggressive)
-vad = webrtcvad.Vad(3)
+# Initialize Silero VAD
+print("[INIT] Loading Silero VAD model...")
+vad_model = load_silero_vad()
 
-def is_speech(chunk, vad_instance, sample_rate=SAMPLE_RATE):
-    """Check if audio chunk contains speech using WebRTC VAD"""
+def is_speech(chunk, vad_model, sample_rate=SAMPLE_RATE):
+    """Check if audio chunk contains speech using Silero VAD"""
     if len(chunk) < 2:
         return False
     try:
-        # WebRTC VAD requires 16-bit PCM audio
-        # Frame size must be 10, 20, or 30ms
-        # At 16kHz: 160 (10ms), 320 (20ms), 480 (30ms) samples = 320, 640, 960 bytes
-        return vad_instance.is_speech(chunk, sample_rate)
+        # Convert bytes to tensor (16-bit PCM)
+        audio_tensor = torch.frombuffer(chunk, dtype=torch.int16).float() / 32768.0
+        
+        # Silero VAD expects audio in the range [-1, 1]
+        confidence = vad_model(audio_tensor, sample_rate).item()
+        
+        # VAD returns confidence score (0-1), threshold at 0.5
+        return confidence > 0.5
     except Exception as e:
-        # Fallback to RMS if VAD fails
+        # Fallback to simple amplitude check if VAD fails
         try:
             samples = struct.unpack(f'<{len(chunk)//2}h', chunk)
             rms = (sum(s**2 for s in samples) / len(samples)) ** 0.5
@@ -129,7 +135,7 @@ try:
                 break
             
             # Detect speech using VAD
-            has_speech = is_speech(chunk, vad)
+            has_speech = is_speech(chunk, vad_model)
             
             # Only write to buffer if speech has been detected
             if audio_started:

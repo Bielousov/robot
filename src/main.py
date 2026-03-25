@@ -28,11 +28,11 @@ class Robot:
 
         # 2. Prefrontal Cortex (LLM)
         self.ears = Ears(
+            debug=Env.Debug,
             model_name=Env.VoskModel, 
             sample_rate=Env.VoskSampleRate,
             wake_word=Name,
             wake_aliases=Env.VoskAliases,
-            debug=Env.Debug,
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
         )

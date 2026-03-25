@@ -79,7 +79,7 @@ defaults.ctl.card 0
 ### Setup `asound`
 
 ```bash
-sudo ln -s "$(pwd)/system/asound.conf" /etc/asound.conf
+sudo ln -s "$(pwd)/system/.asoundrc" ~/.asoundrc
 sudo reboot
 speaker-test -t wav -c 2
 ```

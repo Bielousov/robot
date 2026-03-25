@@ -26,7 +26,7 @@ class Ears:
             debug: bool = False,
             on_record = None,
             on_wake = None,
-            vad_aggressiveness: int = 2, # 0=sensitive, 3=aggressive
+            vad_aggressiveness: int = 0, # 0=most sensitive for faint mics, 3=aggressive
         ):
     
         self.debug = debug;
@@ -43,6 +43,7 @@ class Ears:
         
         # VAD Setup (WebRTC Voice Activity Detection)
         # Aggressiveness: 0-3 (higher = more aggressive filtering)
+        # With faint mics, use 0 (most sensitive)
         self.vad = webrtcvad.Vad(vad_aggressiveness)
         
         # Audio Config
@@ -88,7 +89,7 @@ class Ears:
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
             self.__process_handle = subprocess.Popen(
-                ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
+                ["arecord", "-D", "default", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE if self.debug else subprocess.DEVNULL,
                 bufsize=0
@@ -116,7 +117,7 @@ class Ears:
         
         if not is_speech:
             # Silence detected, skip Vosk processing
-            self.recognizer.Reset()  # Reset recognizer state on long silence
+            self.recognizer.Reset()
             return
         
         # Speech detected, update statistics

@@ -89,10 +89,9 @@ class Ears:
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
             self.__process_handle = subprocess.Popen(
-                ["arecord", "-D", "default", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
+                ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE if self.debug else subprocess.DEVNULL,
-                bufsize=0
+                stderr=subprocess.PIPE if self.debug else subprocess.DEVNULL
             )
 
         # Read a chunk of audio
@@ -108,20 +107,28 @@ class Ears:
         # VAD pre-filtering: Skip silent frames before Vosk processing
         # This significantly reduces CPU load by avoiding unnecessary Vosk processing
         self.__vad_frames_total += 1
-        try:
-            is_speech = self.vad.is_speech(data, self.sample_rate)
-        except Exception as e:
-            if self.debug:
-                print(f"VAD error: {e}")
-            is_speech = True  # Process on VAD errors to be safe
         
-        if not is_speech:
-            # Silence detected, skip Vosk processing
-            self.recognizer.Reset()
-            return
+        # TEMPORARY: Disable VAD to test if it's the culprit
+        use_vad = False
         
-        # Speech detected, update statistics
-        self.__vad_frames_speech += 1
+        if use_vad:
+            try:
+                is_speech = self.vad.is_speech(data, self.sample_rate)
+            except Exception as e:
+                if self.debug:
+                    print(f"VAD error: {e}")
+                is_speech = True  # Process on VAD errors to be safe
+            
+            if not is_speech:
+                # Silence detected, skip Vosk processing
+                self.recognizer.Reset()
+                return
+            
+            # Speech detected, update statistics
+            self.__vad_frames_speech += 1
+        else:
+            # VAD disabled - process all audio for testing
+            self.__vad_frames_speech += 1
 
         # Process with Vosk only if speech was detected
         if self.recognizer.AcceptWaveform(data):

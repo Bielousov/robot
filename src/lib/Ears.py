@@ -88,9 +88,9 @@ class Ears:
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
             self.__process_handle = subprocess.Popen(
-                ["arecord", "-f", "S16_LE", "-D", "capture",  "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
+                ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw", "-q"],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                stderr=subprocess.PIPE if self.debug else subprocess.DEVNULL,
                 bufsize=0
             )
 

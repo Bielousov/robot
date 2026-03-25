@@ -1,8 +1,12 @@
 import json
 import subprocess
 import atexit
+import warnings
 from pathlib import Path
 from vosk import Model, KaldiRecognizer, SetLogLevel
+
+# Suppress deprecated pkg_resources warning from webrtcvad
+warnings.filterwarnings("ignore", category=UserWarning, message=".*pkg_resources.*")
 import webrtcvad
 
 # Use the existing Process architecture

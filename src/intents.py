@@ -75,9 +75,9 @@ class IntentHandler:
         for p in raw_prompts:
             if self.robot.prompts.has(p):
                 # Flush the overheard conversation history for context
-                heard_context = self.robot.ears.get_stack()
+                heard_context = self.robot.state.get_eavesdrop_context()
                 if heard_context:
-                    self.robot.ears.clear_stack()
+                    self.robot.state.eavesdrop.clear()
 
                 # Replace key with a specific prompt from the dictionary category
                 processed_prompts.append(self.robot.prompts.pick(p))

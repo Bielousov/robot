@@ -49,14 +49,14 @@ else
     sudo apt-get update && sudo apt-get install -y unzip
 
     echo "------------------------------------------------"
-    echo "[Model] Downloading and extracting: $VOSK_MODEL_NAME"
+    echo "[Model] Downloading $VOSK_MODEL_URL"
 
     TEMP_ZIP="$MODELS_DIR/$VOSK_MODEL_NAME.zip"
     wget -q --show-progress -L -O "$TEMP_ZIP" "$VOSK_MODEL_URL"
     sync # FORCE DISK SYNC (Crucial for RPi5 SD cards)
     sleep 5
 
-    # Extract into models folder (strip top-level folder)
+    echo "[Model] Extracting to $MODEL_DIR"
     unzip -q "$TEMP_ZIP" -d "$MODELS_DIR"
     rm "$TEMP_ZIP"
     

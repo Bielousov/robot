@@ -60,6 +60,7 @@ def start_app():
         print("\n[System] Shutdown signal received (Ctrl+C)...")
         time.sleep(2)
         print("[System] Shutting down.")
+        time.sleep(2)
 
     finally:
         # This 'finally' block ensures the robot stops even if 

@@ -30,7 +30,6 @@ class Robot:
         self.ears = Ears(
             model_name=Env.VoskModel, 
             sample_rate=Env.VoskSampleRate,
-            stack_size=Env.ContextHistoryLength,
             wake_word=Name,
             wake_aliases=Env.VoskAliases,
             debug=Env.Debug,
@@ -99,21 +98,31 @@ class Robot:
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
 
-    def _on_hear_speach(self):
-        self.state.set_last_spoke()
-        return not self.state.is_speaking
-    
-    def _on_wake_word(self, text: str, conversation_history: list[str]):
-        """Callback triggered by the Ears class when the wake word is detected."""
-        # Get the current state of the ear's memory
+    def _on_hear_speach(self, text: str = ""):
+        """Callback for audio gating and recognized text handling.
+        
+        Called twice:
+        1. With no text: gate check before Vosk processing
+        2. With text: after speech recognition to append to eavesdrop
+        """
         if text:
-            last_captured = conversation_history[-1]
+            # Text recognized - append to eavesdrop history (auto-limited)
+            self.state.append_eavesdrop(text)
+            self.state.set_last_spoke()
+    
+    def _on_wake_word(self, text: str):
+        """Callback triggered by the Ears class when the wake word is detected."""
+        if text:
             print(f"\n[EVENT] Wake Word Detected!")
             print(f" > Message: {text}")
-            print(f" > Last Captured: '{last_captured}'")
             
-            for item in conversation_history:
-                self.state.prompts.append(item)
+            # Flatten eavesdrop context into a single prompt
+            eavesdrop_context = self.state.get_eavesdrop_context()
+            if eavesdrop_context:
+                print(f" > Context: {eavesdrop_context}")
+                self.state.prompts.append(eavesdrop_context)
+            
+            self.state.prompts.append(text)
 
     def run(self):
         # Create brain and logic threads and keep references so we can change

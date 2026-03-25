@@ -2,6 +2,8 @@ import random, time
 import numpy as np
 from datetime import datetime
 
+from config import Env
+
 class State:
     def __init__(self):
         self.is_awake = False
@@ -9,8 +11,10 @@ class State:
         self.last_spoke_time = time.time()
         self.is_speaking = False
         self.is_thinking = False
+        self.eavesdrop = []
         self.prompts = []
         self.responses = []
+        self.eavesdrop_limit = Env.EavesdropHistoryLimit
 
     @property
     def chaos(self):
@@ -71,6 +75,17 @@ class State:
             self.last_spoke_time_diff,
             self.time_of_day
         ]])
+
+    def append_eavesdrop(self, text: str):
+        """Append text to eavesdrop, maintaining max length limit."""
+        self.eavesdrop.append(text)
+        # Keep only the most recent entries
+        if len(self.eavesdrop) > self.eavesdrop_limit:
+            self.eavesdrop = self.eavesdrop[-self.eavesdrop_limit:]
+    
+    def get_eavesdrop_context(self) -> str:
+        """Return eavesdrop history as a single flattened context string."""
+        return " ".join(self.eavesdrop) if self.eavesdrop else ""
 
     def set_awake(self, is_awake_next):
         self.is_awake_next = is_awake_next

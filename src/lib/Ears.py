@@ -1,11 +1,9 @@
 import json
 import subprocess
-import os
-import threading
 import atexit
-from collections import deque
 from pathlib import Path
 from vosk import Model, KaldiRecognizer, SetLogLevel
+import webrtcvad
 
 # Use the existing Process architecture
 from .Threads import Process, Threads
@@ -20,11 +18,11 @@ class Ears:
             wake_word: str,
             model_name: str,
             sample_rate: int = 16000,
-            stack_size: int = 4,
             wake_aliases = '',
             debug: bool = False,
             on_record = None,
             on_wake = None,
+            vad_aggressiveness: int = 2, # 0=sensitive, 3=aggressive
         ):
     
         self.debug = debug;
@@ -39,13 +37,21 @@ class Ears:
         self.model = Model(str(model_full_path))
         self.recognizer = KaldiRecognizer(self.model, sample_rate)
         
+        # VAD Setup (WebRTC Voice Activity Detection)
+        # Aggressiveness: 0-3 (higher = more aggressive filtering)
+        self.vad = webrtcvad.Vad(vad_aggressiveness)
+        
         # Audio Config
         self.sample_rate = sample_rate
-        self.stack = deque(maxlen=stack_size)
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
+        
+        # VAD stats for debugging
+        self.__vad_frames_total = 0
+        self.__vad_frames_speech = 0
 
         print (f"SYNONYMS: {self.wake_aliases}")
+        print (f"VAD Aggressiveness: {vad_aggressiveness} (0=sensitive, 3=aggressive)")
         
         # Threading Management
         self.__threads = Threads()
@@ -94,40 +100,52 @@ class Ears:
         if not data:
             return
 
-        # Process with Vosk
+        # VAD pre-filtering: Skip silent frames before Vosk processing
+        # This significantly reduces CPU load by avoiding unnecessary Vosk processing
+        self.__vad_frames_total += 1
+        try:
+            is_speech = self.vad.is_speech(data, self.sample_rate)
+        except Exception as e:
+            if self.debug:
+                print(f"VAD error: {e}")
+            is_speech = True  # Process on VAD errors to be safe
+        
+        if not is_speech:
+            # Silence detected, skip Vosk processing
+            self.recognizer.Reset()  # Reset recognizer state on long silence
+            return
+        
+        # Speech detected, update statistics
+        self.__vad_frames_speech += 1
+
+        # Process with Vosk only if speech was detected
         if self.recognizer.AcceptWaveform(data):
             result = json.loads(self.recognizer.Result())
             text = self._cleanup(result.get("text", ""))
             
             if text:
-                self.stack.append(text)
+                # Notify caller of recognized text for state management
+                if self.__on_record:
+                    self.__on_record(text)
+                
                 if self.debug:
                     print(f"Captured Speech: {text}")
                 if self._validate(text):
-                    self._on_wake_word_detected(text, self.get_stack())
-                    self.clear_stack()
+                    self._on_wake_word_detected(text)
         else:
             # You can handle partial results here if needed
             # partial = json.loads(self.recognizer.PartialResult())
             pass
 
 
-    def _on_wake_word_detected(self, text, conversation_history):
+    def _on_wake_word_detected(self, text):
         """Internal handler that triggers the external callback."""
         if self.debug:
-            print(f"Wake word detected: '{text}' {conversation_history}")
+            print(f"Wake word detected: '{text}'")
         
-        # 3. Trigger the callback passed from main.py if it exists
+        # Trigger the callback passed from main.py if it exists
         if self.__on_wake:
-            self.__on_wake(text, conversation_history)
-    
-    def get_stack(self):
-        """Returns the current stack as a list."""
-        return list(self.stack)
-    
-    def clear_stack(self):
-        """Clears the stack."""
-        self.stack.clear()
+            self.__on_wake(text)
 
     def start_listening(self):
         """Initializes the background thread loop."""
@@ -142,4 +160,10 @@ class Ears:
             self.__process_handle.terminate()
             self.__process_handle.wait()
             self.__process_handle = None
-        print("[Ears]: Stopped.")
+        
+        # Print VAD statistics if available
+        if self.__vad_frames_total > 0:
+            speech_ratio = (self.__vad_frames_speech / self.__vad_frames_total) * 100
+            print(f"[Ears]: Stopped. VAD Statistics - Processed {self.__vad_frames_speech}/{self.__vad_frames_total} frames ({speech_ratio:.1f}% speech)")
+        else:
+            print("[Ears]: Stopped.")

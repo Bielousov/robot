@@ -1,4 +1,5 @@
 dotenv
+faster-whisper
 joblib
 numpy
 ollama

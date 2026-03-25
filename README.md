@@ -44,10 +44,7 @@ On-board offline AI-powered robot / assistant
 dtparam=i2s=on
 dtparam=audio=off
 
-# Generic I2S DAC overlay for Class D amps (works with NS4168)
-dtoverlay=max98357a
-
-# I2S Microphone
+# I2S Amp + Microphone
 dtoverlay=googlevoicehat-soundcard
 
 # Optional headless setup: disable HDMI

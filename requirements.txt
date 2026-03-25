@@ -1,5 +1,4 @@
 dotenv
-faster-whisper
 joblib
 numpy
 ollama
@@ -7,9 +6,4 @@ pandas
 psutil
 python-dotenv
 scikit-learn
-silero_vad
 vosk
-
-# Use PyTorch CPU wheels for ARM64 / Raspberry Pi 5
---extra-index-url https://download.pytorch.org/whl/cpu
-torch

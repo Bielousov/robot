@@ -1,9 +1,6 @@
 import json
 import subprocess
 import atexit
-import os
-import fcntl
-import time
 from pathlib import Path
 from vosk import Model, KaldiRecognizer, SetLogLevel
 
@@ -75,29 +72,15 @@ class Ears:
         """The core loop called by the Threads manager."""
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
-            if self.debug:
-                print("[Ears] Starting arecord subprocess...")
-            
             self.__process_handle = subprocess.Popen(
                 ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                bufsize=8192
             )
-            
-            # Set stdout to non-blocking
-            flags = fcntl.fcntl(self.__process_handle.stdout, fcntl.F_GETFL)
-            fcntl.fcntl(self.__process_handle.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            
-            if self.debug:
-                print(f"[Ears] arecord PID: {self.__process_handle.pid}")
 
-        # Try to read audio (non-blocking)
-        try:
-            data = self.__process_handle.stdout.read(4000)
-        except BlockingIOError:
-            # No data available yet - sleep briefly to prevent busy-wait
-            time.sleep(0.01)  # 10ms
-            return
+        # Read audio - blocking, waits for data to arrive
+        data = self.__process_handle.stdout.read(4000)
         
         # Check for arecord errors
         if self.__process_handle.poll() is not None:
@@ -108,10 +91,6 @@ class Ears:
                     print(f"[Ears] arecord error: {stderr}")
             except:
                 pass
-
-        if self.__on_record and not self.__on_record():
-            self.recognizer.Reset()
-            return
         
         if not data:
             return
@@ -125,12 +104,17 @@ class Ears:
                 # Print transcript of heard speech
                 print(f"[Ears] Heard: {text}")
                 
-                # Notify caller of recognized text for state management
+                # Call on_record callback for ALL detected speech and check gate
+                gate_check = True  # Default to allow processing
                 if self.__on_record:
-                    self.__on_record(text)
+                    gate_check = self.__on_record(text)
                 
-                if self.debug:
-                    print(f"Captured Speech: {text}")
+                # If gate returned False, stop processing further
+                if gate_check is False:
+                    self.recognizer.Reset()
+                    return
+                
+                # Call on_wake callback ONLY if wake word is detected
                 if self._validate(text):
                     self._on_wake_word_detected(text)
         else:
@@ -141,9 +125,6 @@ class Ears:
 
     def _on_wake_word_detected(self, text):
         """Internal handler that triggers the external callback."""
-        if self.debug:
-            print(f"Wake word detected: '{text}'")
-        
         # Trigger the callback passed from main.py if it exists
         if self.__on_wake:
             self.__on_wake(text)

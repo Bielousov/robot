@@ -141,7 +141,7 @@ class Robot:
     def stop(self):
         self.state.set_awake(False)
         print("[System] Shutting down...")
-        time.sleep(1)
+        time.sleep(3)
         self.threads.stop()
         self.ears.stop_listening()
         self.voice.stop()

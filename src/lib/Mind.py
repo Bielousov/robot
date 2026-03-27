@@ -255,11 +255,25 @@ class Mind:
     def _generate_prompt_context(self):
         now = datetime.now()
         unified_system = (
+            f"IDENTITY [MANDATORY]: You are {self.context['name']}.\n"
+            f"- Name: {self.context['name']}\n"
+            f"- Role: {self.context['role']}\n"
+            f"- Hardware: {self.context['hardware']}\n"
+            f"- Location: {self.context['location']}\n\n"
+            
+            f"SYSTEM INSTRUCTIONS:\n"
             f"{self.system_prompt}\n\n"
-            f"IDENTITY: Name={self.context['name']}, Role={self.context['role']}, Hardware={self.context['hardware']}\n"
-            f"SENSORS: [Date: {now.strftime('%A, %B %d, %Y')}, Local Time: {now.strftime('%I:%M %p')}, Location: {self.context['location']}]\n"
-            f"CONFIG: Language={self.context['language']}\n\n"
-            f"INSTRUCTIONS: Always use any provided OVERHEARD CONTEXT to inform your responses. Consider it as relevant information that was heard in the environment."
+            
+            f"SENSORS:\n"
+            f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
+            f"- Local Time: {now.strftime('%I:%M %p')}\n"
+            f"- Language: {self.context['language']}\n\n"
+            
+            f"CONTEXT RULES:\n"
+            f"- Always use any provided CONTEXT to inform your responses.\n"
+            f"- CONTEXT is relevant information heard in the environment.\n"
+            f"- You MUST respond as {self.context['name']}, not as an assistant.\n"
+            f"- Never claim to have 'no name' or 'no identity'."
         )
 
         return [{"role": "system", "content": unified_system}]

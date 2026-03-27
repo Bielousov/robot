@@ -26,8 +26,11 @@ BASE_URL = "http://localhost:11434"
 class Mind:
     def __init__(
             self,
+            debug: bool = False,
             conversation_history_length: int = 4,
         ):
+
+        self.debug = debug
 
         # Ollama API server configuration
         ollama_proxy_port = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
@@ -184,15 +187,21 @@ class Mind:
             if callback:
                 callback(None, ValueError("Empty prompt"))
             return None
+        
+        # Inject overheard context as a system message if provided
+        if context:
+            context_str = "CONTEXT: " + " ".join(context)
+            self.add_to_history('user', context_str)
+
+            if self.debug:
+                print(f"[Debug] Injected context into history: {context_str}")
 
         for p in prompts:
             if p: # Ensure we don't send empty strings in the array
                 self.add_to_history('user', p)
-        
-        # Inject overheard context as a system message if provided
-        if context:
-            context_str = "OVERHEARD CONTEXT: " + " | ".join(context)
-            self.add_to_history('user', context_str)
+
+                if self.debug:
+                    print(f"[Debug] Added prompt to history: {p}")
 
         try:
             response = self.client.chat(
@@ -239,7 +248,8 @@ class Mind:
     
     def clear_history(self):
         """Reset Pip's short-term memory."""
-        print("[Robot] Memory banks cleared.")
+        if self.debug:
+            print("[Robot] Memory banks cleared.")
         self.history = []
 
     def _generate_prompt_context(self):
@@ -289,7 +299,8 @@ class Mind:
         tps = eval_count / eval_dur if eval_dur > 0 else 0
 
         print(f"[Robot] Response: {eval_count} tokens | {tps:.2f} tokens/s")
-        print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
+        if self.debug:
+            print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
     
     def stop(self):
         self.api_server.stop()

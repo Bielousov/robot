@@ -1,6 +1,7 @@
 import random, time
 import numpy as np
 from datetime import datetime
+from collections import deque
 
 from config import Env
 
@@ -12,10 +13,10 @@ class State:
         self.is_listening = False
         self.is_speaking = False
         self.is_thinking = False
-        self.eavesdrop = []
+        self.eavesdrop_limit = Env.EavesdropHistoryLimit
+        self.eavesdrop = deque(maxlen=self.eavesdrop_limit)
         self.prompts = []
         self.responses = []
-        self.eavesdrop_limit = Env.EavesdropHistoryLimit
 
     @property
     def chaos(self):
@@ -78,15 +79,12 @@ class State:
         ]])
 
     def append_eavesdrop(self, text: str):
-        """Append text to eavesdrop, maintaining max length limit."""
+        """Append text to eavesdrop, maintaining max length limit automatically."""
         self.eavesdrop.append(text)
-        # Keep only the most recent entries
-        if len(self.eavesdrop) > self.eavesdrop_limit:
-            self.eavesdrop = self.eavesdrop[-self.eavesdrop_limit:]
     
-    def get_eavesdrop_context(self) -> str:
-        """Return eavesdrop history as a single flattened context string."""
-        return " ".join(self.eavesdrop) if self.eavesdrop else ""
+    def get_eavesdrop_context(self) -> list[str]:
+        """Return eavesdrop history as a list of strings."""
+        return list(self.eavesdrop)
 
     def set_awake(self, is_awake_next):
         self.is_awake_next = is_awake_next

@@ -23,6 +23,7 @@ class Robot:
         
         # 2. Prefrontal Cortex (LLM)
         self.mind = Mind(
+            debug=Env.Debug,
             conversation_history_length=Env.BrainContextLimit
         )
 
@@ -120,13 +121,6 @@ class Robot:
         if text:
             print(f"\n[EVENT] Wake Word Detected!")
             print(f" > Message: {text}")
-            
-            # Flatten eavesdrop context into a single prompt
-            eavesdroped_context = self.state.get_eavesdrop_context()
-            if eavesdroped_context:
-                print(f" > Context: {eavesdroped_context}")
-                self.state.prompts.append(eavesdroped_context)
-            
             self.state.prompts.append(text)
 
     def run(self):

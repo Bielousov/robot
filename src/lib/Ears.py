@@ -1,7 +1,9 @@
 import json
 import subprocess
 import atexit
-import warnings
+import os
+import fcntl
+import time
 from pathlib import Path
 from vosk import Model, KaldiRecognizer, SetLogLevel
 
@@ -73,14 +75,39 @@ class Ears:
         """The core loop called by the Threads manager."""
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
+            if self.debug:
+                print("[Ears] Starting arecord subprocess...")
+            
             self.__process_handle = subprocess.Popen(
                 ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE if self.debug else subprocess.DEVNULL
+                stderr=subprocess.PIPE
             )
+            
+            # Set stdout to non-blocking
+            flags = fcntl.fcntl(self.__process_handle.stdout, fcntl.F_GETFL)
+            fcntl.fcntl(self.__process_handle.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+            
+            if self.debug:
+                print(f"[Ears] arecord PID: {self.__process_handle.pid}")
 
-        # Read a chunk of audio
-        data = self.__process_handle.stdout.read(4000)
+        # Try to read audio (non-blocking)
+        try:
+            data = self.__process_handle.stdout.read(4000)
+        except BlockingIOError:
+            # No data available yet - sleep briefly to prevent busy-wait
+            time.sleep(0.01)  # 10ms
+            return
+        
+        # Check for arecord errors
+        if self.__process_handle.poll() is not None:
+            # Subprocess exited, check stderr
+            try:
+                stderr = self.__process_handle.stderr.read().decode('utf-8', errors='ignore')
+                if stderr:
+                    print(f"[Ears] arecord error: {stderr}")
+            except:
+                pass
 
         if self.__on_record and not self.__on_record():
             self.recognizer.Reset()

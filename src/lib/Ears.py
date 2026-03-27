@@ -5,10 +5,6 @@ import warnings
 from pathlib import Path
 from vosk import Model, KaldiRecognizer, SetLogLevel
 
-# Suppress deprecated pkg_resources warning from webrtcvad
-warnings.filterwarnings("ignore", category=UserWarning, message=".*pkg_resources.*")
-import webrtcvad
-
 # Use the existing Process architecture
 from .Threads import Process, Threads
 
@@ -26,7 +22,6 @@ class Ears:
             debug: bool = False,
             on_record = None,
             on_wake = None,
-            vad_aggressiveness: int = 0, # 0=most sensitive for faint mics, 3=aggressive
         ):
     
         self.debug = debug;
@@ -41,22 +36,12 @@ class Ears:
         self.model = Model(str(model_full_path))
         self.recognizer = KaldiRecognizer(self.model, sample_rate)
         
-        # VAD Setup (WebRTC Voice Activity Detection)
-        # Aggressiveness: 0-3 (higher = more aggressive filtering)
-        # With faint mics, use 0 (most sensitive)
-        self.vad = webrtcvad.Vad(vad_aggressiveness)
-        
         # Audio Config
         self.sample_rate = sample_rate
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
-        
-        # VAD stats for debugging
-        self.__vad_frames_total = 0
-        self.__vad_frames_speech = 0
 
         print (f"SYNONYMS: {self.wake_aliases}")
-        print (f"VAD Aggressiveness: {vad_aggressiveness} (0=sensitive, 3=aggressive)")
         
         # Threading Management
         self.__threads = Threads()
@@ -104,33 +89,7 @@ class Ears:
         if not data:
             return
 
-        # VAD pre-filtering: Skip silent frames before Vosk processing
-        # This significantly reduces CPU load by avoiding unnecessary Vosk processing
-        self.__vad_frames_total += 1
-        
-        # TEMPORARY: Disable VAD to test if it's the culprit
-        use_vad = False
-        
-        if use_vad:
-            try:
-                is_speech = self.vad.is_speech(data, self.sample_rate)
-            except Exception as e:
-                if self.debug:
-                    print(f"VAD error: {e}")
-                is_speech = True  # Process on VAD errors to be safe
-            
-            if not is_speech:
-                # Silence detected, skip Vosk processing
-                self.recognizer.Reset()
-                return
-            
-            # Speech detected, update statistics
-            self.__vad_frames_speech += 1
-        else:
-            # VAD disabled - process all audio for testing
-            self.__vad_frames_speech += 1
-
-        # Process with Vosk only if speech was detected
+        # Process with Vosk
         if self.recognizer.AcceptWaveform(data):
             result = json.loads(self.recognizer.Result())
             text = self._cleanup(result.get("text", ""))
@@ -173,9 +132,4 @@ class Ears:
             self.__process_handle.wait()
             self.__process_handle = None
         
-        # Print VAD statistics if available
-        if self.__vad_frames_total > 0:
-            speech_ratio = (self.__vad_frames_speech / self.__vad_frames_total) * 100
-            print(f"[Ears]: Stopped. VAD Statistics - Processed {self.__vad_frames_speech}/{self.__vad_frames_total} frames ({speech_ratio:.1f}% speech)")
-        else:
-            print("[Ears]: Stopped.")
+        print("[Ears]: Stopped.")

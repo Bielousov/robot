@@ -33,7 +33,7 @@ class Robot:
             sample_rate=Env.VoskSampleRate,
             wake_word=Name,
             wake_aliases=Env.VoskAliases,
-            on_listen=self._on_listen
+            on_listen=self._on_listen,
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
         )

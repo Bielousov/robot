@@ -77,13 +77,12 @@ class Ears:
             text = text.replace(word, "").strip()
 
         # Filter out very short utterances (noise/false positives)
-        # Keep only if: contains wake word OR has 2+ words OR is 3+ characters
-        words = text.split()
         has_wake_word = self.wake_word in text
-        is_substantial = len(words) >= 2 or len(text) >= 3
         
-        if not (has_wake_word or is_substantial):
-            return ""  # Filter out noise like single "the", "a", etc.
+        # Only keep if: contains wake word OR has 2+ words
+        # Reject all single short words (articles, prepositions, etc.)
+        if not (has_wake_word or len(text) >= 5):
+            return ""  # Filter out noise like single "the", "a", "is", etc.
 
         return text
     

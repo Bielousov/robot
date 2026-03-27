@@ -9,6 +9,7 @@ class State:
         self.is_awake = False
         self.is_awake_next = False
         self.last_spoke_time = time.time()
+        self.is_listening = False
         self.is_speaking = False
         self.is_thinking = False
         self.eavesdrop = []

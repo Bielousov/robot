@@ -2,10 +2,13 @@ import json
 import subprocess
 import atexit
 from pathlib import Path
+from typing import Callable, Optional
 from vosk import Model, KaldiRecognizer, SetLogLevel
+import webrtcvad
+import time
 
 # Use the existing Process architecture
-from .Threads import Process, Threads
+from .Threads import Threads
 
 LIB_PATH = Path(__file__).parent.resolve()
 VOSK_PATH = LIB_PATH / "vosk"
@@ -19,8 +22,9 @@ class Ears:
             sample_rate: int = 16000,
             wake_aliases = '',
             debug: bool = False,
-            on_record = None,
-            on_wake = None,
+            on_listen: Optional[Callable[[str], bool]] = None,
+            on_record: Optional[Callable[[str], bool]] = None,
+            on_wake: Optional[Callable[[str], None]] = None,
         ):
     
         self.debug = debug;
@@ -39,8 +43,16 @@ class Ears:
         self.sample_rate = sample_rate
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
+        
+        # Audio chunk size: 250ms for Vosk processing
+        self.sample_length_ms = 250
+        self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
 
-        print (f"SYNONYMS: {self.wake_aliases}")
+        # VAD Setup - use aggressiveness=2 (moderate balance)
+        self.vad = webrtcvad.Vad(2)
+        # VAD frame size: 20ms * 2 bytes per sample (16-bit)
+        self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
+
         
         # Threading Management
         self.__threads = Threads()
@@ -76,11 +88,11 @@ class Ears:
                 ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                bufsize=8192
+                bufsize=self.buffer_size
             )
 
         # Read audio - blocking, waits for data to arrive
-        data = self.__process_handle.stdout.read(4000)
+        data = self.__process_handle.stdout.read(self.buffer_size)
         
         # Check for arecord errors
         if self.__process_handle.poll() is not None:
@@ -95,8 +107,31 @@ class Ears:
         if not data:
             return
 
+        # Check if audio has voice activity before processing with Vosk
+        # VAD requires 10ms, 20ms, or 30ms frames
+        # At 16kHz: 20ms = 320 samples * 2 bytes (16-bit) = 640 bytes
+        
+        try:
+            # Process audio in 20ms chunks through VAD
+            for i in range(0, len(data), self.vad_frame_size):
+                frame = data[i:i+self.vad_frame_size]
+                if len(frame) == self.vad_frame_size:  # Only process complete frames
+                    if self.vad.is_speech(frame, self.sample_rate):
+                        if self.__on_listen:
+                            self.__on_listen(True)
+                        break
+        except Exception as e:
+            if self.debug:
+                print(f"[VAD] Error: {e}")
+
+
         # Process with Vosk
+        start_time = time.time()
         if self.recognizer.AcceptWaveform(data):
+            process_time = time.time() - start_time
+            if self.debug:
+                print(f"[Vosk] Processing time: {process_time*1000:.2f}ms")
+            
             result = json.loads(self.recognizer.Result())
             text = self._cleanup(result.get("text", ""))
             

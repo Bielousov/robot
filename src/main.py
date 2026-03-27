@@ -33,6 +33,7 @@ class Robot:
             sample_rate=Env.VoskSampleRate,
             wake_word=Name,
             wake_aliases=Env.VoskAliases,
+            on_listen=self._on_listen
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
         )
@@ -98,6 +99,10 @@ class Robot:
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
 
+    def _on_listen(self, listening: bool):
+        """Callback for Ears to send recognized text for processing."""
+        self.state.is_listening = listening
+
     def _on_hear_speach(self, text: str = ""):
         """Callback for audio gating and recognized text handling.
         
@@ -117,10 +122,10 @@ class Robot:
             print(f" > Message: {text}")
             
             # Flatten eavesdrop context into a single prompt
-            eavesdrop_context = self.state.get_eavesdrop_context()
-            if eavesdrop_context:
-                print(f" > Context: {eavesdrop_context}")
-                self.state.prompts.append(eavesdrop_context)
+            eavesdroped_context = self.state.get_eavesdrop_context()
+            if eavesdroped_context:
+                print(f" > Context: {eavesdroped_context}")
+                self.state.prompts.append(eavesdroped_context)
             
             self.state.prompts.append(text)
 

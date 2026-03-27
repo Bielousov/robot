@@ -59,6 +59,7 @@ class Ears:
         self.__process_handle = None # Subprocess for arecord
 
         # Callback handlers
+        self.__on_listen = on_listen
         self.__on_record = on_record
         self.__on_wake = on_wake
         

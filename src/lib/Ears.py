@@ -48,7 +48,7 @@ class Ears:
         self.sample_length_ms = 250
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
 
-        # VAD Setup - use aggressiveness=2 (moderate balance)
+        # VAD Setup
         self.vad = webrtcvad.Vad(2)
         # VAD frame size: 20ms * 2 bytes per sample (16-bit)
         self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
@@ -112,19 +112,25 @@ class Ears:
         # VAD requires 10ms, 20ms, or 30ms frames
         # At 16kHz: 20ms = 320 samples * 2 bytes (16-bit) = 640 bytes
         
+        has_speech = False
         try:
             # Process audio in 20ms chunks through VAD
             for i in range(0, len(data), self.vad_frame_size):
                 frame = data[i:i+self.vad_frame_size]
                 if len(frame) == self.vad_frame_size:  # Only process complete frames
                     if self.vad.is_speech(frame, self.sample_rate):
+                        has_speech = True
                         if self.__on_listen:
                             self.__on_listen(True)
                         break
         except Exception as e:
+            has_speech = True  # Default to True if VAD fails
             if self.debug:
                 print(f"[VAD] Error: {e}")
 
+        # Skip Vosk processing if no speech detected
+        if not has_speech:
+            return
 
         # Process with Vosk
         start_time = time.time()

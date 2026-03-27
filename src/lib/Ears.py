@@ -122,6 +122,9 @@ class Ears:
             text = self._cleanup(result.get("text", ""))
             
             if text:
+                # Print transcript of heard speech
+                print(f"[Ears] Heard: {text}")
+                
                 # Notify caller of recognized text for state management
                 if self.__on_record:
                     self.__on_record(text)

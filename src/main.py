@@ -104,6 +104,7 @@ class Robot:
     def _on_speak(self, speaking: bool):
         """Callback for Voice to indicate when speaking is done."""
         self.state.is_speaking = speaking
+        self.state.set_last_spoke()
 
     def _on_listen(self, listening: bool):
         """Callback for Ears to send recognized text for processing."""

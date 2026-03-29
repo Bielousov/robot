@@ -91,17 +91,11 @@ class IntentHandler:
     def _handle_speak_intent(self, phrase):
         if not phrase:
             return
-        
-        def callback(success, error=None):
-            """Callback triggered when the Voice process finishes."""
-            self.robot.state.is_speaking = False
-            if error:
-                self._debug(f"Voice Error: {error}", tag="Error")
 
         # Set the state and trigger voice with the callback
         self.robot.state.is_speaking = True
         self.robot.state.set_last_spoke()
-        self.robot.voice.say(phrase, callback)
+        self.robot.voice.say(phrase)
         self._debug(f"Saying: {phrase}", tag="ROBOT")
 
     def _unhandled_intent(self, intent):

@@ -42,7 +42,8 @@ class Robot:
         # 3. Voice Setup
         self.voice = Voice(
             voice_model_name=Env.Voice,
-            voice_sample_rate=Env.VoiceSampleRate
+            voice_sample_rate=Env.VoiceSampleRate,
+            on_speak=self._on_speak, # Treat spoken text as eavesdrop input
         )
         
         # 4. Intent handler setup
@@ -99,6 +100,10 @@ class Robot:
                 self.threads.set_interval(self.brain_thread, interval)
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
+
+    def _on_speak(self, speaking: bool):
+        """Callback for Voice to indicate when speaking is done."""
+        self.state.is_speaking = speaking
 
     def _on_listen(self, listening: bool):
         """Callback for Ears to send recognized text for processing."""

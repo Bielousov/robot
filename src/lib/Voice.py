@@ -21,7 +21,6 @@ class Voice:
         self._model_path = MODELS_PATH / f"{voice_model_name}.onnx"
         self._sample_rate = voice_sample_rate
         self._speech_lock = threading.Lock()
-        # Persistent process handle
         self._proc = None
         self._aplay = None
 
@@ -33,7 +32,6 @@ class Voice:
             return
 
         os.chmod(PIPER_BIN, 0o755)
-        self._start_engine()
         
         # Register cleanup to kill processes on exit
         atexit.register(self.stop)
@@ -41,9 +39,8 @@ class Voice:
         signal.signal(signal.SIGTERM, self._handle_signal)
 
     def _start_engine(self):
-        """Starts Piper and aplay in a persistent pipeline."""
+        """Start a Piper process and an aplay consumer for one utterance."""
         try:
-            # Start Piper in 'raw' mode, outputting to stdout
             self._proc = subprocess.Popen(
                 [str(PIPER_BIN), "--model", str(self._model_path), "--output_raw"],
                 stdin=subprocess.PIPE,
@@ -52,7 +49,6 @@ class Voice:
                 bufsize=0
             )
             
-            # Pipe Piper's stdout directly into aplay
             self._aplay = subprocess.Popen(
                 ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
                 stdin=self._proc.stdout,
@@ -60,32 +56,33 @@ class Voice:
                 stderr=subprocess.DEVNULL,
                 bufsize=0
             )
+            self._proc.stdout.close()
         except Exception as e:
             print(f"[Voice Error]: Failed to start TTS engine: {e}")
+            self._proc = None
+            self._aplay = None
 
     def say(self, text):
-        """Sends text to the existing Piper process and waits for playback to finish."""
+        """Synthesize and play one utterance without overlapping speech."""
         def task():
             with self._speech_lock:
-                if not self._proc or self._proc.poll() is not None:
-                    self._start_engine()
-                
                 try:
-                    # Piper expects one line of text at a time
-                    input_text = f"{text.strip()}\n"
-                    self._proc.stdin.write(input_text.encode('utf-8'))
-                    self._proc.stdin.flush()
-                    
-                    # Wait for aplay to finish playing the audio
-                    if self._aplay:
-                        self._aplay.wait()
-                    
                     if self.__on_speak:
                         self.__on_speak(True)
+
+                    self._start_engine()
+                    if not self._proc or not self._aplay:
+                        raise RuntimeError("TTS pipeline did not start")
+
+                    self._proc.communicate(input=f"{text.strip()}\n".encode("utf-8"))
+                    self._aplay.wait()
                 except Exception as e:
                     print(f"[Voice Error]: {e}")
+                finally:
                     if self.__on_speak:
                         self.__on_speak(False)
+                    self._proc = None
+                    self._aplay = None
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -98,7 +95,7 @@ class Voice:
         print("[Voice]: Shutting down TTS engine...")
         if self._proc:
             self._proc.terminate()
-            self._proc.wait()
+            self._proc.wait(timeout=2)
         if self._aplay:
             self._aplay.terminate()
-            self._aplay.wait()
+            self._aplay.wait(timeout=2)

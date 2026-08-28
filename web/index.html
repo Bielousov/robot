@@ -19,7 +19,7 @@
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
-            const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11435');
+            const ollamaUrl = '';
             const [model, setModel] = useState('pip');
             const [systemPrompt, setSystemPrompt] = useState('You are a helpful robot assistant.');
             const messagesEndRef = useRef(null);
@@ -99,7 +99,7 @@
                 } catch (error) {
                     setMessages(prev => [...prev, { 
                         role: 'error', 
-                        content: `Error: ${error.message}. Make sure Ollama is running at ${ollamaUrl}` 
+                        content: `Error: ${error.message}. Make sure Ollama is running on the web server.`
                     }]);
                 } finally {
                     setLoading(false);

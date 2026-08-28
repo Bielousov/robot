@@ -5,8 +5,8 @@ A simple React-based chat interface that communicates with an Ollama language mo
 ## Features
 
 - **React Chat Interface** - Built with React 18 using CDN links (no build step required)
-- **Ollama Integration** - Connects to Ollama API for LLM responses
-- **Configurable Settings** - Change Ollama URL and model dynamically
+- **Ollama Integration** - Connects to the local Ollama API through the web server
+- **Configurable Settings** - Change the model dynamically
 - **Auto-scrolling** - Chat scrolls to show latest messages
 - **Responsive Design** - Works on desktop and mobile devices
 - **Error Handling** - Clear error messages if connection fails
@@ -34,7 +34,7 @@ Serving files from: /workspaces/robot/web
 
 ### 2. Start Ollama
 
-Make sure Ollama is running on the default URL or update it in the UI:
+Make sure Ollama is running on the same machine as the web server:
 ```bash
 ollama serve          # Runs on http://localhost:11434 by default
 ```
@@ -47,18 +47,14 @@ Open your browser to:
 
 ## Using the Chat Interface
 
-1. **Configure Settings** (top of page):
-   - **Ollama URL**: The address where Ollama is running (default: `http://localhost:11434`)
-   - **Model**: The model to use (default: `mistral`)
-
-2. **Send Messages**:
+1. **Send Messages**:
    - Type your message in the input field
    - Press "Send" or hit Enter
    - Wait for the AI response
 
 ## Default Configuration
 
-- **Ollama URL**: `http://localhost:11434`
+- **Ollama backend**: `http://127.0.0.1:11434` from the web server
 - **Default Model**: `mistral`
 - **Port**: 8000
 
@@ -94,9 +90,8 @@ killall python3  # Kill the server process
 ```
 
 ### Ollama Connection Error
-- Verify Ollama is running: `curl http://localhost:11434/api/tags`
-- Check firewall settings
-- Try updating the Ollama URL in the UI
+- Verify Ollama is running on the server: `curl http://localhost:11434/api/tags`
+- Check that the web server can reach its local Ollama service
 
 ### Styles Not Loading
 - Clear browser cache (Ctrl+Shift+Delete)

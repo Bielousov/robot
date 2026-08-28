@@ -111,12 +111,26 @@ class Mind:
             print("[Robot] Server already active.")
         except Exception:
             print("[Robot] Starting Ollama server...")
+            if not OLLAMA_BIN.is_file():
+                raise FileNotFoundError(
+                    f"Ollama binary not found at {OLLAMA_BIN}. Run install.sh first."
+                )
+            if not os.access(OLLAMA_BIN, os.X_OK):
+                raise PermissionError(f"Ollama binary is not executable: {OLLAMA_BIN}")
+
             log_file = open(LOGS_PATH, "a")
-            self.process = subprocess.Popen(
-                [str(OLLAMA_BIN), "serve"],
-                stdout=log_file, stderr=log_file,
-                env=os.environ, preexec_fn=os.setsid 
-            )
+            try:
+                self.process = subprocess.Popen(
+                    [str(OLLAMA_BIN), "serve"],
+                    stdout=log_file, stderr=log_file,
+                    env=os.environ, preexec_fn=os.setsid
+                )
+            except OSError as error:
+                log_file.close()
+                raise RuntimeError(
+                    f"Could not execute Ollama at {OLLAMA_BIN}: {error}. "
+                    "Run the ARM64 installer on the Raspberry Pi."
+                ) from error
             
             # Health check loop
             for _ in range(15):

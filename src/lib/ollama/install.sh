@@ -19,7 +19,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 # Fallback defaults if .env is missing or values aren't set
-OLLAMA_VERSION=${OLLAMA_VERSION:-"0.15.6"}
+OLLAMA_VERSION=${OLLAMA_VERSION:-"0.33.2"}
 OLLAMA_MODEL_NAME=${OLLAMA_MODEL_NAME:-"pip"}
 
 mkdir -p "$DIST_DIR"

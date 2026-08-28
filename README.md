@@ -94,7 +94,7 @@ speaker-test -t wav -c 2
   cd robot
 ```
 
-### Enable python virtula environment
+### Enable python virtual environment
 ```bash
   python3 -m venv .venv --upgrade-deps
   source .venv/bin/activate  

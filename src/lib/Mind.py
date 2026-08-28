@@ -208,6 +208,7 @@ class Mind:
                 model=self.model_name,
                 messages=self._generate_prompt_context() + self.history,
                 stream=False,
+                think=False,
                 keep_alive=-1
             )
             self._response_metrics(response)

@@ -1,0 +1,20 @@
+[Unit]
+Description=Ollama Local LLM API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/projects/robot
+EnvironmentFile=/home/pi/projects/robot/.env
+Environment=OLLAMA_MODELS=/home/pi/projects/robot/src/lib/ollama/models
+Environment=OLLAMA_HOST=0.0.0.0:11434
+# Start the Ollama server without auto-loading any model.
+ExecStart=/bin/bash /home/pi/projects/robot/start.sh ollama
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

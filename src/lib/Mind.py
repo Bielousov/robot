@@ -86,7 +86,6 @@ class Mind:
         }
 
         self._prepare_environment()
-        self._force_stop_server()
         self.start_server()
         self.api_server.start()
         self.load_model()
@@ -106,41 +105,15 @@ class Mind:
         os.environ.update(env_vars)
 
     def start_server(self):
-        """Starts Ollama background process."""
+        """Checks that the external Ollama service is already running."""
         try:
-            self.client.ps() 
-            print("[Robot] Server already active.")
-        except Exception:
-            print("[Robot] Starting Ollama server...")
-            if not OLLAMA_BIN.is_file():
-                raise FileNotFoundError(
-                    f"Ollama binary not found at {OLLAMA_BIN}. Run install.sh first."
-                )
-            if not os.access(OLLAMA_BIN, os.X_OK):
-                raise PermissionError(f"Ollama binary is not executable: {OLLAMA_BIN}")
-
-            log_file = open(LOGS_PATH, "a")
-            try:
-                self.process = subprocess.Popen(
-                    [str(OLLAMA_BIN), "serve"],
-                    stdout=log_file, stderr=log_file,
-                    env=os.environ, preexec_fn=os.setsid
-                )
-            except OSError as error:
-                log_file.close()
-                raise RuntimeError(
-                    f"Could not execute Ollama at {OLLAMA_BIN}: {error}. "
-                    "Run the ARM64 installer on the Raspberry Pi."
-                ) from error
-            
-            # Health check loop
-            for _ in range(15):
-                time.sleep(1)
-                try:
-                    self.client.ps()
-                    return
-                except: continue
-            raise RuntimeError("Ollama failed to start. Check server.log")
+            self.client.ps()
+            print("[Robot] Ollama service is running.")
+            return
+        except Exception as exc:
+            raise RuntimeError(
+                "Ollama service is not running. Start it via 'sudo systemctl start ollama.service'."
+            ) from exc
         
     def load_model(self):
         """Creates the 'pip' model showing: Loading model [name] ([size] MB): [percent] %"""

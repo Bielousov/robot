@@ -15,15 +15,15 @@ A simple React-based chat interface that communicates with an Ollama language mo
 
 - `index.html` - Main React chat component with embedded JSX
 - `styles.css` - Modern gradient UI styling
-- `../bin/server.sh` - Python HTTP server to serve files
+- `../services/web.sh` - Python HTTP server to serve files
 
 ## Setup
 
 ### 1. Start the Web Server
 
 ```bash
-./bin/server.sh          # Starts on port 8000
-./bin/server.sh 3000     # Custom port
+./services/web.sh          # Starts on port 8000
+./services/web.sh 3000     # Custom port
 ```
 
 The server will output:
@@ -105,6 +105,6 @@ killall python3  # Kill the server process
 ├── web/
 │   ├── index.html      # React app + chat logic
 │   └── styles.css      # UI styling
-└── bin/
-    └── server.sh       # Python HTTP server
+└── services/
+    └── web.sh       # Python HTTP server
 ```

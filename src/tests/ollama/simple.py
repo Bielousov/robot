@@ -20,7 +20,7 @@ def run_test():
         llm.think("System check.") 
         llm.clear_history() # Clear warm-up from history to keep test clean
 
-        test_prompt = "Hi, I'm Anton, your master and creator. Say how you feel about being created."
+        test_prompt = "Hi Pip. I am Anton, your human operator and creator. Say how you feel about being created."
         
         print(f"[Test] Prompting Pip: '{test_prompt}'")
         

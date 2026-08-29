@@ -1,23 +1,13 @@
+import ollama
 import os
 import psutil
 import re
 import time
 import signal
-import ollama
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-try:
-    from dotenv import load_dotenv
-except ImportError:  # pragma: no cover - optional runtime dependency
-    def load_dotenv(*args, **kwargs):
-        return False
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(PROJECT_ROOT / ".env")
-
-from .MindProxy import OllamaAPIServer
 from models.personality import create_personality_model, get_llm_model_config
 
 # Path configuration
@@ -29,7 +19,6 @@ OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
 
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_PORT = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
 
 class Mind:
     def __init__(
@@ -39,10 +28,6 @@ class Mind:
         ):
 
         self.debug = debug
-
-        # Ollama API server configuration
-      
-        self.api_server = OllamaAPIServer(proxy_port=OLLAMA_PORT, ollama_base_url=OLLAMA_URL)
         
         llm_config = get_llm_model_config()
         self.base_model = llm_config["base_model"]
@@ -57,11 +42,10 @@ class Mind:
         self.history = []
         
         self.process = None
-        self.client = ollama.Client(host=BASE_URL)
+        self.client = ollama.Client(host=OLLAMA_URL)
 
         self._prepare_environment()
         self.start_server()
-        self.api_server.start()
         time.sleep(2)
         self.is_ready = create_personality_model(
             client=self.client,
@@ -264,7 +248,6 @@ class Mind:
             print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
     
     def stop(self):
-        self.api_server.stop()
         if self.process:
             print("[-] Stopping server...")
             os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)

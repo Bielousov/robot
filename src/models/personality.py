@@ -70,6 +70,13 @@ def create_personality_model(
     """
     print(f"[Robot] Initializing personality for '{model_name}' based on {base_model} model")
 
+    try:
+        client.show(model_name)
+        print(f"[Robot] Existing model '{model_name}' found. Rebuilding it with the current identity prompt.")
+        client.delete(model_name)
+    except Exception:
+        pass
+
     last_error = None
     for attempt in range(1, max_attempts + 1):
         try:

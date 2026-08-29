@@ -95,11 +95,11 @@ class Mind:
         prompts: List[str],
         context: Optional[List[str]] = None,
     ) -> List[dict]:
-        """Build a minimal real chat transcript.
+        """Build a simple conversation transcript mirroring the web app.
 
-        Keep only recent actual history, a compact context note, and the final
-        current user message as the last turn. Avoid synthetic wrapper text that
-        makes the model sound like a generic assistant.
+        Recent actual history goes first, followed by the latest user message.
+        Context is kept minimal and appended as a plain note; no synthetic prompt
+        wrappers are injected because they alter the model behavior.
         """
         final_prompt = prompts[-1].strip() if prompts and prompts[-1] else ""
         if not final_prompt:

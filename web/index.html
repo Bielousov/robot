@@ -100,6 +100,22 @@
                 return recentMessages;
             };
 
+            const getSafeAssistantContent = (payload) => {
+                const message = payload?.message ?? {};
+                const content = typeof message.content === 'string' ? message.content.trim() : '';
+                const thinking = typeof message.thinking === 'string' ? message.thinking.trim() : '';
+
+                if (thinking && content && content === thinking) {
+                    return '';
+                }
+
+                if (/<think|<thinking|thinking\s*:/i.test(content) || /thinking/i.test(thinking)) {
+                    return '';
+                }
+
+                return content;
+            };
+
             const sendMessage = async (e) => {
                 e.preventDefault();
                 if (!input.trim()) return;
@@ -136,10 +152,15 @@
                     const evalCount = Number(data.eval_count || 0);
                     const evalDurationSeconds = (data.eval_duration || 0) / 1_000_000_000;
                     const tokensPerSecond = evalDurationSeconds > 0 ? evalCount / evalDurationSeconds : 0;
+                    const assistantContent = getSafeAssistantContent(data);
+
+                    if (!assistantContent) {
+                        throw new Error('The model returned only thinking text.');
+                    }
 
                     setMessages(prev => [...prev, {
                         role: 'assistant',
-                        content: data.message.content,
+                        content: assistantContent,
                         metrics: {
                             timeMs: totalDurationMs,
                             tokens: evalCount,
@@ -198,6 +219,12 @@
                                     </div>
                                 </div>
                             ))}
+                            {loading && (
+                                <div className="message assistant">
+                                    <div className="message-role">🤖 Assistant</div>
+                                    <div className="message-content typing">Thinking...</div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 

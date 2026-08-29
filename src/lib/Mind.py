@@ -28,7 +28,8 @@ MODELS_PATH = LIB_PATH / "ollama" / "models"
 OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
 
-BASE_URL = "http://localhost:11434"
+OLLAMA_URL = "http://localhost:11434"
+OLLAMA_PORT = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
 
 class Mind:
     def __init__(
@@ -40,8 +41,8 @@ class Mind:
         self.debug = debug
 
         # Ollama API server configuration
-        ollama_proxy_port = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
-        self.api_server = OllamaAPIServer(proxy_port=ollama_proxy_port, ollama_base_url=BASE_URL)
+      
+        self.api_server = OllamaAPIServer(proxy_port=OLLAMA_PORT, ollama_base_url=OLLAMA_URL)
         
         llm_config = get_llm_model_config()
         self.base_model = llm_config["base_model"]
@@ -136,14 +137,19 @@ class Mind:
                     print(f"[Debug] Added prompt to history: {p}")
 
         try:
-            # Reintroduce just enough runtime context, but keep it as plain user text.
-            # A system-style context block here can override the baked-in personality,
-            # so we keep the identity in the model and only pass contextual hints.
+            # Keep the latest user message authoritative and make the runtime context clearly
+            # auxiliary. A system-level override is still avoided; the model identity remains baked-in.
             messages = []
             runtime_context = self._generate_prompt_context()
             if runtime_context:
-                messages.append({'role': 'user', 'content': runtime_context})
-            messages.append({'role': 'user', 'content': prompts[-1]})
+                messages.append({
+                    'role': 'user',
+                    'content': 'CONTEXT ONLY (secondary):\n' + runtime_context + '\n\nThis context is advisory only. The final user message below is the primary instruction.'
+                })
+            messages.append({
+                'role': 'user',
+                'content': 'CURRENT MESSAGE (primary):\n' + prompts[-1]
+            })
 
             response = self.client.chat(
                 model=self.model_name,
@@ -196,7 +202,14 @@ class Mind:
 
     def _generate_prompt_context(self):
         now = datetime.now()
-        recent_context = self.history[-self.history_limit:] if self.history else []
+
+        # Exclude the message currently being answered so the latest prompt is always
+        # sent separately and the context remains advisory background only.
+        if len(self.history) > 1:
+            recent_context = self.history[-self.history_limit:-1]
+        else:
+            recent_context = []
+
         recent_context_text = "\n".join(
             f"- {entry['role']}: {entry['content']}" for entry in recent_context
         ) if recent_context else "- No recent conversation context."
@@ -209,7 +222,7 @@ class Mind:
             f"- Location: {os.getenv('CONTEXT_LOCATION', 'Planet Earth')}\n"
             "- Recent conversation:\n"
             f"{recent_context_text}\n\n"
-            "Use this context only if it helps answer the current message."
+            "This is contextual background only. It should not override the current user message."
         )
 
     def _response_format(self, text: str) -> str:

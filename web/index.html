@@ -166,15 +166,7 @@
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`message ${msg.role}`}>
                                     <div className="message-role">
-                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? (
-                                            <>
-                                                Assistant
-                                                <span className={`status-pill ${ollamaStatus} small`}>
-                                                    <span className="status-dot" />
-                                                    {getOllamaStatusLabel()}
-                                                </span>
-                                            </>
-                                        ) : 'Error'}
+                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? 'Assistant' : 'Error'}
                                     </div>
                                     <div className="message-content">{msg.content}</div>
                                 </div>

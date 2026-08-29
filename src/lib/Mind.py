@@ -129,12 +129,33 @@ class Mind:
                     "content": f"Context: {compact_context}",
                 })
 
-        runtime_context = self._generate_prompt_context()
-        if runtime_context:
-            messages.append({
-                "role": "user",
-                "content": f"Context: {runtime_context}",
-            })
+        prompt_lower = final_prompt.lower()
+        asks_about_context = any(
+            keyword in prompt_lower
+            for keyword in [
+                "time",
+                "date",
+                "day",
+                "sensor",
+                "temperature",
+                "battery",
+                "location",
+                "where are you",
+                "what time",
+                "what date",
+                "status",
+                "environment",
+                "weather",
+            ]
+        )
+
+        if asks_about_context:
+            runtime_context = self._generate_prompt_context()
+            if runtime_context:
+                messages.append({
+                    "role": "user",
+                    "content": f"Context: {runtime_context}",
+                })
 
         messages.append({
             "role": "user",

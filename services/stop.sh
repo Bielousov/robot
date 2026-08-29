@@ -11,18 +11,19 @@ stop_service() {
     else
       systemctl stop "${name}.service" || true
     fi
-    return 0
   fi
 
   case "$name" in
     ollama)
       echo "[stop.sh] Stopping Ollama API"
       pkill -f "ollama serve" || true
+      pkill -f "/src/lib/ollama/dist/bin/ollama" || true
       ;;
     web)
       echo "[stop.sh] Stopping web server"
-      pkill -f "web.server.sh" || true
+      pkill -f "web/server.sh" || true
       pkill -f "python3.*http.server" || true
+      pkill -f "python3.*PORT.*OLLAMA_URL" || true
       ;;
   esac
 }

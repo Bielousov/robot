@@ -22,7 +22,7 @@ print_status() {
       fi
       ;;
     web)
-      if pgrep -f "web.server.sh" >/dev/null 2>&1; then
+      if pgrep -f "web/server.sh" >/dev/null 2>&1 || pgrep -f "python3.*http.server" >/dev/null 2>&1; then
         echo "[status.sh] web: running"
       else
         echo "[status.sh] web: stopped"

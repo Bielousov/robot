@@ -9,7 +9,7 @@ User=pip
 Group=pip
 WorkingDirectory=/home/pip/robot
 EnvironmentFile=/home/pip/robot/.env
-ExecStart=/bin/sh /home/pip/robot/services/web.server.sh
+ExecStart=/bin/sh /home/pip/robot/web/server.sh
 Restart=on-failure
 RestartSec=5
 

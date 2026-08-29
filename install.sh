@@ -54,4 +54,14 @@ else
     echo "[Error] Could not find Web installer at: $WEB_INSTALLER"
 fi
 
+# --- Install systemd services ---
+SERVICES_INSTALLER="$SCRIPT_DIR/services/install.sh"
+if [ -f "$SERVICES_INSTALLER" ]; then
+    echo "[Main] Installing systemd services..."
+    chmod +x "$SERVICES_INSTALLER"
+    sh "$SERVICES_INSTALLER"
+else
+    echo "[Error] Could not find services installer at: $SERVICES_INSTALLER"
+fi
+
 echo "[Main] Installation sequence finished."

@@ -2,7 +2,8 @@
 set -eu
 
 SCRIPT_PATH="${0}"
-PROJECT_ROOT="$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="$PROJECT_ROOT/.env"
 
 if [ -f "$ENV_FILE" ]; then
@@ -12,7 +13,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 OLLAMA_BIN="$PROJECT_ROOT/src/lib/ollama/dist/bin/ollama"
-WEB_SERVER="$PROJECT_ROOT/services/web.server.sh"
+WEB_SERVER="$PROJECT_ROOT/web/server.sh"
 
 if [ ! -x "$OLLAMA_BIN" ]; then
   echo "[start.sh] Ollama binary not found or not executable: $OLLAMA_BIN"

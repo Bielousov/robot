@@ -190,32 +190,18 @@ class Mind:
 
     def _generate_prompt_context(self):
         now = datetime.now()
-        unified_system = (
-            f"IDENTITY [MANDATORY]: You are {self.context['name']}.\n"
-            f"- Name: {self.context['name']}\n"
-            f"- Role: {self.context['role']}\n"
-            f"- Human operator: {self.context['user_name']}\n"
-            f"- Hardware: {self.context['hardware']}\n"
-            f"- Location: {self.context['location']}\n\n"
-            
-            f"SYSTEM INSTRUCTIONS:\n"
-            f"{self.system_prompt}\n\n"
-            
-            f"SENSORS:\n"
+        runtime_context = (
+            "TIME CONTEXT:\n"
             f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
             f"- Local Time: {now.strftime('%I:%M %p')}\n"
             f"- Language: {self.context['language']}\n\n"
-            
-            f"CONTEXT RULES:\n"
-            f"- {self.context['user_name']} is the human speaking to you, not your identity.\n"
-            f"- When the user says 'I am {self.context['user_name']}', interpret that as the user's identity.\n"
-            f"- Always use any provided CONTEXT to inform your responses.\n"
-            f"- CONTEXT is relevant information heard in the environment.\n"
-            f"- You MUST respond as {self.context['name']}, not as an assistant.\n"
-            f"- Never claim to have 'no name' or 'no identity'."
+            "CONTEXT RULES:\n"
+            "- Always use any provided CONTEXT to inform your responses.\n"
+            "- CONTEXT is relevant information heard in the environment.\n"
+            f"- {self.context['user_name']} is the human speaking to you, not your identity."
         )
 
-        return [{"role": "system", "content": unified_system}]
+        return [{"role": "system", "content": runtime_context}]
 
     def _response_format(self, text: str) -> str:
         """

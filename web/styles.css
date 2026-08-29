@@ -198,6 +198,15 @@ body {
     color: var(--text-tertiary-color);
 }
 
+.message-metrics {
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    opacity: 0.9;
+    white-space: nowrap;
+    color: inherit;
+}
+
 .input-form {
     display: flex;
     align-items: center;

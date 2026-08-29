@@ -124,7 +124,20 @@
                     }
 
                     const data = await response.json();
-                    setMessages(prev => [...prev, { role: 'assistant', content: data.message.content }]);
+                    const totalDurationMs = (data.total_duration || 0) / 1_000_000;
+                    const evalCount = Number(data.eval_count || 0);
+                    const evalDurationSeconds = (data.eval_duration || 0) / 1_000_000_000;
+                    const tokensPerSecond = evalDurationSeconds > 0 ? evalCount / evalDurationSeconds : 0;
+
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: data.message.content,
+                        metrics: {
+                            timeMs: totalDurationMs,
+                            tokens: evalCount,
+                            tokensPerSecond: tokensPerSecond,
+                        }
+                    }]);
                 } catch (error) {
                     setMessages(prev => [...prev, { 
                         role: 'error', 
@@ -167,7 +180,14 @@
                                     <div className="message-role">
                                         {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? 'Assistant' : 'Error'}
                                     </div>
-                                    <div className="message-content">{msg.content}</div>
+                                    <div className="message-content">
+                                        {msg.content}
+                                        {msg.role === 'assistant' && msg.metrics && (
+                                            <div className="message-metrics">
+                                                {`Time: ${(msg.metrics.timeMs / 1000).toFixed(2)}s | Tokens: ${msg.metrics.tokens} | ${msg.metrics.tokensPerSecond.toFixed(1)} tok/s`}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                             {loading && (

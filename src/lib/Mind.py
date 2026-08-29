@@ -88,6 +88,7 @@ class Mind:
         self._prepare_environment()
         self.start_server()
         self.api_server.start()
+        time.sleep(2)
         self.load_model()
         
         while not self.is_ready:
@@ -118,48 +119,61 @@ class Mind:
     def load_model(self):
         """Creates the 'pip' model showing: Loading model [name] ([size] MB): [percent] %"""
         print(f"[Robot] Initializing personality for '{self.model_name}' based on {self.base_model} model")
-        
-        try:
-            stream = self.client.create(
-                model=self.model_name,
-                from_=self.base_model,
-                system=self.system_prompt,
-                parameters=self.options,
-                stream=True 
-            )
 
-            for chunk in stream:
-                status = chunk.get('status', '')
-                completed = chunk.get('completed')
-                total = chunk.get('total')
+        last_error = None
+        for attempt in range(1, 9):
+            try:
+                stream = self.client.create(
+                    model=self.model_name,
+                    from_=self.base_model,
+                    system=self.system_prompt,
+                    parameters=self.options,
+                    stream=True
+                )
 
-                if total and completed and total > 0:
-                    total_mb = total / (1024 * 1024)
-                    loaded_pct = (completed / total) * 100
-                    
-                    # Format: Loading model gemma3:1b (120.5 MB): 45.2 %
-                    sys.stdout.write(
-                        f"\rLoading model {self.base_model} ({total_mb:.1f} MB): {loaded_pct:.1f} %"
-                    )
-                    sys.stdout.flush()
-                elif status and status != "success":
-                    # Print other statuses like 'verifying' or 'writing'
-                    sys.stdout.write(f"\r{status}...{' ' * 20}")
-                    sys.stdout.flush()
+                for chunk in stream:
+                    status = chunk.get('status', '')
+                    completed = chunk.get('completed')
+                    total = chunk.get('total')
 
-                if status == "success" or chunk.get('done'):
-                    print(f"\n[-] Loading personality in to the memory…")
+                    if total and completed and total > 0:
+                        total_mb = total / (1024 * 1024)
+                        loaded_pct = (completed / total) * 100
 
-                    self.client.generate(
-                        model=self.model_name,
-                        prompt='',
-                        stream=False,
-                        keep_alive=-1
-                    )
-                    self.is_ready = True
-                    return
-        except Exception as e:
-            print(f"\n[Error] Could not build personality model: {e}")
+                        # Format: Loading model gemma3:1b (120.5 MB): 45.2 %
+                        sys.stdout.write(
+                            f"\rLoading model {self.base_model} ({total_mb:.1f} MB): {loaded_pct:.1f} %"
+                        )
+                        sys.stdout.flush()
+                    elif status and status != "success":
+                        # Print other statuses like 'verifying' or 'writing'
+                        sys.stdout.write(f"\r{status}...{' ' * 20}")
+                        sys.stdout.flush()
+
+                    if status == "success" or chunk.get('done'):
+                        print(f"\n[-] Loading personality in to the memory…")
+
+                        self.client.generate(
+                            model=self.model_name,
+                            prompt='',
+                            stream=False,
+                            keep_alive=-1
+                        )
+                        self.is_ready = True
+                        return
+            except Exception as e:
+                last_error = e
+                message = str(e)
+                if "not found" in message.lower() or "404" in message:
+                    if attempt < 8:
+                        print(f"\n[Robot] Model not ready yet (attempt {attempt}/8). Waiting for SD card flush...")
+                        time.sleep(2)
+                        continue
+                print(f"\n[Error] Could not build personality model: {e}")
+                return
+
+        if last_error is not None:
+            print(f"\n[Error] Could not build personality model after retries: {last_error}")
 
     def think(
         self,

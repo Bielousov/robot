@@ -178,13 +178,24 @@ class Mind:
 
     def _generate_prompt_context(self):
         now = datetime.now()
+        recent_context = self.history[-self.history_limit:] if self.history else []
+        recent_context_text = "\n".join(
+            f"- {entry['role']}: {entry['content']}" for entry in recent_context
+        ) if recent_context else "- No recent conversation context."
+
         runtime_context = (
-            "TIME CONTEXT:\n"
+            "SENSOR CONTEXT:\n"
             f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
             f"- Local Time: {now.strftime('%I:%M %p')}\n"
+            f"- Language: {os.getenv('LANGUAGE', 'English')}\n"
+            f"- Location: {os.getenv('CONTEXT_LOCATION', 'Planet Earth')}\n"
+            "- Ambient conversation context:\n"
+            f"{recent_context_text}\n\n"
             "CONTEXT RULES:\n"
             "- Always use any provided CONTEXT to inform your responses.\n"
             "- CONTEXT is relevant information heard in the environment.\n"
+            "- Do not claim a different identity than the one baked into the model.\n"
+            "- Keep replies brief and truthful."
         )
 
         return [{"role": "system", "content": runtime_context}]

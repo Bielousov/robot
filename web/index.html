@@ -24,6 +24,7 @@
             const [model, setModel] = useState('pip');
 
             const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
 
             const STORAGE_KEY = 'robot_chat_history';
             const CONTEXT_LENGTH = 8;
@@ -85,6 +86,12 @@
             useEffect(() => {
                 scrollToBottom();
             }, [messages]);
+
+            useEffect(() => {
+                if (!loading) {
+                    inputRef.current?.focus();
+                }
+            }, [loading, messages]);
 
             const getContextMessages = () => {
                 // Get last 8 non-error messages for Ollama context
@@ -201,6 +208,7 @@
 
                         <form onSubmit={sendMessage} className="input-form">
                             <input
+                                ref={inputRef}
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}

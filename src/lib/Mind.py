@@ -136,9 +136,18 @@ class Mind:
                     print(f"[Debug] Added prompt to history: {p}")
 
         try:
+            # Reintroduce just enough runtime context, but keep it as plain user text.
+            # A system-style context block here can override the baked-in personality,
+            # so we keep the identity in the model and only pass contextual hints.
+            messages = []
+            runtime_context = self._generate_prompt_context()
+            if runtime_context:
+                messages.append({'role': 'user', 'content': runtime_context})
+            messages.append({'role': 'user', 'content': prompts[-1]})
+
             response = self.client.chat(
                 model=self.model_name,
-                messages=self._generate_prompt_context() + self.history,
+                messages=messages,
                 stream=False,
                 think=False,
                 keep_alive=-1
@@ -192,22 +201,16 @@ class Mind:
             f"- {entry['role']}: {entry['content']}" for entry in recent_context
         ) if recent_context else "- No recent conversation context."
 
-        runtime_context = (
-            "SENSOR CONTEXT:\n"
+        return (
+            "RUNTIME CONTEXT:\n"
             f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
-            f"- Local Time: {now.strftime('%I:%M %p')}\n"
+            f"- Time: {now.strftime('%I:%M %p')}\n"
             f"- Language: {os.getenv('LANGUAGE', 'English')}\n"
             f"- Location: {os.getenv('CONTEXT_LOCATION', 'Planet Earth')}\n"
-            "- Ambient conversation context:\n"
+            "- Recent conversation:\n"
             f"{recent_context_text}\n\n"
-            "CONTEXT RULES:\n"
-            "- Always use any provided CONTEXT to inform your responses.\n"
-            "- CONTEXT is relevant information heard in the environment.\n"
-            "- Do not claim a different identity than the one baked into the model.\n"
-            "- Keep replies brief and truthful."
+            "Use this context only if it helps answer the current message."
         )
-
-        return [{"role": "system", "content": runtime_context}]
 
     def _response_format(self, text: str) -> str:
         """

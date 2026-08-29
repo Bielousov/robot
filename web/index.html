@@ -123,6 +123,7 @@
                                 { role: 'user', content: userMessage }
                             ],
                             stream: false,
+                            think: false,
                         }),
                     });
 
@@ -197,12 +198,6 @@
                                     </div>
                                 </div>
                             ))}
-                            {loading && (
-                                <div className="message assistant">
-                                    <div className="message-role">🤖 Assistant</div>
-                                    <div className="message-content typing">Thinking...</div>
-                                </div>
-                            )}
                             <div ref={messagesEndRef} />
                         </div>
 

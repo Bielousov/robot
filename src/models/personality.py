@@ -49,7 +49,7 @@ def get_llm_model_config() -> Dict[str, Any]:
         "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", 1.2)),
         "top_k": int(os.getenv("OLLAMA_TOP_K", 40)),
         "top_p": float(os.getenv("OLLAMA_TOP_P", 0.9)),
-        "stop": ["User:", "Pip:"],
+        "stop": ["User:"],
     }
 
     return {

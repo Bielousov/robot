@@ -56,9 +56,55 @@ body {
 }
 
 .header h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     font-size: 1.75rem;
     letter-spacing: -0.05em;
     text-transform: capitalize;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: rgba(51, 51, 51, 0.08);
+    color: var(--text-primary-color);
+    white-space: nowrap;
+}
+
+.status-pill.small {
+    margin-left: 0.5rem;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.55rem;
+}
+
+.status-pill.online {
+    background: rgba(39, 174, 96, 0.12);
+    color: #137a41;
+}
+
+.status-pill.offline {
+    background: rgba(199, 45, 4, 0.12);
+    color: var(--danger-color);
+}
+
+.status-pill.checking {
+    background: rgba(255, 92, 0, 0.12);
+    color: var(--secondary-color);
+}
+
+.status-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
 }
 
 .chat-container {

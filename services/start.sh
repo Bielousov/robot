@@ -13,19 +13,19 @@ WEB_LOG="/tmp/robot-web.log"
 
 assert_running() {
   name="$1"
-  pattern="$2"
+  endpoint="$2"
   log_file="$3"
   startup_delay="${4:-3}"
 
   sleep "$startup_delay"
 
-  if pgrep -af "$pattern" >/dev/null 2>&1; then
-    echo "[start.sh] $name started and is still running."
+  if curl -fsS "$endpoint" >/dev/null 2>&1; then
+    echo "[start.sh] $name started and is responding on $endpoint."
     return 0
   fi
 
   echo "[start.sh] ERROR: $name did not stay alive after launch."
-  echo "[start.sh] Expected pattern: $pattern"
+  echo "[start.sh] Expected endpoint: $endpoint"
   echo "[start.sh] Log file: $log_file"
 
   if [ -f "$log_file" ]; then
@@ -66,14 +66,14 @@ fi
 if ! curl -fsS "${OLLAMA_URL}/api/version" >/dev/null 2>&1; then
   echo "[start.sh] Starting Ollama API without preloading any model"
   nohup env "OLLAMA_HOST=${OLLAMA_HOST}" "OLLAMA_MODELS=${PROJECT_ROOT}/src/lib/ollama/models" "$OLLAMA_BIN" serve >"$OLLAMA_LOG" 2>&1 &
-  assert_running "Ollama" "ollama serve|/src/lib/ollama/dist/bin/ollama" "$OLLAMA_LOG" 3
+  assert_running "Ollama" "${OLLAMA_URL}/api/version" "$OLLAMA_LOG" 3
 else
   echo "[start.sh] Ollama is already running."
 fi
 
 echo "[start.sh] Starting web server"
 nohup sh "$WEB_SERVER" "$WEB_PORT" >"$WEB_LOG" 2>&1 &
-assert_running "Web" "web/server.sh|python3.*http.server|python3.*PORT.*OLLAMA_URL" "$WEB_LOG" 3
+assert_running "Web" "http://127.0.0.1:${WEB_PORT}/" "$WEB_LOG" 3
 
 echo "[start.sh] Ollama and web services startup commands were issued."
 exit 0

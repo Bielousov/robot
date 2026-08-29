@@ -19,6 +19,7 @@
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
+            const [ollamaStatus, setOllamaStatus] = useState('checking');
             const ollamaUrl = '';
             const [model, setModel] = useState('pip');
             const [systemPrompt, setSystemPrompt] = useState('You are a helpful robot assistant.');
@@ -47,6 +48,35 @@
                     console.error('Failed to save chat history:', error);
                 }
             }, [messages]);
+
+            const getOllamaStatusLabel = () => {
+                switch (ollamaStatus) {
+                    case 'online':
+                        return 'Ollama online';
+                    case 'offline':
+                        return 'Ollama offline';
+                    default:
+                        return 'Checking Ollama...';
+                }
+            };
+
+            const fetchOllamaStatus = async () => {
+                try {
+                    const response = await fetch(`${ollamaUrl}/api/version`, {
+                        method: 'GET',
+                        cache: 'no-store',
+                    });
+                    setOllamaStatus(response.ok ? 'online' : 'offline');
+                } catch (error) {
+                    setOllamaStatus('offline');
+                }
+            };
+
+            useEffect(() => {
+                fetchOllamaStatus();
+                const interval = setInterval(fetchOllamaStatus, 8000);
+                return () => clearInterval(interval);
+            }, []);
 
             const scrollToBottom = () => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,7 +145,13 @@
             return (
                 <main className="container">
                     <header className="header">
-                        <h1>{model}...</h1>
+                        <h1>
+                            {model}...
+                            <span className={`status-pill ${ollamaStatus}`}>
+                                <span className="status-dot" />
+                                {getOllamaStatusLabel()}
+                            </span>
+                        </h1>
                         <button onClick={clearHistory} className="clear-button">Clear History</button>
                     </header>
 
@@ -130,7 +166,15 @@
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`message ${msg.role}`}>
                                     <div className="message-role">
-                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? 'Assistant' : 'Error'}
+                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? (
+                                            <>
+                                                Assistant
+                                                <span className={`status-pill ${ollamaStatus} small`}>
+                                                    <span className="status-dot" />
+                                                    {getOllamaStatusLabel()}
+                                                </span>
+                                            </>
+                                        ) : 'Error'}
                                     </div>
                                     <div className="message-content">{msg.content}</div>
                                 </div>

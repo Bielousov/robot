@@ -26,10 +26,12 @@ if [ ! -f "$WEB_SERVER" ]; then
 fi
 
 echo "[start.sh] Starting Ollama API without preloading any model"
-"$OLLAMA_BIN" serve &
-OLLAMA_PID=$!
+nohup "$OLLAMA_BIN" serve >/dev/null 2>&1 &
 
-trap 'kill "$OLLAMA_PID" 2>/dev/null || true' EXIT INT TERM
+sleep 1
 
 echo "[start.sh] Starting web server"
-exec sh "$WEB_SERVER" "${PORT:-8000}"
+nohup sh "$WEB_SERVER" "${PORT:-8000}" >/dev/null 2>&1 &
+
+echo "[start.sh] All services started."
+exit 0

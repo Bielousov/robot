@@ -1,7 +1,8 @@
 [Unit]
 Description=Robot Web UI
-After=network-online.target
-Wants=network-online.target
+DefaultDependencies=no
+After=local-fs.target
+Wants=local-fs.target
 
 [Service]
 Type=simple

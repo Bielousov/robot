@@ -90,6 +90,42 @@ class Mind:
             options=self.options,
         )
 
+    def _build_request_messages(
+        self,
+        prompts: List[str],
+        context: Optional[List[str]] = None,
+    ) -> List[dict]:
+        """Build the request payload without mutating persistent history.
+
+        The current message stays primary. Any historical/runtime context remains
+        advisory and must not override or duplicate the current prompt.
+        """
+        messages: List[dict] = []
+
+        runtime_context = self._generate_prompt_context()
+        if runtime_context:
+            messages.append({
+                'role': 'user',
+                'content': 'CONTEXT ONLY (secondary):\n' + runtime_context + '\n\nThis context is advisory only. The final user message below is the primary instruction.'
+            })
+
+        if context:
+            context_text = " ".join(context).strip()
+            if context_text:
+                messages.append({
+                    'role': 'user',
+                    'content': 'ADDITIONAL CONTEXT (secondary):\n' + context_text + '\n\nThis context is background only; the final user message remains primary.'
+                })
+
+        final_prompt = prompts[-1].strip() if prompts and prompts[-1] else ""
+        if final_prompt:
+            messages.append({
+                'role': 'user',
+                'content': 'CURRENT MESSAGE (primary):\n' + final_prompt
+            })
+
+        return messages
+
     def think(
         self,
         prompt: Union[str, List[str]],
@@ -104,36 +140,15 @@ class Mind:
             if callback:
                 callback(None, ValueError("Empty prompt"))
             return None
-        
-        # Inject overheard context as a system message if provided
-        if context:
-            context_str = "CONTEXT: " + " ".join(context)
-            self.add_to_history('user', context_str)
-
-            if self.debug:
-                print(f"[Debug] Injected context into history: {context_str}")
-
-        for p in prompts:
-            if p: # Ensure we don't send empty strings in the array
-                self.add_to_history('user', p)
-
-                if self.debug:
-                    print(f"[Debug] Added prompt to history: {p}")
 
         try:
-            # Keep the latest user message authoritative and make the runtime context clearly
-            # auxiliary. A system-level override is still avoided; the model identity remains baked-in.
-            messages = []
-            runtime_context = self._generate_prompt_context()
-            if runtime_context:
-                messages.append({
-                    'role': 'user',
-                    'content': 'CONTEXT ONLY (secondary):\n' + runtime_context + '\n\nThis context is advisory only. The final user message below is the primary instruction.'
-                })
-            messages.append({
-                'role': 'user',
-                'content': 'CURRENT MESSAGE (primary):\n' + prompts[-1]
-            })
+            current_prompt = prompts[-1].strip() if prompts[-1] else ""
+            if not current_prompt:
+                if callback:
+                    callback(None, ValueError("Empty prompt"))
+                return None
+
+            messages = self._build_request_messages(prompts, context=context)
 
             response = self.client.chat(
                 model=self.model_name,
@@ -143,8 +158,11 @@ class Mind:
                 keep_alive=-1
             )
             self._response_metrics(response)
-            
+
             answer = self._response_format(response['message']['content'])
+
+            # Persist only the actual completed turn after the model responds.
+            self.add_to_history('user', current_prompt)
             self.add_to_history('robot', answer)
 
             if callback:
@@ -187,12 +205,12 @@ class Mind:
     def _generate_prompt_context(self):
         now = datetime.now()
 
-        # Exclude the message currently being answered so the latest prompt is always
-        # sent separately and the context remains advisory background only.
-        if len(self.history) > 1:
-            recent_context = self.history[-self.history_limit:-1]
-        else:
-            recent_context = []
+        # Keep the memory window independent from the current request. The current
+        # message is always sent separately as the primary instruction, so the saved
+        # conversation history should not include that same message again.
+        recent_context = list(self.history)
+        if len(recent_context) > self.history_limit:
+            recent_context = recent_context[-self.history_limit:]
 
         recent_context_text = "\n".join(
             f"- {entry['role']}: {entry['content']}" for entry in recent_context

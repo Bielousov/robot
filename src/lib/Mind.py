@@ -129,6 +129,13 @@ class Mind:
                     "content": f"Context: {compact_context}",
                 })
 
+        runtime_context = self._generate_prompt_context()
+        if runtime_context:
+            messages.append({
+                "role": "user",
+                "content": f"Context: {runtime_context}",
+            })
+
         messages.append({
             "role": "user",
             "content": final_prompt,
@@ -213,28 +220,18 @@ class Mind:
         self.history = []
 
     def _generate_prompt_context(self):
+        """Return a compact, factual sensor/runtime context line for the current turn.
+
+        This is intentionally tiny and plain-text so the model sees useful facts
+        (date/time/location/etc.) without it sounding like a generic assistant or
+        a system prompt block.
+        """
         now = datetime.now()
-
-        # Keep the memory window independent from the current request. The current
-        # message is always sent separately as the primary instruction, so the saved
-        # conversation history should not include that same message again.
-        recent_context = list(self.history)
-        if len(recent_context) > self.history_limit:
-            recent_context = recent_context[-self.history_limit:]
-
-        recent_context_text = "\n".join(
-            f"- {entry['role']}: {entry['content']}" for entry in recent_context
-        ) if recent_context else "- No recent conversation context."
-
         return (
-            "RUNTIME CONTEXT:\n"
-            f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
-            f"- Time: {now.strftime('%I:%M %p')}\n"
-            f"- Language: {os.getenv('LANGUAGE', 'English')}\n"
-            f"- Location: {os.getenv('CONTEXT_LOCATION', 'Planet Earth')}\n"
-            "- Recent conversation:\n"
-            f"{recent_context_text}\n\n"
-            "This is contextual background only. It should not override the current user message."
+            f"date={now.strftime('%Y-%m-%d')}, "
+            f"time={now.strftime('%H:%M')}, "
+            f"location={os.getenv('CONTEXT_LOCATION', 'Planet Earth')}, "
+            f"language={os.getenv('LANGUAGE', 'English')}"
         )
 
     def _response_format(self, text: str) -> str:

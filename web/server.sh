@@ -1,17 +1,20 @@
-#!/bin/bash
+#!/bin/sh
 
 # Simple web server for robot web interface
 # Serves web/index.html on http://localhost:8000
 
-PORT=${1:-8000}
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_DIR="$(dirname "$SCRIPT_DIR")/web"
+PORT="${1:-8000}"
+SCRIPT_PATH="${0}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+WEB_DIR="$PROJECT_ROOT/web"
 
 echo "Starting web server on http://0.0.0.0:$PORT"
 echo "Serving files from: $WEB_DIR"
 echo "Press Ctrl+C to stop"
 
-cd "$WEB_DIR" && PORT="$PORT" python3 << 'PYTHON_EOF'
+cd "$WEB_DIR" || exit 1
+PORT="$PORT" exec python3 << 'PYTHON_EOF'
 import http.server
 import socketserver
 import os

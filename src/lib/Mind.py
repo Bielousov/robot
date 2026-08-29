@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from .MindProxy import OllamaAPIServer
-from src.models.llm import create_personality_model, get_llm_model_config
+from models.personality import create_personality_model, get_llm_model_config
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()

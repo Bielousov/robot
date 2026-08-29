@@ -1,6 +1,6 @@
 import os
 
-from src.models.llm import build_personality_system_prompt
+from models.personality import build_personality_system_prompt
 
 
 def test_build_personality_system_prompt_includes_identity(monkeypatch):

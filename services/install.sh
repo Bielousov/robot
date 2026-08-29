@@ -9,7 +9,7 @@ if ! command -v sudo >/dev/null 2>&1; then
   exit 1
 fi
 
-for unit in ollama.service web.service; do
+for unit in ollama.service web.service robot.service; do
   src="$SCRIPT_DIR/$unit"
   dst="/etc/systemd/system/$unit"
 
@@ -23,7 +23,8 @@ for unit in ollama.service web.service; do
 done
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now ollama.service
-sudo systemctl enable --now web.service
+sudo systemctl enable ollama.service
+sudo systemctl enable web.service
+sudo systemctl enable robot.service
 
 echo "[install.sh] Service installation complete."

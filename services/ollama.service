@@ -5,13 +5,13 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/projects/robot
-EnvironmentFile=/home/pi/projects/robot/.env
-Environment=OLLAMA_MODELS=/home/pi/projects/robot/src/lib/ollama/models
+User=pip
+Group=pip
+WorkingDirectory=/home/pip/robot
+EnvironmentFile=/home/pip/robot/.env
+Environment=OLLAMA_MODELS=/home/pip/robot/src/lib/ollama/models
 Environment=OLLAMA_HOST=0.0.0.0:11434
-ExecStart=/home/pi/projects/robot/src/lib/ollama/dist/bin/ollama serve
+ExecStart=/home/pip/robot/src/lib/ollama/dist/bin/ollama serve
 Restart=on-failure
 RestartSec=5
 

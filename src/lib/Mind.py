@@ -95,34 +95,44 @@ class Mind:
         prompts: List[str],
         context: Optional[List[str]] = None,
     ) -> List[dict]:
-        """Build the request payload without mutating persistent history.
+        """Build a minimal real chat transcript.
 
-        The current message stays primary. Any historical/runtime context remains
-        advisory and must not override or duplicate the current prompt.
+        Keep only recent actual history, a compact context note, and the final
+        current user message as the last turn. Avoid synthetic wrapper text that
+        makes the model sound like a generic assistant.
         """
+        final_prompt = prompts[-1].strip() if prompts and prompts[-1] else ""
+        if not final_prompt:
+            return []
+
         messages: List[dict] = []
 
-        runtime_context = self._generate_prompt_context()
-        if runtime_context:
+        recent_history = self.history[-self.history_limit:] if self.history else []
+        for entry in recent_history:
+            content = (entry.get("content") or "").strip()
+            if not content:
+                continue
             messages.append({
-                'role': 'user',
-                'content': 'CONTEXT ONLY (secondary):\n' + runtime_context + '\n\nThis context is advisory only. The final user message below is the primary instruction.'
+                "role": entry.get("role", "user"),
+                "content": content,
             })
 
         if context:
-            context_text = " ".join(context).strip()
-            if context_text:
+            compact_context = " | ".join(
+                str(item).strip()
+                for item in context
+                if str(item).strip()
+            )
+            if compact_context:
                 messages.append({
-                    'role': 'user',
-                    'content': 'ADDITIONAL CONTEXT (secondary):\n' + context_text + '\n\nThis context is background only; the final user message remains primary.'
+                    "role": "user",
+                    "content": f"Context: {compact_context}",
                 })
 
-        final_prompt = prompts[-1].strip() if prompts and prompts[-1] else ""
-        if final_prompt:
-            messages.append({
-                'role': 'user',
-                'content': 'CURRENT MESSAGE (primary):\n' + final_prompt
-            })
+        messages.append({
+            "role": "user",
+            "content": final_prompt,
+        })
 
         return messages
 

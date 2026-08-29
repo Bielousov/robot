@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from .MindProxy import OllamaAPIServer
+from src.models.llm import create_personality_model, get_llm_model_config
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -36,10 +37,11 @@ class Mind:
         ollama_proxy_port = int(os.getenv("OLLAMA_PROXY_PORT", 11435))
         self.api_server = OllamaAPIServer(proxy_port=ollama_proxy_port, ollama_base_url=BASE_URL)
         
-        # Identity settings
-        self.base_model = os.getenv("OLLAMA_BASE_MODEL", "gemma3:270m")
-        self.model_name = os.getenv("OLLAMA_MODEL_NAME", "pip")
-        self.system_prompt = os.getenv("OLLAMA_SYSTEM_PROMPT", "You are Robot.")
+        llm_config = get_llm_model_config()
+        self.base_model = llm_config["base_model"]
+        self.model_name = llm_config["model_name"]
+        self.system_prompt = llm_config["system_prompt"]
+        self.options = llm_config["options"]
 
         self.is_ready = False
 
@@ -59,37 +61,17 @@ class Mind:
             "role": os.getenv("ROBOT_ROLE", "Robot"),
         }
 
-        # Hardware profile for RPi5
-        self.options = {
-            # The maximum number of tokens the model can "remember" at once (history + system prompt + current input).
-            "num_ctx": int(os.getenv("OLLAMA_CONTEXT_LENGTH", 1024)),
-
-            # Number of CPU cores allocated for processing; higher can be faster, but too high causes system stutter.
-            "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
-
-            # Controls randomness: 0.0 is deterministic/robotic, 1.0+ is creative/chaotic. (Lower is better for Pip).
-            "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 1.0)),
-
-            # The maximum length of the generated response in tokens; prevents the model from rambling.
-            "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", 40)),
-
-            # Discourages the model from repeating words or phrases; helps prevent Pip from getting stuck in a loop.
-            "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", 1.2)),
-
-            # Quality filter: Limits the model's word choices to the 'K' most likely next words.
-            "top_k": float(os.getenv("OLLAMA_TOP_K", 40)),  # Limits vocabulary to the most likely "efficient" words
-            
-            # Probability filter: Only considers words whose combined probability reaches 'P' (Nucleus sampling).
-            "top_p": float(os.getenv("OLLAMA_TOP_P", 0.9)),
-            
-            "stop": ["User:", "Pip:"]
-        }
-
         self._prepare_environment()
         self.start_server()
         self.api_server.start()
         time.sleep(2)
-        self.load_model()
+        self.is_ready = create_personality_model(
+            client=self.client,
+            model_name=self.model_name,
+            base_model=self.base_model,
+            system_prompt=self.system_prompt,
+            options=self.options,
+        )
         
         while not self.is_ready:
             time.sleep(0.5)
@@ -117,63 +99,14 @@ class Mind:
             ) from exc
         
     def load_model(self):
-        """Creates the 'pip' model showing: Loading model [name] ([size] MB): [percent] %"""
-        print(f"[Robot] Initializing personality for '{self.model_name}' based on {self.base_model} model")
-
-        last_error = None
-        for attempt in range(1, 9):
-            try:
-                stream = self.client.create(
-                    model=self.model_name,
-                    from_=self.base_model,
-                    system=self.system_prompt,
-                    parameters=self.options,
-                    stream=True
-                )
-
-                for chunk in stream:
-                    status = chunk.get('status', '')
-                    completed = chunk.get('completed')
-                    total = chunk.get('total')
-
-                    if total and completed and total > 0:
-                        total_mb = total / (1024 * 1024)
-                        loaded_pct = (completed / total) * 100
-
-                        # Format: Loading model gemma3:1b (120.5 MB): 45.2 %
-                        sys.stdout.write(
-                            f"\rLoading model {self.base_model} ({total_mb:.1f} MB): {loaded_pct:.1f} %"
-                        )
-                        sys.stdout.flush()
-                    elif status and status != "success":
-                        # Print other statuses like 'verifying' or 'writing'
-                        sys.stdout.write(f"\r{status}...{' ' * 20}")
-                        sys.stdout.flush()
-
-                    if status == "success" or chunk.get('done'):
-                        print(f"\n[-] Loading personality in to the memory…")
-
-                        self.client.generate(
-                            model=self.model_name,
-                            prompt='',
-                            stream=False,
-                            keep_alive=-1
-                        )
-                        self.is_ready = True
-                        return
-            except Exception as e:
-                last_error = e
-                message = str(e)
-                if "not found" in message.lower() or "404" in message:
-                    if attempt < 8:
-                        print(f"\n[Robot] Model not ready yet (attempt {attempt}/8). Waiting for SD card flush...")
-                        time.sleep(2)
-                        continue
-                print(f"\n[Error] Could not build personality model: {e}")
-                return
-
-        if last_error is not None:
-            print(f"\n[Error] Could not build personality model after retries: {last_error}")
+        """Creates the custom personality model from the configured environment."""
+        self.is_ready = create_personality_model(
+            client=self.client,
+            model_name=self.model_name,
+            base_model=self.base_model,
+            system_prompt=self.system_prompt,
+            options=self.options,
+        )
 
     def think(
         self,

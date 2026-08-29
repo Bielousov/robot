@@ -22,7 +22,7 @@
             const [ollamaStatus, setOllamaStatus] = useState('checking');
             const ollamaUrl = '';
             const [model, setModel] = useState('pip');
-            const [systemPrompt, setSystemPrompt] = useState('You are a helpful robot assistant.');
+
             const messagesEndRef = useRef(null);
 
             const STORAGE_KEY = 'robot_chat_history';
@@ -111,7 +111,6 @@
                         },
                         body: JSON.stringify({
                             model: model,
-                            system: systemPrompt,
                             messages: [
                                 ...contextMessages,
                                 { role: 'user', content: userMessage }

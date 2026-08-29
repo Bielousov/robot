@@ -11,33 +11,24 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-start_service() {
-  name="$1"
+OLLAMA_BIN="$PROJECT_ROOT/src/lib/ollama/dist/bin/ollama"
+WEB_SERVER="$PROJECT_ROOT/services/web.server.sh"
 
-  if command -v systemctl >/dev/null 2>&1; then
-    echo "[start.sh] Starting ${name}.service via systemctl"
-    if command -v sudo >/dev/null 2>&1; then
-      sudo systemctl daemon-reload >/dev/null 2>&1 || true
-      sudo systemctl start "${name}.service"
-    else
-      systemctl daemon-reload >/dev/null 2>&1 || true
-      systemctl start "${name}.service"
-    fi
-    systemctl --no-pager status "${name}.service" --lines=5 || true
-    return 0
-  fi
+if [ ! -x "$OLLAMA_BIN" ]; then
+  echo "[start.sh] Ollama binary not found or not executable: $OLLAMA_BIN"
+  exit 1
+fi
 
-  case "$name" in
-    ollama)
-      echo "[start.sh] Starting Ollama API without preloading any model"
-      exec "$PROJECT_ROOT/src/lib/ollama/dist/bin/ollama" serve
-      ;;
-    web)
-      echo "[start.sh] Starting web server"
-      exec sh "$PROJECT_ROOT/services/web.server.sh" "${PORT:-8000}"
-      ;;
-  esac
-}
+if [ ! -f "$WEB_SERVER" ]; then
+  echo "[start.sh] Web server script not found: $WEB_SERVER"
+  exit 1
+fi
 
-start_service ollama
-start_service web
+echo "[start.sh] Starting Ollama API without preloading any model"
+"$OLLAMA_BIN" serve &
+OLLAMA_PID=$!
+
+trap 'kill "$OLLAMA_PID" 2>/dev/null || true' EXIT INT TERM
+
+echo "[start.sh] Starting web server"
+exec sh "$WEB_SERVER" "${PORT:-8000}"

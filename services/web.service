@@ -9,7 +9,7 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/projects/robot
 EnvironmentFile=/home/pi/projects/robot/.env
-ExecStart=/bin/sh /home/pi/projects/robot/services/start.sh
+ExecStart=/bin/sh /home/pi/projects/robot/services/web.server.sh
 Restart=on-failure
 RestartSec=5
 

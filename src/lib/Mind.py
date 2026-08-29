@@ -1,13 +1,10 @@
 import os
 import psutil
 import re
-import subprocess
 import time
 import signal
-import sys
 import ollama
 from datetime import datetime
-from dotenv import load_dotenv
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
@@ -51,15 +48,6 @@ class Mind:
         
         self.process = None
         self.client = ollama.Client(host=BASE_URL)
-
-        self.context = {
-            "hardware": "Raspberry Pi 5",
-            "language": os.getenv("LANGUAGE", "English"),
-            "location": os.getenv("CONTEXT_LOCATION", "Planet Earth"),
-            "name": os.getenv("NAME", "Robot"),
-            "user_name": os.getenv("USER_NAME", "human"),
-            "role": os.getenv("ROBOT_ROLE", "Robot"),
-        }
 
         self._prepare_environment()
         self.start_server()
@@ -194,11 +182,9 @@ class Mind:
             "TIME CONTEXT:\n"
             f"- Date: {now.strftime('%A, %B %d, %Y')}\n"
             f"- Local Time: {now.strftime('%I:%M %p')}\n"
-            f"- Language: {self.context['language']}\n\n"
             "CONTEXT RULES:\n"
             "- Always use any provided CONTEXT to inform your responses.\n"
             "- CONTEXT is relevant information heard in the environment.\n"
-            f"- {self.context['user_name']} is the human speaking to you, not your identity."
         )
 
         return [{"role": "system", "content": runtime_context}]

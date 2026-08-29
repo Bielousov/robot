@@ -1,7 +1,13 @@
 import os
 import sys
 import time
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict
+
+from dotenv import load_dotenv
+
+ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / ".env")
 
 
 def build_personality_system_prompt() -> str:
@@ -73,7 +79,23 @@ def create_personality_model(
     try:
         client.show(model_name)
         print(f"[Robot] Existing model '{model_name}' found. Rebuilding it with the current identity prompt.")
-        client.delete(model_name)
+        try:
+            client.delete(model_name)
+        except Exception:
+            pass
+        time.sleep(1)
+    except Exception:
+        pass
+
+    # Force a second unload check in case the model exists but is not visible to the Python client.
+    try:
+        existing = client.list()
+        for model in existing.get("models", []):
+            name = model.get("name") or model.get("model")
+            if name and name == model_name:
+                print(f"[Robot] Unloading stale model '{model_name}' from Ollama before rebuild.")
+                client.delete(model_name)
+                time.sleep(1)
     except Exception:
         pass
 

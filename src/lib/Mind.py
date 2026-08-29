@@ -8,6 +8,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional runtime dependency
+    def load_dotenv(*args, **kwargs):
+        return False
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
+
 from .MindProxy import OllamaAPIServer
 from models.personality import create_personality_model, get_llm_model_config
 

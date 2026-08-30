@@ -124,95 +124,6 @@
                 return content;
             };
 
-            const appendChunkToText = (existingText, nextChunk) => {
-                if (!nextChunk) return existingText;
-
-                const cleanChunk = String(nextChunk).replace(/\r/g, '');
-                if (!cleanChunk) return existingText;
-
-                const prev = String(existingText || '');
-
-                if (!prev) return cleanChunk;
-
-                const prevLastChar = prev.slice(-1);
-                const nextFirstChar = cleanChunk.charAt(0);
-                const needsSpace =
-                    prev.length > 0 &&
-                    /[A-Za-z0-9]/.test(prevLastChar) &&
-                    /[A-Za-z0-9]/.test(nextFirstChar) &&
-                    !/\s/.test(cleanChunk.charAt(0));
-
-                return prev + (needsSpace ? ' ' : '') + cleanChunk;
-            };
-
-            const splitStreamText = (text) => {
-                if (!text) return [];
-
-                const candidates = text.match(/\S+\s*|\s+/g) || [text];
-                return candidates.filter(Boolean).map(part => part.trim() ? part.trim() : part);
-            };
-
-            const streamAssistantResponse = async (response, onChunk, onComplete) => {
-                if (!response.body) {
-                    throw new Error('Streaming is not supported by this Ollama response.');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-                let finalPayload = null;
-
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        buffer += decoder.decode(value, { stream: true });
-                        const parts = buffer.split('\n');
-                        buffer = parts.pop() || '';
-
-                        for (const part of parts) {
-                            const trimmed = part.trim();
-                            if (!trimmed) continue;
-
-                            try {
-                                const payload = JSON.parse(trimmed);
-                                finalPayload = payload;
-                                const chunkContent = getSafeAssistantContent(payload);
-                                if (chunkContent) {
-                                    const wordChunks = splitStreamText(chunkContent);
-                                    for (const wordChunk of wordChunks) {
-                                        onChunk(wordChunk);
-                                    }
-                                }
-                            } catch (error) {
-                                // Ignore partial/incomplete JSON fragments while streaming.
-                            }
-                        }
-                    }
-
-                    if (buffer.trim()) {
-                        try {
-                            const payload = JSON.parse(buffer.trim());
-                            finalPayload = payload;
-                            const chunkContent = getSafeAssistantContent(payload);
-                            if (chunkContent) {
-                                const wordChunks = splitStreamText(chunkContent);
-                                for (const wordChunk of wordChunks) {
-                                    onChunk(wordChunk);
-                                }
-                            }
-                        } catch (error) {
-                            // Ignore trailing partial JSON fragments.
-                        }
-                    }
-
-                    onComplete(finalPayload);
-                } finally {
-                    reader.releaseLock();
-                }
-            };
-
             const sendMessage = async (e) => {
                 e.preventDefault();
                 if (!input.trim()) return;
@@ -224,16 +135,19 @@
 
                 try {
                     const contextMessages = getContextMessages();
-                    const response = await fetch(`${ollamaUrl}/api/generate`, {
+                    const response = await fetch(`${ollamaUrl}/api/chat`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
                             model: model,
-                            prompt: userMessage,
-                            stream: true,
-                            raw: true,
+                            messages: [
+                                ...contextMessages,
+                                { role: 'user', content: userMessage }
+                            ],
+                            stream: false,
+                            think: false,
                         }),
                     });
 
@@ -241,56 +155,26 @@
                         throw new Error(`Ollama error: ${response.statusText}`);
                     }
 
-                    let streamedContent = '';
-                    const assistantIndex = messages.length + 1;
+                    const data = await response.json();
+                    const totalDurationMs = (data.total_duration || 0) / 1_000_000;
+                    const evalCount = Number(data.eval_count || 0);
+                    const evalDurationSeconds = (data.eval_duration || 0) / 1_000_000_000;
+                    const tokensPerSecond = evalDurationSeconds > 0 ? evalCount / evalDurationSeconds : 0;
+                    const assistantContent = getSafeAssistantContent(data);
+
+                    if (!assistantContent) {
+                        throw new Error('The model returned only thinking text.');
+                    }
 
                     setMessages(prev => [...prev, {
                         role: 'assistant',
-                        content: '',
-                        metrics: null
-                    }]);
-
-                    await streamAssistantResponse(
-                        response,
-                        (chunk) => {
-                            streamedContent = appendChunkToText(streamedContent, chunk);
-                            setMessages(prev => {
-                                const next = [...prev];
-                                if (!next[assistantIndex]) {
-                                    next[assistantIndex] = { role: 'assistant', content: '', metrics: null };
-                                }
-                                next[assistantIndex] = {
-                                    ...next[assistantIndex],
-                                    content: streamedContent,
-                                };
-                                return next;
-                            });
-                        },
-                        (payload) => {
-                            const totalDurationMs = (payload?.total_duration || 0) / 1_000_000;
-                            const evalCount = Number(payload?.eval_count || 0);
-                            const evalDurationSeconds = (payload?.eval_duration || 0) / 1_000_000_000;
-                            const tokensPerSecond = evalDurationSeconds > 0 ? evalCount / evalDurationSeconds : 0;
-
-                            if (!streamedContent.trim()) {
-                                throw new Error('The model returned only thinking text.');
-                            }
-
-                            setMessages(prev => {
-                                const next = [...prev];
-                                const message = next[assistantIndex] || { role: 'assistant', content: streamedContent, metrics: null };
-                                next[assistantIndex] = {
-                                    ...message,
-                                    metrics: {
-                                        timeMs: totalDurationMs,
-                                        tokens: evalCount,
-                                        tokensPerSecond: tokensPerSecond,
-                                    }
-                                };
-                                return next;
-                            });
+                        content: assistantContent,
+                        metrics: {
+                            timeMs: totalDurationMs,
+                            tokens: evalCount,
+                            tokensPerSecond: tokensPerSecond,
                         }
-                    );
+                    }]);
                 } catch (error) {
                     setMessages(prev => [...prev, { 
                         role: 'error', 

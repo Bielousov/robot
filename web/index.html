@@ -232,7 +232,6 @@
                         body: JSON.stringify({
                             model: model,
                             prompt: userMessage,
-                            context: contextMessages.map(msg => msg.content).join('\n'),
                             stream: true,
                             raw: true,
                         }),

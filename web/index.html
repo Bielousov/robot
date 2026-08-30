@@ -101,9 +101,8 @@
             };
 
             const getSafeAssistantContent = (payload) => {
-                const message = payload?.message ?? {};
-                const content = typeof message.content === 'string' ? message.content : '';
-                const thinking = typeof message.thinking === 'string' ? message.thinking : '';
+                const content = typeof payload?.response === 'string' ? payload.response : '';
+                const thinking = typeof payload?.thinking === 'string' ? payload.thinking : '';
 
                 if (thinking && content && content === thinking) {
                     return '';
@@ -132,15 +131,25 @@
                 if (!cleanChunk) return existingText;
 
                 const prev = String(existingText || '');
+
+                if (!prev) return cleanChunk;
+
                 const prevLastChar = prev.slice(-1);
                 const nextFirstChar = cleanChunk.charAt(0);
-                const needsSpace = 
+                const needsSpace =
                     prev.length > 0 &&
                     /[A-Za-z0-9]/.test(prevLastChar) &&
                     /[A-Za-z0-9]/.test(nextFirstChar) &&
                     !/\s/.test(cleanChunk.charAt(0));
 
                 return prev + (needsSpace ? ' ' : '') + cleanChunk;
+            };
+
+            const splitStreamText = (text) => {
+                if (!text) return [];
+
+                const candidates = text.match(/\S+\s*|\s+/g) || [text];
+                return candidates.filter(Boolean).map(part => part.trim() ? part.trim() : part);
             };
 
             const streamAssistantResponse = async (response, onChunk, onComplete) => {
@@ -171,7 +180,10 @@
                                 finalPayload = payload;
                                 const chunkContent = getSafeAssistantContent(payload);
                                 if (chunkContent) {
-                                    onChunk(chunkContent);
+                                    const wordChunks = splitStreamText(chunkContent);
+                                    for (const wordChunk of wordChunks) {
+                                        onChunk(wordChunk);
+                                    }
                                 }
                             } catch (error) {
                                 // Ignore partial/incomplete JSON fragments while streaming.
@@ -185,7 +197,10 @@
                             finalPayload = payload;
                             const chunkContent = getSafeAssistantContent(payload);
                             if (chunkContent) {
-                                onChunk(chunkContent);
+                                const wordChunks = splitStreamText(chunkContent);
+                                for (const wordChunk of wordChunks) {
+                                    onChunk(wordChunk);
+                                }
                             }
                         } catch (error) {
                             // Ignore trailing partial JSON fragments.
@@ -209,19 +224,17 @@
 
                 try {
                     const contextMessages = getContextMessages();
-                    const response = await fetch(`${ollamaUrl}/api/chat`, {
+                    const response = await fetch(`${ollamaUrl}/api/generate`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
                             model: model,
-                            messages: [
-                                ...contextMessages,
-                                { role: 'user', content: userMessage }
-                            ],
+                            prompt: userMessage,
+                            context: contextMessages.map(msg => msg.content).join('\n'),
                             stream: true,
-                            think: false,
+                            raw: true,
                         }),
                     });
 

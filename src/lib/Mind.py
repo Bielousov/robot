@@ -224,17 +224,33 @@ class Mind:
             return None
 
         classifier_instructions = (
-            "Classify whether this speech is addressed to the robot.\n"
-            "Return ONLY one number from 0.0 to 1.0.\n"
-            "1.0 = definitely addressed to the robot\n"
-            "0.0 = definitely not addressed to the robot\n"
-            "0.5 = uncertain\n"
-            "Direct commands/questions to the robot: high.\n"
-            "Talking to another person: low.\n"
-            "Conversation not involving the robot: low.\n"
-            "Ambiguous speech: around 0.5."
+            "You are a classifier that determines whether transcribed speech was "
+            "intentionally addressed to a robot.\n\n"
+            "Return ONLY one decimal number between 0.0 and 1.0.\n\n"
+            "The score represents:\n"
+            "1.0 = clearly valid, meaningful speech directed at the robot\n"
+            "0.0 = clearly not directed at the robot OR gibberish/unintelligible speech\n\n"
+            "IMPORTANT:\n"
+            "First determine whether the transcription is coherent and has a plausible meaning.\n"
+            "If it is gibberish, nonsensical, malformed, or appears to be a bad speech-recognition "
+            "result, the score MUST be 0.0-0.1 regardless of whether it resembles a command.\n\n"
+            "Examples:\n"
+            "Hey Pip, what time is it? -> 1.0\n"
+            "Pip, turn on the lights -> 1.0\n"
+            "what's the weather tomorrow? -> 0.8\n"
+            "I think we should leave soon -> 0.1\n"
+            "Can you pass me that? -> 0.2\n"
+            "immortal the table seventy five -> 0.0\n"
+            "purple seven window banana -> 0.0\n"
+            "the florp is going to blen -> 0.0\n"
+            "uhhh... Pip... can you... -> 0.4\n\n"
+            "Do not infer meaning that is not present in the transcription.\n"
+            "Do not assume unusual word combinations are meaningful.\n"
+            "Return ONLY the number.\n\n"
+            "Speech:\n"
+            "{{TEXT}}"
         )
-        prompt = f"<spoken_text>{request}</spoken_text>"
+        prompt = classifier_instructions.replace("{{TEXT}}", request)
         started_at = time.perf_counter()
         try:
             response = self.client.chat(
@@ -250,11 +266,7 @@ class Mind:
             )
             elapsed_seconds = time.perf_counter() - started_at
             raw_response = response.get("message", {}).get("content", "").strip()
-            score_match = re.search(
-                r"addressed_confidence_score\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*%?",
-                raw_response,
-                flags=re.IGNORECASE,
-            )
+            score_match = re.fullmatch(r"\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*", raw_response)
             score = float(score_match.group(1)) if score_match else None
             if score is not None:
                 if score > 1.0:

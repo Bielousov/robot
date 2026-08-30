@@ -101,8 +101,12 @@
             };
 
             const getSafeAssistantContent = (payload) => {
-                const content = typeof payload?.response === 'string' ? payload.response : '';
-                const thinking = typeof payload?.thinking === 'string' ? payload.thinking : '';
+                const messageContent = typeof payload?.message?.content === 'string' ? payload.message.content : '';
+                const legacyContent = typeof payload?.response === 'string' ? payload.response : '';
+                const content = messageContent || legacyContent;
+                const thinking = typeof payload?.thinking === 'string'
+                    ? payload.thinking
+                    : (typeof payload?.message?.thinking === 'string' ? payload.message.thinking : '');
 
                 if (thinking && content && content === thinking) {
                     return '';

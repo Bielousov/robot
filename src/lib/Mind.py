@@ -224,18 +224,15 @@ class Mind:
             return None
 
         classifier_instructions = (
-            "You are a message-address classifier, not Pip and not a conversational "
-            "assistant. Analyze the supplied transcript and decide whether the speaker "
-            "is talking directly to Pip, the robot, or to another person. Do not assume "
-            "every microphone transcript is addressed to Pip. Weight the actual words "
-            "in this transcript: use of Pip, robot, or a wake alias; direct second-person "
-            "language; an actionable request; and whether the sentence makes sense as "
-            "speech directed at a listener. Reduce confidence for third-person statements, "
-            "conversation fragments, and remarks about unrelated subjects. Choose a "
-            "continuous score specific to this text, not a memorized default or round "
-            "anchor value. Return only this line: addressed_confidence_score: 0.xxxxx. "
-            "The score must be between 0.0 and 1.0 and must contain at least three "
-            "decimal places."
+            "Classify whether this speech is addressed to the robot."
+            "Return ONLY one number from 0.0 to 1.0."
+            "1.0 = definitely addressed to the robot"
+            "0.0 = definitely not addressed to the robot"
+            "0.5 = uncertain"
+            "Direct commands/questions to the robot: high."
+            "Talking to another person: low."an
+            "Conversation not involving the robot: low."
+            "Ambiguous speech: around 0.5."
         )
         prompt = f"<spoken_text>{request}</spoken_text>"
         started_at = time.perf_counter()

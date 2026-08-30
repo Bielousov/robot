@@ -44,8 +44,8 @@ class Ears:
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
         
-        # Audio chunk size: 250ms for Vosk processing
-        self.sample_length_ms = 250
+        # Smaller chunks reduce recognition and silence-endpoint latency.
+        self.sample_length_ms = 100
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
 
         # VAD Setup
@@ -57,6 +57,7 @@ class Ears:
         # Threading Management
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
+        self.__speech_active = False
 
         # Callback handlers
         self.__on_listen = on_listen
@@ -94,7 +95,7 @@ class Ears:
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
             self.__process_handle = subprocess.Popen(
-                ["arecord", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
+                ["arecord", "-D", "plughw:0,0", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 bufsize=self.buffer_size
@@ -136,8 +137,10 @@ class Ears:
             if self.debug:
                 print(f"[VAD] Error: {e}")
 
-        # Skip Vosk processing if no speech detected
-        if not has_speech:
+        # Keep feeding silence after speech so Vosk can detect the utterance end.
+        if has_speech:
+            self.__speech_active = True
+        elif not self.__speech_active:
             return
 
         # Process with Vosk
@@ -148,6 +151,7 @@ class Ears:
                 print(f"[Vosk] Processing time: {process_time*1000:.2f}ms")
             
             result = json.loads(self.recognizer.Result())
+            self.__speech_active = False
             text = self._cleanup(result.get("text", ""))
             
             if text:

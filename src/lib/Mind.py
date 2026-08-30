@@ -224,14 +224,14 @@ class Mind:
             return None
 
         classifier_instructions = (
-            "Classify whether this speech is addressed to the robot."
-            "Return ONLY one number from 0.0 to 1.0."
-            "1.0 = definitely addressed to the robot"
-            "0.0 = definitely not addressed to the robot"
-            "0.5 = uncertain"
-            "Direct commands/questions to the robot: high."
-            "Talking to another person: low."an
-            "Conversation not involving the robot: low."
+            "Classify whether this speech is addressed to the robot.\n"
+            "Return ONLY one number from 0.0 to 1.0.\n"
+            "1.0 = definitely addressed to the robot\n"
+            "0.0 = definitely not addressed to the robot\n"
+            "0.5 = uncertain\n"
+            "Direct commands/questions to the robot: high.\n"
+            "Talking to another person: low.\n"
+            "Conversation not involving the robot: low.\n"
             "Ambiguous speech: around 0.5."
         )
         prompt = f"<spoken_text>{request}</spoken_text>"

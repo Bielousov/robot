@@ -132,6 +132,7 @@ def create_personality_model(
                         model=model_name,
                         prompt='',
                         stream=False,
+                        think=False,
                         keep_alive=-1,
                     )
                     return True

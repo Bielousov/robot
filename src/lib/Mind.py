@@ -216,6 +216,55 @@ class Mind:
 
             return None
 
+    def analyze(self, text: Optional[str] = None) -> Optional[float]:
+        """Estimate whether an STT fragment was addressed to the robot."""
+        request = (text or (self.history[-1].get("content", "") if self.history else "")).strip()
+        if not request:
+            print("[Robot] Analyze skipped: empty STT fragment")
+            return None
+
+        prompt = (
+            "Classify whether this spoken text is addressed directly to Pip, "
+            "the robot, or is merely overheard speech. Return only one line in "
+            "this exact format: addressed_confidence_score: NN.NNNNNNNN%. "
+            "Use 0% when it is definitely overheard and 100% when definitely "
+            "addressed. Do not return any other text.\n\n"
+            f"Spoken text: {request}"
+        )
+        started_at = time.perf_counter()
+        try:
+            response = self.client.chat(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                options={**self.options, "temperature": 0.0, "num_predict": 16},
+                stream=False,
+                think=False,
+                keep_alive=-1,
+            )
+            elapsed_seconds = time.perf_counter() - started_at
+            raw_response = response.get("message", {}).get("content", "").strip()
+            score_match = re.search(
+                r"addressed_confidence_score\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*%",
+                raw_response,
+                flags=re.IGNORECASE,
+            )
+            score = float(score_match.group(1)) if score_match else None
+            if score is not None:
+                score = max(0.0, min(100.0, score))
+
+            api_time = response.get("total_duration", 0) / 1e9
+            score_text = f"{score:.8f}%" if score is not None else "unparsed"
+            print(f"[Robot] Analyze request: {request}")
+            print(f"[Robot] Analyze score: addressed_confidence_score: {score_text}")
+            print(f"[Robot] Analyze response: {raw_response}")
+            print(f"[Robot] Analyze response time: {elapsed_seconds:.3f}s (API: {api_time:.3f}s)")
+            return score
+        except Exception as exc:
+            elapsed_seconds = time.perf_counter() - started_at
+            print(f"[Robot] Analyze request: {request}")
+            print(f"[Robot] Analyze failed after {elapsed_seconds:.3f}s: {exc}")
+            return None
+
     def add_to_history(self, role: str, message: str) -> list:
         """
         Appends a message to context and maintains the sliding window.

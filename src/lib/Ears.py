@@ -44,9 +44,12 @@ class Ears:
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
         
-        # Smaller chunks reduce recognition and silence-endpoint latency.
-        self.sample_length_ms = 100
+        # Keep chunks short enough for responsive capture without excessive
+        # per-call recognizer overhead on the Pi.
+        self.sample_length_ms = 160
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
+        self.silence_timeout_ms = 300
+        self.silence_bytes = 0
 
         # VAD Setup
         self.vad = webrtcvad.Vad(2)
@@ -137,21 +140,30 @@ class Ears:
             if self.debug:
                 print(f"[VAD] Error: {e}")
 
-        # Keep feeding silence after speech so Vosk can detect the utterance end.
+        # Keep feeding a short silence tail so Vosk can finalize the utterance.
         if has_speech:
             self.__speech_active = True
+            self.silence_bytes = 0
         elif not self.__speech_active:
             return
+        else:
+            self.silence_bytes += len(data)
 
         # Process with Vosk
         start_time = time.time()
-        if self.recognizer.AcceptWaveform(data):
+        accepted = self.recognizer.AcceptWaveform(data)
+        silence_timeout = self.silence_bytes >= (
+            self.sample_rate * 2 * self.silence_timeout_ms / 1000
+        )
+        if accepted or silence_timeout:
             process_time = time.time() - start_time
             if self.debug:
                 print(f"[Vosk] Processing time: {process_time*1000:.2f}ms")
             
-            result = json.loads(self.recognizer.Result())
+            result_method = self.recognizer.Result if accepted else self.recognizer.FinalResult
+            result = json.loads(result_method())
             self.__speech_active = False
+            self.silence_bytes = 0
             text = self._cleanup(result.get("text", ""))
             
             if text:

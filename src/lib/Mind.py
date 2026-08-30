@@ -216,26 +216,40 @@ class Mind:
 
             return None
 
-    def analyze(self, text: Optional[str] = None) -> Optional[float]:
+    def analyze_conversation(self, text: Optional[str] = None) -> Optional[float]:
         """Estimate whether an STT fragment was addressed to the robot."""
         request = (text or (self.history[-1].get("content", "") if self.history else "")).strip()
         if not request:
             print("[Robot] Analyze skipped: empty STT fragment")
             return None
 
-        prompt = (
-            "Classify whether this spoken text is addressed directly to Pip, "
-            "the robot, or is merely overheard speech. Return only one line in "
-            "this exact format: addressed_confidence_score: NN.NNNNNNNN%. "
-            "Use 0% when it is definitely overheard and 100% when definitely "
-            "addressed. Do not return any other text.\n\n"
-            f"Spoken text: {request}"
+        classifier_instructions = (
+            "You are a message-address classifier, not Pip and not a conversational "
+            "assistant. Analyze the supplied transcript and decide whether the speaker "
+            "is talking directly to Pip, the robot, or to another person. Do not assume "
+            "every microphone transcript is addressed to Pip. Explicitly using Pip, "
+            "robot, or a wake alias is strong evidence. A direct request using you/your "
+            "is moderate evidence. Third-person statements, fragments, or remarks about "
+            "unrelated subjects are usually overheard.\n\n"
+            "Calibration examples:\n"
+            "Pip, what time is it? -> 98\n"
+            "Robot, stop moving. -> 99\n"
+            "I wonder what the weather will be tomorrow. -> 8\n"
+            "Can you pass me the salt? -> 45\n"
+            "That car is very loud. -> 3\n\n"
+            "Return only this line, with a newly chosen number based on the supplied "
+            "text: addressed_confidence_score: NN.NNNNNNNN. The number must be from "
+            "0 to 100. Do not repeat an example number unless the text deserves it."
         )
+        prompt = f"<spoken_text>{request}</spoken_text>"
         started_at = time.perf_counter()
         try:
             response = self.client.chat(
                 model=self.model_name,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": classifier_instructions},
+                    {"role": "user", "content": prompt},
+                ],
                 options={**self.options, "temperature": 0.0, "num_predict": 16},
                 stream=False,
                 think=False,
@@ -244,7 +258,7 @@ class Mind:
             elapsed_seconds = time.perf_counter() - started_at
             raw_response = response.get("message", {}).get("content", "").strip()
             score_match = re.search(
-                r"addressed_confidence_score\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*%",
+                r"addressed_confidence_score\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*%?",
                 raw_response,
                 flags=re.IGNORECASE,
             )

@@ -123,7 +123,7 @@ class Robot:
             self.state.append_eavesdrop(text)
             self.state.set_last_spoke()
             threading.Thread(
-                target=self.mind.analyze,
+                target=self.mind.analyze_conversation,
                 args=(text,),
                 daemon=True,
             ).start()

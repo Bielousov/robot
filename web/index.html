@@ -102,18 +102,45 @@
 
             const getSafeAssistantContent = (payload) => {
                 const message = payload?.message ?? {};
-                const content = typeof message.content === 'string' ? message.content.trim() : '';
-                const thinking = typeof message.thinking === 'string' ? message.thinking.trim() : '';
+                const content = typeof message.content === 'string' ? message.content : '';
+                const thinking = typeof message.thinking === 'string' ? message.thinking : '';
 
                 if (thinking && content && content === thinking) {
                     return '';
                 }
 
-                if (/<think|<thinking|thinking\s*:/i.test(content) || /thinking/i.test(thinking)) {
+                const contentStripped = content.replace(/^\s+|\s+$/g, '');
+                const thinkingStripped = thinking.replace(/^\s+|\s+$/g, '');
+
+                if (
+                    (!contentStripped && !thinkingStripped) ||
+                    /^(?:<think|<thinking|thinking\s*:)/i.test(contentStripped) ||
+                    /^(?:<think|<thinking|thinking\s*:)/i.test(thinkingStripped) ||
+                    /<think\b|<thinking\b|thinking\s*:/i.test(contentStripped) ||
+                    /<think\b|<thinking\b|thinking\s*:/i.test(thinkingStripped)
+                ) {
                     return '';
                 }
 
                 return content;
+            };
+
+            const appendChunkToText = (existingText, nextChunk) => {
+                if (!nextChunk) return existingText;
+
+                const cleanChunk = String(nextChunk).replace(/\r/g, '');
+                if (!cleanChunk) return existingText;
+
+                const prev = String(existingText || '');
+                const prevLastChar = prev.slice(-1);
+                const nextFirstChar = cleanChunk.charAt(0);
+                const needsSpace = 
+                    prev.length > 0 &&
+                    /[A-Za-z0-9]/.test(prevLastChar) &&
+                    /[A-Za-z0-9]/.test(nextFirstChar) &&
+                    !/\s/.test(cleanChunk.charAt(0));
+
+                return prev + (needsSpace ? ' ' : '') + cleanChunk;
             };
 
             const streamAssistantResponse = async (response, onChunk, onComplete) => {
@@ -214,7 +241,7 @@
                     await streamAssistantResponse(
                         response,
                         (chunk) => {
-                            streamedContent += chunk;
+                            streamedContent = appendChunkToText(streamedContent, chunk);
                             setMessages(prev => {
                                 const next = [...prev];
                                 if (!next[assistantIndex]) {

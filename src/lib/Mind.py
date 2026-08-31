@@ -248,7 +248,7 @@ class Mind:
                 think=False,
                 keep_alive=-1,
                 logprobs=True,
-                top_logprobs=5,
+                top_logprobs=10,
             )
 
             elapsed_seconds = time.perf_counter() - started_at

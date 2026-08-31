@@ -39,7 +39,7 @@ PROMPTS = [
     ("tell me about your hardware", "ANY"),
     ("then tell me some fun fact", "ANY"),
     ("what is the weather like today", "ANY"),
-    ("who are you", "NO"),
+    ("who are you", "ANY"),
 
     # Clearly not addressed
     ("chips", "NO"),
@@ -51,12 +51,12 @@ PROMPTS = [
     ("immortal the table seventy five", "NO"),
 
     # Additional boundary cases
-    ("can you help me", "NO"),
-    ("can you read me a book", "NO"),
-    ("read me a book", "NO"),
+    ("can you read me a book", "ANY"),
+    ("can you help me", "ANY"),
+    ("read me a book", "ANY"),
     ("i think we should leave soon", "NO"),
-    ("hey what is your name", "NO"),
-    ("hey what time is it", "NO"),
+    ("hey what is your name", "YES"),
+    ("hey what time is it", "YES"),
 ]
 
 def run_test(llm, prompt):

@@ -35,6 +35,7 @@ def get_classifier_model_options() -> Dict[str, Any]:
         "num_predict": 4,
         "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
         "repeat_penalty": 1.0,
+        "seed": 42,
         "temperature": 0.0,
         "top_k": 1,
         "top_p": 1.0,

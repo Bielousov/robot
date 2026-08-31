@@ -239,15 +239,17 @@ class Mind:
             return None
 
         options = get_classifier_model_options()
-        prompt = build_conversation_classifier_prompt()
+        prompt = build_conversation_classifier_prompt(request)
         started_at = time.perf_counter()
 
         try:
             response = self.client.chat(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": request},
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
                 ],
                 options=options,
                 stream=False,

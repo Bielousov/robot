@@ -1,17 +1,15 @@
 from config import Name
 
 
-def build_conversation_classifier_prompt() -> str:
+def build_conversation_classifier_prompt(request: str) -> str:
     return (
-        f"You are a classifier for a robot named {Name}.\n"
-        f"The robot name is exactly: {Name}\n\n"
-        f"Treat '{Name}', '{Name.lower()}', and '{Name.upper()}' as the same name.\n\n"
-
-        "RULE:\n"
-        f"If the request contains the word '{Name}', output ADDRESSED.\n"
-        "If it does not contain the robot name, output NOT_ADDRESSED.\n\n"
-
-        "Output exactly one label:\n"
-        "ADDRESSED\n"
-        "NOT_ADDRESSED"
+        "Candidate intents:\n"
+        "ADDRESSED: the speaker is directly talking to the robot Pip; "
+        "the robot's name is explicitly spoken in the request.\n"
+        "AMBIGUOUS: the request could reasonably be directed at Pip, "
+        "but the robot's name is not explicitly spoken.\n"
+        "NOT_ADDRESSED: the speaker is clearly talking about something "
+        "else or is not addressing the robot.\n\n"
+        f"User message: {request}\n\n"
+        "Answer with exactly one intent name from the list above."
     )

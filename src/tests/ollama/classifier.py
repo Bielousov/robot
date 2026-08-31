@@ -9,6 +9,7 @@ if str(project_path) not in sys.path:
 
 from lib.Mind import Mind
 
+CLASSIFICATION_THRESHOLD = 0.7
 
 # ---------------------------------------------------------------------
 # Test matrix
@@ -38,7 +39,7 @@ PROMPTS = [
     ("tell me about your hardware", "ANY"),
     ("then tell me some fun fact", "ANY"),
     ("what is the weather like today", "ANY"),
-    ("who are you", "ANY"),
+    ("who are you", "NO"),
 
     # Clearly not addressed
     ("chips", "NO"),
@@ -58,9 +59,8 @@ PROMPTS = [
     ("hey what time is it", "NO"),
 ]
 
-
 def run_test(llm, prompt):
-    """Run one classification and return the actual response + score."""
+    """Run one classification and derive YES/NO from the confidence score."""
 
     start = time.perf_counter()
 
@@ -68,13 +68,14 @@ def run_test(llm, prompt):
 
     elapsed = time.perf_counter() - start
 
-    # classify_conversation() currently logs the raw response but only
-    # returns the score. The actual YES/NO is therefore taken from the
-    # latest classifier response stored by Mind, if available.
-    actual = getattr(llm, "last_classification", None)
-
-    if actual is None:
+    if score is None:
         actual = "?"
+    else:
+        actual = (
+            "YES"
+            if score >= CLASSIFICATION_THRESHOLD
+            else "NO"
+        )
 
     return actual, score, elapsed
 
@@ -121,6 +122,8 @@ def benchmark():
                 f"{elapsed:.3f}s"
             )
 
+            # ANY means we don't care whether the score crosses
+            # the YES/NO threshold; we only want to inspect the score.
             if expected == "ANY" or actual == expected:
                 passed += 1
             else:

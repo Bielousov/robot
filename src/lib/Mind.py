@@ -259,6 +259,10 @@ class Mind:
             # Parse classification
             # ---------------------------------------------------------
 
+            print(
+                f"[Robot] Analyze raw response: {raw_response!r}"
+            )
+
             classification = None
 
             normalized_response = raw_response.strip().upper()
@@ -266,11 +270,16 @@ class Mind:
             for label in ConversationClassification:
                 normalized_label = str(label).strip().upper()
 
+                print(
+                    f"[Robot] Analyze compare: "
+                    f"{normalized_response!r} == {normalized_label!r}"
+                )
+
                 if normalized_response == normalized_label:
                     classification = label
                     break
 
-            # Also handle responses containing extra whitespace/text.
+            # Also handle responses containing extra text.
             if classification is None:
                 for label in ConversationClassification:
                     normalized_label = str(label).strip().upper()
@@ -278,6 +287,11 @@ class Mind:
                     if normalized_label in normalized_response:
                         classification = label
                         break
+
+            print(
+                f"[Robot] Analyze parsed classification: "
+                f"{classification!r}"
+            )
 
             # ---------------------------------------------------------
             # Calculate score

@@ -261,39 +261,44 @@ class Mind:
             # ---------------------------------------------------------
 
             score = None
-
             logprobs = response.get("logprobs") or []
 
             if logprobs:
-                for token_info in logprobs:
-                    # Probability of the token actually generated
-                    token = str(token_info.get("token", "")).strip().upper()
+                # The first generated token is the classification token.
+                token_info = logprobs[0]
 
-                    if token == "YES":
-                        logprob = token_info.get("logprob")
+                candidates = {}
 
-                        if logprob is not None:
-                            score = math.exp(float(logprob))
-                            break
+                # Actual generated token
+                token = str(token_info.get("token", "")).strip().upper()
+                logprob = token_info.get("logprob")
 
-                    # YES may be an alternative token rather than the
-                    # token actually selected (e.g. model answered NO).
-                    for alternative in token_info.get("top_logprobs", []) or []:
-                        alt_token = (
-                            str(alternative.get("token", ""))
-                            .strip()
-                            .upper()
-                        )
+                if token and logprob is not None:
+                    candidates[token] = float(logprob)
 
-                        if alt_token == "YES":
-                            logprob = alternative.get("logprob")
+                # Alternative tokens
+                for alternative in token_info.get("top_logprobs", []) or []:
+                    token = str(
+                        alternative.get("token", "")
+                    ).strip().upper()
 
-                            if logprob is not None:
-                                score = math.exp(float(logprob))
-                                break
+                    logprob = alternative.get("logprob")
 
-                    if score is not None:
-                        break
+                    if token and logprob is not None:
+                        candidates[token] = float(logprob)
+
+                yes_logprob = candidates.get("YES")
+                no_logprob = candidates.get("NO")
+
+                if yes_logprob is not None and no_logprob is not None:
+                    yes_probability = math.exp(yes_logprob)
+                    no_probability = math.exp(no_logprob)
+
+                    total = yes_probability + no_probability
+
+                    if total > 0:
+                        score = yes_probability / total
+
             # ---------------------------------------------------------
             # Timing
             # ---------------------------------------------------------

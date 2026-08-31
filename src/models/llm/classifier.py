@@ -1,4 +1,4 @@
-def build_voice_address_system_prompt() -> str:
+def build_conversation_classifier_prompt() -> str:
     """Return the classifier instructions for detecting if speech is directed at Pip."""
     return (
     "Classify whether the following speech is addressed to a robot named Pip.\n\n"
@@ -37,15 +37,4 @@ def build_voice_address_system_prompt() -> str:
     "\"I'm going to read a book\" -> NO\n"
     "\"immortal the table seventy five\" -> NO\n"
     "\"purple seven window banana\" -> NO\n\n"
-
-    "Speech:\n"
-    "{{TEXT}}"
 )
-
-
-
-def build_conversation_classifier_prompt(request: str) -> str:
-    """Return the user payload for the voice-address classifier."""
-    text = (request or "").strip()
-    return build_voice_address_system_prompt().replace("{{TEXT}}", text)
-

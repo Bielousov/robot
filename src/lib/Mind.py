@@ -189,10 +189,12 @@ class Mind:
                 return None
 
             messages = self._build_request_messages(prompts, context=context)
+            options = get_conversation_model_options()
 
             response = self.client.chat(
                 model=self.model_name,
                 messages=messages,
+                options=options,
                 stream=False,
                 think=False,
                 keep_alive=-1
@@ -231,7 +233,7 @@ class Mind:
             return None
 
         options = get_classifier_model_options()
-        prompt = build_conversation_classifier_prompt(request)
+        prompt = build_conversation_classifier_prompt()
         started_at = time.perf_counter()
 
         try:

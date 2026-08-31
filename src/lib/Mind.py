@@ -257,11 +257,12 @@ class Mind:
             raw_response = message.get("content", "").strip()
 
             # ---------------------------------------------------------
-            # Extract first generated token and its YES/NO probabilities
+            # Extract classification and class probabilities
             # ---------------------------------------------------------
 
             score = None
             classification = None
+            candidates = {}
 
             logprobs = (
                 message.get("logprobs")
@@ -280,16 +281,16 @@ class Mind:
                     token_info.get("token", "")
                 ).strip().upper()
 
-                if generated_token == "YES":
-                    classification = "YES"
-                elif generated_token == "NO":
-                    classification = "NO"
+                if generated_token in (
+                    "ADDRESSED",
+                    "AMBIGUOUS",
+                    "NOT_ADDRESSED",
+                ):
+                    classification = generated_token
 
                 # -----------------------------------------------------
-                # Collect YES / NO probabilities from this position
+                # Collect candidate log probabilities
                 # -----------------------------------------------------
-
-                candidates = {}
 
                 token = str(
                     token_info.get("token", "")
@@ -310,51 +311,73 @@ class Mind:
                     if token and logprob is not None:
                         candidates[token] = float(logprob)
 
-                yes_logprob = candidates.get("YES")
-                no_logprob = candidates.get("NO")
-
                 # -----------------------------------------------------
-                # Convert YES/NO log-probability difference to 0..1
+                # Extract the three classifier probabilities
                 # -----------------------------------------------------
 
-                if yes_logprob is not None and no_logprob is not None:
+                addressed_logprob = candidates.get("ADDRESSED")
+                ambiguous_logprob = candidates.get("AMBIGUOUS")
+                not_addressed_logprob = candidates.get("NOT_ADDRESSED")
 
-                    # Log-odds of YES versus NO.
-                    log_odds = yes_logprob - no_logprob
+                # -----------------------------------------------------
+                # Normalize the three probabilities
+                #
+                # This produces:
+                #
+                #   score ~= P(ADDRESSED)
+                #
+                # relative to the three possible classifications.
+                # -----------------------------------------------------
 
-                    # Sigmoid:
-                    #
-                    # log_odds =  0 -> 0.5
-                    # log_odds >  0 -> YES side
-                    # log_odds <  0 -> NO side
-                    #
-                    # Scale the difference so that modest differences
-                    # produce useful confidence values.
-                    score = 1.0 / (
-                        1.0 + math.exp(-log_odds)
+                if (
+                    addressed_logprob is not None
+                    and ambiguous_logprob is not None
+                    and not_addressed_logprob is not None
+                ):
+                    addressed_probability = math.exp(addressed_logprob)
+                    ambiguous_probability = math.exp(ambiguous_logprob)
+                    not_addressed_probability = math.exp(
+                        not_addressed_logprob
                     )
 
+                    total_probability = (
+                        addressed_probability
+                        + ambiguous_probability
+                        + not_addressed_probability
+                    )
+
+                    if total_probability > 0:
+                        score = (
+                            addressed_probability
+                            / total_probability
+                        )
+
                 # -----------------------------------------------------
-                # If only one of YES/NO is available, use classification
+                # Fallback if not all three candidates are available
                 # -----------------------------------------------------
 
-                elif classification == "YES":
+                elif classification == "ADDRESSED":
                     score = 1.0
 
-                elif classification == "NO":
+                elif classification == "AMBIGUOUS":
+                    score = 0.5
+
+                elif classification == "NOT_ADDRESSED":
                     score = 0.0
 
             # ---------------------------------------------------------
-            # Fallback to actual response
+            # Fallback to actual text response
             # ---------------------------------------------------------
 
             if classification is None:
                 normalized_response = raw_response.upper()
 
-                if normalized_response == "YES":
-                    classification = "YES"
-                elif normalized_response == "NO":
-                    classification = "NO"
+                if normalized_response in (
+                    "ADDRESSED",
+                    "AMBIGUOUS",
+                    "NOT_ADDRESSED",
+                ):
+                    classification = normalized_response
 
             # ---------------------------------------------------------
             # Timing
@@ -377,6 +400,7 @@ class Mind:
             # ---------------------------------------------------------
             # Logging
             # ---------------------------------------------------------
+
             if self.debug:
                 print(
                     f"[Robot] Analyze candidates: "

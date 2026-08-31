@@ -9,7 +9,13 @@ if str(project_path) not in sys.path:
 
 from lib.Mind import Mind
 
+
 CLASSIFICATION_THRESHOLD = 0.51
+
+# Expected confidence range for ambiguous ("ANY") cases.
+AMBIGUOUS_MIN = 0.20
+AMBIGUOUS_MAX = 0.80
+
 
 # ---------------------------------------------------------------------
 # Test matrix
@@ -59,8 +65,9 @@ PROMPTS = [
     ("hey what time is it", "YES"),
 ]
 
+
 def run_test(llm, prompt):
-    """Run one classification and derive YES/NO from the confidence score."""
+    """Run one classification and return YES/NO, score, and elapsed time."""
 
     start = time.perf_counter()
 
@@ -122,20 +129,44 @@ def benchmark():
                 f"{elapsed:.3f}s"
             )
 
-            # ANY means we don't care whether the score crosses
-            # the YES/NO threshold; we only want to inspect the score.
-            if actual == expected:
-                passed += 1
-            else:
-                if expected == "ANY" and score > 0.2 and score < 0.8:
+            # ---------------------------------------------------------
+            # Evaluate result
+            # ---------------------------------------------------------
+
+            if score is None:
+                failed += 1
+                continue
+
+            if expected == "YES":
+                # Explicitly addressed prompts should cross the threshold.
+                if score >= CLASSIFICATION_THRESHOLD:
                     passed += 1
                 else:
                     failed += 1
+
+            elif expected == "NO":
+                # Clearly non-addressed prompts should stay below threshold.
+                if score < CLASSIFICATION_THRESHOLD:
+                    passed += 1
+                else:
+                    failed += 1
+
+            elif expected == "ANY":
+                # Ambiguous prompts should remain reasonably centered.
+                if AMBIGUOUS_MIN < score < AMBIGUOUS_MAX:
+                    passed += 1
+                else:
+                    failed += 1
+
+        # -------------------------------------------------------------
+        # Results
+        # -------------------------------------------------------------
 
         print()
         print("=" * 100)
         print("CLASSIFIER TEST RESULTS")
         print("=" * 100)
+
         print(f"Total:    {len(PROMPTS)}")
         print(f"Passed:   {passed}")
         print(f"Failed:   {failed}")
@@ -143,6 +174,15 @@ def benchmark():
         if PROMPTS:
             accuracy = passed / len(PROMPTS) * 100
             print(f"Accuracy: {accuracy:.1f}%")
+
+        print()
+        print(
+            f"YES threshold:       >= {CLASSIFICATION_THRESHOLD:.2f}"
+        )
+        print(
+            f"ANY confidence:      {AMBIGUOUS_MIN:.2f} < score "
+            f"< {AMBIGUOUS_MAX:.2f}"
+        )
 
         print("=" * 100)
 

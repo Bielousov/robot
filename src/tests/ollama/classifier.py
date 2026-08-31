@@ -68,6 +68,9 @@ def run_test(llm, prompt):
 
     elapsed = time.perf_counter() - start
 
+
+    print(f"[TEST DEBUG] score={score!r}, type={type(score)}")
+
     if score is None:
         actual = "?"
     else:

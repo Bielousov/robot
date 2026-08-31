@@ -10,7 +10,8 @@ def build_conversation_classifier_prompt() -> str:
         "AMBIGUOUS\n"
         "NOT_ADDRESSED\n\n"
 
-        f"respond with ADDRESSED only when the '{Name}' was present in the request\n\n"
+        f"Respond ADDRESSED when and only when robot name ('{Name}') is present in the request, \n"
+        "do not consider other response rules in this case.\n\n"
 
         "AMBIGUOUS means the utterance is a question, request, command, "
         "or other meaningful speech where the intended listener is unknown. "

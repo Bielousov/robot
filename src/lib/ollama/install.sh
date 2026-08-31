@@ -15,12 +15,10 @@ if [ -f "$ENV_FILE" ]; then
     echo "[Ollama] Loading config from $ENV_FILE"
     # Extract variables from .env while ignoring comments
     OLLAMA_VERSION=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_VERSION' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
-    OLLAMA_MODEL_NAME=$(grep -v '^#' "$ENV_FILE" | grep 'OLLAMA_MODEL_NAME' | cut -d '=' -f2 | tr -d '"' | tr -d "'")
 fi
 
 # Fallback defaults if .env is missing or values aren't set
 OLLAMA_VERSION=${OLLAMA_VERSION:-"0.33.1"}
-OLLAMA_MODEL_NAME=${OLLAMA_MODEL_NAME:-"pip"}
 OLLAMA_RELEASE_VERSION=${OLLAMA_VERSION%%-*}
 
 mkdir -p "$DIST_DIR"

@@ -261,14 +261,23 @@ class Mind:
 
             classification = None
 
+            normalized_response = raw_response.strip().upper()
+
             for label in ConversationClassification:
-                if re.search(
-                    rf"\b{re.escape(label)}\b",
-                    raw_response,
-                    re.IGNORECASE,
-                ):
+                normalized_label = str(label).strip().upper()
+
+                if normalized_response == normalized_label:
                     classification = label
                     break
+
+            # Also handle responses containing extra whitespace/text.
+            if classification is None:
+                for label in ConversationClassification:
+                    normalized_label = str(label).strip().upper()
+
+                    if normalized_label in normalized_response:
+                        classification = label
+                        break
 
             # ---------------------------------------------------------
             # Calculate score

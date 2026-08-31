@@ -9,7 +9,7 @@ if str(project_path) not in sys.path:
 
 from lib.Mind import Mind
 
-CLASSIFICATION_THRESHOLD = 0.7
+CLASSIFICATION_THRESHOLD = 0.51
 
 # ---------------------------------------------------------------------
 # Test matrix

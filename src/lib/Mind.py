@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from models.llm.classifier import ConversationClassification, build_conversation_classifier_prompt
+from models.llm.classifier import build_conversation_classifier_prompt
 from models.llm.identity import build_identity_system_prompt
 from models.llm.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 

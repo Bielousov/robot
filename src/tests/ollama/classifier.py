@@ -10,64 +10,57 @@ if str(project_path) not in sys.path:
 from lib.Mind import Mind
 
 
-CLASSIFICATION_THRESHOLD = 0.51
-
-# Expected confidence range for ambiguous ("ANY") cases.
-AMBIGUOUS_MIN = 0.20
-AMBIGUOUS_MAX = 0.80
-
-
 # ---------------------------------------------------------------------
 # Test matrix
 # ---------------------------------------------------------------------
 
 PROMPTS = [
     # Explicitly addressed to Pip
-    ("pip what is your name", "YES"),
-    ("pip what are you doing", "YES"),
-    ("pip what time is it now", "YES"),
-    ("pip what time is it", "YES"),
-    ("pip tell me a job", "YES"),
-    ("pip tell me a joke", "YES"),
-    ("pip tell me about your hardware", "YES"),
-    ("pip then tell me some fun fact", "YES"),
-    ("pip what is the weather like today", "YES"),
-    ("pip who are you", "YES"),
-    ("hey pip", "YES"),
+    ("pip what is your name", "ADDRESSED"),
+    ("pip what are you doing", "ADDRESSED"),
+    ("pip what time is it now", "ADDRESSED"),
+    ("pip what time is it", "ADDRESSED"),
+    ("pip tell me a job", "ADDRESSED"),
+    ("pip tell me a joke", "ADDRESSED"),
+    ("pip tell me about your hardware", "ADDRESSED"),
+    ("pip then tell me some fun fact", "ADDRESSED"),
+    ("pip what is the weather like today", "ADDRESSED"),
+    ("pip who are you", "ADDRESSED"),
+    ("hey pip", "ADDRESSED"),
 
     # Same/similar prompts without explicit address
-    ("what is your name", "ANY"),
-    ("what are you doing", "ANY"),
-    ("what time is it now", "ANY"),
-    ("what time is it", "ANY"),
-    ("tell me a job", "ANY"),
-    ("tell me a joke", "ANY"),
-    ("tell me about your hardware", "ANY"),
-    ("then tell me some fun fact", "ANY"),
-    ("what is the weather like today", "ANY"),
-    ("who are you", "ANY"),
+    ("what is your name", "AMBIGUOUS"),
+    ("what are you doing", "AMBIGUOUS"),
+    ("what time is it now", "AMBIGUOUS"),
+    ("what time is it", "AMBIGUOUS"),
+    ("tell me a job", "AMBIGUOUS"),
+    ("tell me a joke", "AMBIGUOUS"),
+    ("tell me about your hardware", "AMBIGUOUS"),
+    ("then tell me some fun fact", "AMBIGUOUS"),
+    ("what is the weather like today", "AMBIGUOUS"),
+    ("who are you", "AMBIGUOUS"),
 
     # Clearly not addressed
-    ("chips", "NO"),
-    ("the dog is outside", "NO"),
-    ("i think it will rain", "NO"),
-    ("not sure what i do about this", "NO"),
-    ("specialized hardware", "NO"),
-    ("purple seven window banana", "NO"),
-    ("immortal the table seventy five", "NO"),
+    ("chips", "NOT_ADDRESSED"),
+    ("the dog is outside", "NOT_ADDRESSED"),
+    ("i think it will rain", "NOT_ADDRESSED"),
+    ("not sure what i do about this", "NOT_ADDRESSED"),
+    ("specialized hardware", "NOT_ADDRESSED"),
+    ("purple seven window banana", "NOT_ADDRESSED"),
+    ("immortal the table seventy five", "NOT_ADDRESSED"),
 
     # Additional boundary cases
-    ("can you read me a book", "ANY"),
-    ("can you help me", "ANY"),
-    ("read me a book", "ANY"),
-    ("i think we should leave soon", "NO"),
-    ("hey what is your name", "YES"),
-    ("hey what time is it", "YES"),
+    ("can you read me a book", "AMBIGUOUS"),
+    ("can you help me", "AMBIGUOUS"),
+    ("read me a book", "AMBIGUOUS"),
+    ("i think we should leave soon", "NOT_ADDRESSED"),
+    ("hey what is your name", "ADDRESSED"),
+    ("hey what time is it", "ADDRESSED"),
 ]
 
 
 def run_test(llm, prompt):
-    """Run one classification and return YES/NO, score, and elapsed time."""
+    """Run one classification and return label, score, and elapsed time."""
 
     start = time.perf_counter()
 
@@ -75,14 +68,11 @@ def run_test(llm, prompt):
 
     elapsed = time.perf_counter() - start
 
-    if score is None:
+    # classify_conversation() should expose the actual classification.
+    actual = getattr(llm, "last_classification", None)
+
+    if actual is None:
         actual = "?"
-    else:
-        actual = (
-            "YES"
-            if score >= CLASSIFICATION_THRESHOLD
-            else "NO"
-        )
 
     return actual, score, elapsed
 
@@ -97,13 +87,13 @@ def benchmark():
 
         print(
             f"{'Prompt':<42} | "
-            f"{'Expected':<8} | "
-            f"{'Actual':<6} | "
+            f"{'Expected':<15} | "
+            f"{'Actual':<15} | "
             f"{'Confidence':<12} | "
             f"{'Request Time':<12}"
         )
 
-        print("-" * 100)
+        print("-" * 115)
 
         passed = 0
         failed = 0
@@ -123,8 +113,8 @@ def benchmark():
 
             print(
                 f"{prompt:<42} | "
-                f"{expected:<8} | "
-                f"{actual:<6} | "
+                f"{expected:<15} | "
+                f"{actual:<15} | "
                 f"{score_text:<12} | "
                 f"{elapsed:.3f}s"
             )
@@ -133,39 +123,19 @@ def benchmark():
             # Evaluate result
             # ---------------------------------------------------------
 
-            if score is None:
+            if actual == expected:
+                passed += 1
+            else:
                 failed += 1
-                continue
-
-            if expected == "YES":
-                # Explicitly addressed prompts should cross the threshold.
-                if score >= CLASSIFICATION_THRESHOLD:
-                    passed += 1
-                else:
-                    failed += 1
-
-            elif expected == "NO":
-                # Clearly non-addressed prompts should stay below threshold.
-                if score < CLASSIFICATION_THRESHOLD:
-                    passed += 1
-                else:
-                    failed += 1
-
-            elif expected == "ANY":
-                # Ambiguous prompts should remain reasonably centered.
-                if AMBIGUOUS_MIN < score < AMBIGUOUS_MAX:
-                    passed += 1
-                else:
-                    failed += 1
 
         # -------------------------------------------------------------
         # Results
         # -------------------------------------------------------------
 
         print()
-        print("=" * 100)
+        print("=" * 115)
         print("CLASSIFIER TEST RESULTS")
-        print("=" * 100)
+        print("=" * 115)
 
         print(f"Total:    {len(PROMPTS)}")
         print(f"Passed:   {passed}")
@@ -175,16 +145,7 @@ def benchmark():
             accuracy = passed / len(PROMPTS) * 100
             print(f"Accuracy: {accuracy:.1f}%")
 
-        print()
-        print(
-            f"YES threshold:       >= {CLASSIFICATION_THRESHOLD:.2f}"
-        )
-        print(
-            f"ANY confidence:      {AMBIGUOUS_MIN:.2f} < score "
-            f"< {AMBIGUOUS_MAX:.2f}"
-        )
-
-        print("=" * 100)
+        print("=" * 115)
 
 
 if __name__ == "__main__":

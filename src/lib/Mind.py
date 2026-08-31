@@ -261,22 +261,42 @@ class Mind:
             # ---------------------------------------------------------
 
             score = None
-            logprobs = response.get("logprobs") or []
+
+            # Ollama may expose logprobs on the message or response.
+            logprobs = (
+                message.get("logprobs")
+                or response.get("logprobs")
+                or []
+            )
 
             if logprobs:
-                # The first generated token is the classification token.
+                # IMPORTANT:
+                # Only inspect the first generated token.
+                #
+                # YES and NO must be compared at the SAME token position.
+                # Looking for YES/NO across the entire generated sequence
+                # can produce a meaningless probability.
                 token_info = logprobs[0]
 
                 candidates = {}
 
+                # -----------------------------------------------------
                 # Actual generated token
-                token = str(token_info.get("token", "")).strip().upper()
+                # -----------------------------------------------------
+
+                token = str(
+                    token_info.get("token", "")
+                ).strip().upper()
+
                 logprob = token_info.get("logprob")
 
                 if token and logprob is not None:
                     candidates[token] = float(logprob)
 
-                # Alternative tokens
+                # -----------------------------------------------------
+                # Alternative tokens at the SAME position
+                # -----------------------------------------------------
+
                 for alternative in token_info.get("top_logprobs", []) or []:
                     token = str(
                         alternative.get("token", "")
@@ -287,6 +307,10 @@ class Mind:
                     if token and logprob is not None:
                         candidates[token] = float(logprob)
 
+                # -----------------------------------------------------
+                # Calculate P(YES | YES or NO)
+                # -----------------------------------------------------
+
                 yes_logprob = candidates.get("YES")
                 no_logprob = candidates.get("NO")
 
@@ -294,10 +318,21 @@ class Mind:
                     yes_probability = math.exp(yes_logprob)
                     no_probability = math.exp(no_logprob)
 
-                    total = yes_probability + no_probability
+                    total_probability = (
+                        yes_probability + no_probability
+                    )
 
-                    if total > 0:
-                        score = yes_probability / total
+                    if total_probability > 0:
+                        score = (
+                            yes_probability
+                            / total_probability
+                        )
+
+                # Useful diagnostic while tuning the classifier.
+                print(
+                    f"[Robot] Analyze candidates: "
+                    f"{candidates!r}"
+                )
 
             # ---------------------------------------------------------
             # Timing

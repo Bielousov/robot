@@ -269,12 +269,6 @@ class Mind:
 
             for label in ConversationClassification:
                 normalized_label = str(label).strip().upper()
-
-                print(
-                    f"[Robot] Analyze compare: "
-                    f"{normalized_response!r} == {normalized_label!r}"
-                )
-
                 if normalized_response == normalized_label:
                     classification = label
                     break
@@ -287,11 +281,6 @@ class Mind:
                     if normalized_label in normalized_response:
                         classification = label
                         break
-
-            print(
-                f"[Robot] Analyze parsed classification: "
-                f"{classification!r}"
-            )
 
             # ---------------------------------------------------------
             # Calculate score
@@ -314,12 +303,6 @@ class Mind:
                 else "unavailable"
             )
 
-            classification_text = (
-                classification
-                if classification is not None
-                else "unparsed"
-            )
-
             # ---------------------------------------------------------
             # Logging
             # ---------------------------------------------------------
@@ -327,7 +310,7 @@ class Mind:
             print(f"[Robot] Analyze request: {request}")
             print(
                 f"[Robot] Analyze classification: "
-                f"{classification_text}"
+                f"{classification}"
             )
             print(
                 f"[Robot] Analyze score: "

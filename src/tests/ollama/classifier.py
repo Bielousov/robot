@@ -68,9 +68,6 @@ def run_test(llm, prompt):
 
     elapsed = time.perf_counter() - start
 
-
-    print(f"[TEST DEBUG] score={score!r}, type={type(score)}")
-
     if score is None:
         actual = "?"
     else:
@@ -127,10 +124,13 @@ def benchmark():
 
             # ANY means we don't care whether the score crosses
             # the YES/NO threshold; we only want to inspect the score.
-            if expected == "ANY" or actual == expected:
+            if actual == expected:
                 passed += 1
             else:
-                failed += 1
+                if expected == "ANY" and score > 0.2 and score < 0.8:
+                    passed += 1
+                else:
+                    failed += 1
 
         print()
         print("=" * 100)

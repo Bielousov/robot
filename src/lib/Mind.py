@@ -8,7 +8,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from models.personality import create_personality_model, get_llm_model_config
+from models.llm.classifier import build_conversation_classifier_prompt
+from models.llm.identity import build_identity_system_prompt
+from models.llm.config import get_llm_model_config, get_llm_model_options
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -29,32 +31,26 @@ class Mind:
 
         self.debug = debug
         
-        llm_config = get_llm_model_config()
-        self.base_model = llm_config["base_model"]
-        self.model_name = llm_config["model_name"]
-        self.system_prompt = llm_config["system_prompt"]
-        self.options = llm_config["options"]
+        config = get_llm_model_config()
+        self.base_model = config["base_model"]
+        self.model_name = config["model_name"]
+        self.options = get_llm_model_options()
+        self.system_prompt = build_identity_system_prompt()
 
         self.is_ready = False
 
         # Context history
         self.history_limit = conversation_history_length
         self.history = []
-        
+
         self.process = None
         self.client = ollama.Client(host=OLLAMA_URL)
 
         self._prepare_environment()
         self.start_server()
         time.sleep(2)
-        self.is_ready = create_personality_model(
-            client=self.client,
-            model_name=self.model_name,
-            base_model=self.base_model,
-            system_prompt=self.system_prompt,
-            options=self.options,
-        )
-        
+        self.load_model()
+
         while not self.is_ready:
             time.sleep(0.5)
 
@@ -81,14 +77,16 @@ class Mind:
             ) from exc
         
     def load_model(self):
-        """Creates the custom personality model from the configured environment."""
-        self.is_ready = create_personality_model(
-            client=self.client,
-            model_name=self.model_name,
-            base_model=self.base_model,
-            system_prompt=self.system_prompt,
-            options=self.options,
-        )
+        """Pull the configured base model into Ollama and mark the runtime ready."""
+        try:
+            print(f"[Robot] Pulling base model '{self.base_model}' into Ollama...")
+            self.client.pull(self.base_model)
+            self.is_ready = True
+            print(f"[Robot] Base model '{self.base_model}' is ready.")
+        except Exception as exc:
+            self.is_ready = False
+            print(f"[Error] Could not load base model '{self.base_model}': {exc}")
+            raise
 
     def _build_request_messages(
         self,
@@ -105,7 +103,11 @@ class Mind:
         if not final_prompt:
             return []
 
-        messages: List[dict] = []
+        self.system_prompt = build_identity_system_prompt()
+
+        messages: List[dict] = [
+            {"role": "system", "content": self.system_prompt},
+        ]
 
         recent_history = self.history[-self.history_limit:] if self.history else []
         for entry in recent_history:
@@ -223,58 +225,13 @@ class Mind:
             print("[Robot] Analyze skipped: empty STT fragment")
             return None
 
-        classifier_instructions = (
-            "You are a robot voice-address detector.\n\n"
-
-            "Your ONLY task is to decide if the speaker is talking TO the robot named Pip.\n\n"
-
-            "Output ONLY one number:\n"
-            "1.0 = YES, the speaker is talking to Pip\n"
-            "0.0 = NO, the speaker is not talking to Pip\n\n"
-
-            "RULES:\n"
-            "1. If the word 'Pip' is used to get the robot's attention and is followed by "
-            "a question, request, command, or instruction, output 1.0.\n"
-            "2. A question or request immediately following 'Pip' means YES.\n"
-            "3. The word 'Pip' does not need to be followed by punctuation.\n"
-            "4. Imperfect speech recognition and missing punctuation do not change the meaning.\n"
-            "5. A command or request without 'Pip' is also usually YES.\n"
-            "6. If the speaker clearly talks ABOUT Pip rather than TO Pip, output 0.0.\n"
-            "7. Ordinary conversation not directed at Pip is 0.0.\n"
-            "8. Gibberish is 0.0.\n\n"
-
-            "EXAMPLES:\n"
-            "Pip what is your name -> 1.0\n"
-            "Pip, what is your name? -> 1.0\n"
-            "Pip tell me some fun facts -> 1.0\n"
-            "Pip then tell me some fun fact -> 1.0\n"
-            "Hey Pip -> 1.0\n"
-            "Pip turn on the lights -> 1.0\n"
-            "Can you read me a book -> 1.0\n"
-            "Read me a book -> 1.0\n"
-            "Tell me a joke -> 1.0\n"
-            "What is your name -> 1.0\n"
-            "I was talking to Pip yesterday -> 0.0\n"
-            "Pip is a robot -> 0.0\n"
-            "Where is Pip -> 0.0\n"
-            "John can you read me a book -> 0.0\n"
-            "I think we should leave -> 0.0\n"
-            "purple seven window banana -> 0.0\n"
-            "immortal the table seventy five -> 0.0\n\n"
-
-            "Speech:\n"
-            "{{TEXT}}\n\n"
-
-            "Answer:"
-        )
-        prompt = classifier_instructions.replace("{{TEXT}}", request)
+        prompt = build_conversation_classifier_prompt(request)
         started_at = time.perf_counter()
         try:
             response = self.client.chat(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": classifier_instructions},
-                    {"role": "user", "content": prompt},
+                    {"role": "system", "content": prompt},
                 ],
                 options={**self.options, "temperature": 0.2, "num_predict": 16},
                 stream=False,

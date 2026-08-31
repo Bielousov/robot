@@ -9,41 +9,39 @@ def build_conversation_classifier_prompt() -> str:
 
         "Output exactly one word: YES or NO.\n\n"
 
-        f"YES = the speaker is addressing {Name}.\n"
-        f"NO = the speaker is not addressing {Name}.\n\n"
+        f"YES means there is evidence that {Name} is the intended listener.\n"
+        f"NO means there is no sufficient evidence that {Name} is the intended listener.\n\n"
 
-        "CLASSIFICATION PRIORITY:\n\n"
+        "DECISION PROCESS:\n\n"
 
-        f"1. If '{Name}' is used as a vocative or direct address to the "
-        f"robot, classify YES. This is the strongest available evidence "
-        f"and should dominate the rest of the sentence.\n\n"
+        "First determine whether the speech is meaningful and intelligible.\n"
+        "If it is meaningless, nonsensical, or obviously corrupted, choose NO.\n\n"
 
-        f"2. If '{Name}' appears naturally before or within a question, "
-        f"request, command, or statement and is being used to get the "
-        f"robot's attention, classify YES.\n\n"
+        f"Then determine whether the speaker is addressing {Name}.\n\n"
 
-        f"3. Do not require the sentence following '{Name}' to have any "
-        f"particular wording. The content may be a question, request, "
-        f"command, statement, short phrase, or imperfect STT transcription.\n\n"
+        f"If '{Name}' is used as a direct form of address, choose YES.\n"
+        f"A direct address to '{Name}' is sufficient evidence by itself.\n"
+        f"Do not let the meaning or wording of the rest of the sentence "
+        f"override a clear direct address to '{Name}'.\n\n"
 
-        f"4. If '{Name}' is absent, do not assume NO. A question, request, "
-        f"command, or conversational statement may or may not be addressed "
-        f"to {Name}. Treat the listener as uncertain.\n\n"
+        f"If '{Name}' is not explicitly used as an address, do not assume "
+        f"that the speaker is talking to {Name}.\n"
+        "A question, request, command, or statement without an identified "
+        "listener is insufficient evidence for YES.\n"
+        "However, it is also insufficient evidence for NO unless there is "
+        "positive evidence that the speaker is addressing someone else or "
+        "is simply speaking about something unrelated.\n\n"
 
-        f"5. Classify NO when there is clear evidence the speaker is talking "
-        f"to another person, discussing something unrelated to {Name}, "
-        f"or the transcription is meaningless or corrupted.\n\n"
+        "Therefore:\n"
+        "Meaningful speech + direct address to the robot = YES.\n"
+        "Meaningful speech + no identified listener = uncertain; choose NO.\n"
+        "Meaningful speech + evidence of another listener = NO.\n"
+        "Meaningless or corrupted speech = NO.\n\n"
 
-        "6. Minor STT errors must not override a clear direct address.\n\n"
+        "Minor speech-recognition errors must not override a clear direct "
+        f"address to '{Name}'.\n\n"
 
-        "IMPORTANT:\n"
-        f"The presence of a direct address to '{Name}' is more important "
-        "than the specific words used afterward.\n"
-        f"Do not classify a sentence as NO merely because the sentence "
-        f"following '{Name}' is unfamiliar, unusual, short, or not present "
-        f"in the training examples.\n\n"
-
-        "Do not answer the speaker.\n"
+        "Do not answer the speech.\n"
         "Do not explain your decision.\n"
         "Output ONLY YES or NO."
     )

@@ -382,31 +382,31 @@ class Mind:
             # ---------------------------------------------------------
             # Logging
             # ---------------------------------------------------------
+            if self.debug:
+                print(
+                    f"[Robot] Analyze request: {request}"
+                )
 
-            print(
-                f"[Robot] Analyze request: {request}"
-            )
+                print(
+                    f"[Robot] Analyze response: "
+                    f"{raw_response!r}"
+                )
 
-            print(
-                f"[Robot] Analyze response: "
-                f"{raw_response!r}"
-            )
+                print(
+                    f"[Robot] Analyze classification: "
+                    f"{classification_text}"
+                )
 
-            print(
-                f"[Robot] Analyze classification: "
-                f"{classification_text}"
-            )
+                print(
+                    f"[Robot] Analyze score: "
+                    f"addressed_confidence_score: {score_text}"
+                )
 
-            print(
-                f"[Robot] Analyze score: "
-                f"addressed_confidence_score: {score_text}"
-            )
-
-            print(
-                f"[Robot] Analyze response time: "
-                f"{elapsed_seconds:.3f}s "
-                f"(API: {api_time:.3f}s)"
-            )
+                print(
+                    f"[Robot] Analyze response time: "
+                    f"{elapsed_seconds:.3f}s "
+                    f"(API: {api_time:.3f}s)"
+                )
 
             return score
 

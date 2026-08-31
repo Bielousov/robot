@@ -221,208 +221,208 @@ class Mind:
             return None
 
     def classify_conversation(self, text: Optional[str] = None) -> Optional[float]:
-    """Estimate probability that an STT fragment was addressed to the robot."""
+        """Estimate probability that an STT fragment was addressed to the robot."""
 
-    request = (
-        text
-        or (self.history[-1].get("content", "") if self.history else "")
-    ).strip()
+        request = (
+            text
+            or (self.history[-1].get("content", "") if self.history else "")
+        ).strip()
 
-    if not request:
-        print("[Robot] Analyze skipped: empty STT fragment")
-        return None
+        if not request:
+            print("[Robot] Analyze skipped: empty STT fragment")
+            return None
 
-    options = get_classifier_model_options()
-    prompt = build_conversation_classifier_prompt()
-    started_at = time.perf_counter()
+        options = get_classifier_model_options()
+        prompt = build_conversation_classifier_prompt()
+        started_at = time.perf_counter()
 
-    try:
-        response = self.client.chat(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": request},
-            ],
-            options=options,
-            stream=False,
-            think=False,
-            keep_alive=-1,
-            logprobs=True,
-            top_logprobs=10,
-        )
+        try:
+            response = self.client.chat(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": request},
+                ],
+                options=options,
+                stream=False,
+                think=False,
+                keep_alive=-1,
+                logprobs=True,
+                top_logprobs=10,
+            )
 
-        elapsed_seconds = time.perf_counter() - started_at
+            elapsed_seconds = time.perf_counter() - started_at
 
-        message = response.get("message", {})
-        raw_response = message.get("content", "").strip()
+            message = response.get("message", {})
+            raw_response = message.get("content", "").strip()
 
-        # ---------------------------------------------------------
-        # Extract first generated token and its YES/NO probabilities
-        # ---------------------------------------------------------
+            # ---------------------------------------------------------
+            # Extract first generated token and its YES/NO probabilities
+            # ---------------------------------------------------------
 
-        score = None
-        classification = None
+            score = None
+            classification = None
 
-        logprobs = (
-            message.get("logprobs")
-            or response.get("logprobs")
-            or []
-        )
+            logprobs = (
+                message.get("logprobs")
+                or response.get("logprobs")
+                or []
+            )
 
-        if logprobs:
-            token_info = logprobs[0]
+            if logprobs:
+                token_info = logprobs[0]
 
-            # -----------------------------------------------------
-            # Actual generated classification
-            # -----------------------------------------------------
+                # -----------------------------------------------------
+                # Actual generated classification
+                # -----------------------------------------------------
 
-            generated_token = str(
-                token_info.get("token", "")
-            ).strip().upper()
-
-            if generated_token == "YES":
-                classification = "YES"
-            elif generated_token == "NO":
-                classification = "NO"
-
-            # -----------------------------------------------------
-            # Collect YES / NO probabilities from this position
-            # -----------------------------------------------------
-
-            candidates = {}
-
-            token = str(
-                token_info.get("token", "")
-            ).strip().upper()
-
-            logprob = token_info.get("logprob")
-
-            if token and logprob is not None:
-                candidates[token] = float(logprob)
-
-            for alternative in token_info.get("top_logprobs", []) or []:
-                token = str(
-                    alternative.get("token", "")
+                generated_token = str(
+                    token_info.get("token", "")
                 ).strip().upper()
 
-                logprob = alternative.get("logprob")
+                if generated_token == "YES":
+                    classification = "YES"
+                elif generated_token == "NO":
+                    classification = "NO"
+
+                # -----------------------------------------------------
+                # Collect YES / NO probabilities from this position
+                # -----------------------------------------------------
+
+                candidates = {}
+
+                token = str(
+                    token_info.get("token", "")
+                ).strip().upper()
+
+                logprob = token_info.get("logprob")
 
                 if token and logprob is not None:
                     candidates[token] = float(logprob)
 
-            yes_logprob = candidates.get("YES")
-            no_logprob = candidates.get("NO")
+                for alternative in token_info.get("top_logprobs", []) or []:
+                    token = str(
+                        alternative.get("token", "")
+                    ).strip().upper()
 
-            print(
-                f"[Robot] Analyze candidates: "
-                f"{candidates!r}"
-            )
+                    logprob = alternative.get("logprob")
 
-            # -----------------------------------------------------
-            # Convert YES/NO log-probability difference to 0..1
-            # -----------------------------------------------------
+                    if token and logprob is not None:
+                        candidates[token] = float(logprob)
 
-            if yes_logprob is not None and no_logprob is not None:
+                yes_logprob = candidates.get("YES")
+                no_logprob = candidates.get("NO")
 
-                # Log-odds of YES versus NO.
-                log_odds = yes_logprob - no_logprob
-
-                # Sigmoid:
-                #
-                # log_odds =  0 -> 0.5
-                # log_odds >  0 -> YES side
-                # log_odds <  0 -> NO side
-                #
-                # Scale the difference so that modest differences
-                # produce useful confidence values.
-                score = 1.0 / (
-                    1.0 + math.exp(-log_odds)
+                print(
+                    f"[Robot] Analyze candidates: "
+                    f"{candidates!r}"
                 )
 
-            # -----------------------------------------------------
-            # If only one of YES/NO is available, use classification
-            # -----------------------------------------------------
+                # -----------------------------------------------------
+                # Convert YES/NO log-probability difference to 0..1
+                # -----------------------------------------------------
 
-            elif classification == "YES":
-                score = 1.0
+                if yes_logprob is not None and no_logprob is not None:
 
-            elif classification == "NO":
-                score = 0.0
+                    # Log-odds of YES versus NO.
+                    log_odds = yes_logprob - no_logprob
 
-        # ---------------------------------------------------------
-        # Fallback to actual response
-        # ---------------------------------------------------------
+                    # Sigmoid:
+                    #
+                    # log_odds =  0 -> 0.5
+                    # log_odds >  0 -> YES side
+                    # log_odds <  0 -> NO side
+                    #
+                    # Scale the difference so that modest differences
+                    # produce useful confidence values.
+                    score = 1.0 / (
+                        1.0 + math.exp(-log_odds)
+                    )
 
-        if classification is None:
-            normalized_response = raw_response.upper()
+                # -----------------------------------------------------
+                # If only one of YES/NO is available, use classification
+                # -----------------------------------------------------
 
-            if normalized_response == "YES":
-                classification = "YES"
-            elif normalized_response == "NO":
-                classification = "NO"
+                elif classification == "YES":
+                    score = 1.0
 
-        # ---------------------------------------------------------
-        # Timing
-        # ---------------------------------------------------------
+                elif classification == "NO":
+                    score = 0.0
 
-        api_time = response.get("total_duration", 0) / 1e9
+            # ---------------------------------------------------------
+            # Fallback to actual response
+            # ---------------------------------------------------------
 
-        score_text = (
-            f"{score:.8f}"
-            if score is not None
-            else "unavailable"
-        )
+            if classification is None:
+                normalized_response = raw_response.upper()
 
-        classification_text = (
-            classification
-            if classification is not None
-            else "unparsed"
-        )
+                if normalized_response == "YES":
+                    classification = "YES"
+                elif normalized_response == "NO":
+                    classification = "NO"
 
-        # ---------------------------------------------------------
-        # Logging
-        # ---------------------------------------------------------
+            # ---------------------------------------------------------
+            # Timing
+            # ---------------------------------------------------------
 
-        print(
-            f"[Robot] Analyze request: {request}"
-        )
+            api_time = response.get("total_duration", 0) / 1e9
 
-        print(
-            f"[Robot] Analyze response: "
-            f"{raw_response!r}"
-        )
+            score_text = (
+                f"{score:.8f}"
+                if score is not None
+                else "unavailable"
+            )
 
-        print(
-            f"[Robot] Analyze classification: "
-            f"{classification_text}"
-        )
+            classification_text = (
+                classification
+                if classification is not None
+                else "unparsed"
+            )
 
-        print(
-            f"[Robot] Analyze score: "
-            f"addressed_confidence_score: {score_text}"
-        )
+            # ---------------------------------------------------------
+            # Logging
+            # ---------------------------------------------------------
 
-        print(
-            f"[Robot] Analyze response time: "
-            f"{elapsed_seconds:.3f}s "
-            f"(API: {api_time:.3f}s)"
-        )
+            print(
+                f"[Robot] Analyze request: {request}"
+            )
 
-        return score
+            print(
+                f"[Robot] Analyze response: "
+                f"{raw_response!r}"
+            )
 
-    except Exception as exc:
-        elapsed_seconds = time.perf_counter() - started_at
+            print(
+                f"[Robot] Analyze classification: "
+                f"{classification_text}"
+            )
 
-        print(
-            f"[Robot] Analyze request: {request}"
-        )
+            print(
+                f"[Robot] Analyze score: "
+                f"addressed_confidence_score: {score_text}"
+            )
 
-        print(
-            f"[Robot] Analyze failed after "
-            f"{elapsed_seconds:.3f}s: {exc}"
-        )
+            print(
+                f"[Robot] Analyze response time: "
+                f"{elapsed_seconds:.3f}s "
+                f"(API: {api_time:.3f}s)"
+            )
 
-        return None
+            return score
+
+        except Exception as exc:
+            elapsed_seconds = time.perf_counter() - started_at
+
+            print(
+                f"[Robot] Analyze request: {request}"
+            )
+
+            print(
+                f"[Robot] Analyze failed after "
+                f"{elapsed_seconds:.3f}s: {exc}"
+            )
+
+            return None
 
     def add_to_history(self, role: str, message: str) -> list:
         """

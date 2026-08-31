@@ -221,7 +221,7 @@ class Mind:
             return None
 
     def analyze_conversation(self, text: Optional[str] = None) -> Optional[float]:
-        """Estimate whether an STT fragment was addressed to the robot."""
+        """Estimate probability that an STT fragment was addressed to the robot."""
 
         request = (
             text
@@ -256,35 +256,23 @@ class Mind:
             raw_response = message.get("content", "").strip()
 
             # ---------------------------------------------------------
-            # Parse classification
-            # ---------------------------------------------------------
-
-            classification = None
-            normalized_response = raw_response.strip().upper()
-
-            for label in ConversationClassification:
-                normalized_label = str(label).strip().upper()
-                if normalized_response == normalized_label:
-                    classification = label
-                    break
-
-            # Also handle responses containing extra text.
-            if classification is None:
-                for label in ConversationClassification:
-                    normalized_label = str(label).strip().upper()
-
-                    if normalized_label in normalized_response:
-                        classification = label
-                        break
-
-            # ---------------------------------------------------------
-            # Calculate score
+            # Extract YES probability
             # ---------------------------------------------------------
 
             score = None
 
-            if classification is not None:
-                score = float(ConversationClassification[classification])
+            logprobs = message.get("logprobs") or response.get("logprobs")
+
+            if logprobs:
+                for token_info in logprobs:
+                    token = str(token_info.get("token", "")).strip().upper()
+
+                    if token == "YES":
+                        logprob = token_info.get("logprob")
+
+                        if logprob is not None:
+                            score = math.exp(float(logprob))
+                            break
 
             # ---------------------------------------------------------
             # Timing
@@ -303,19 +291,14 @@ class Mind:
             # ---------------------------------------------------------
 
             print(f"[Robot] Analyze request: {request}")
-
             print(
-                f"[Robot] Analyze raw response: {raw_response!r}"
-            )
-            print(
-                f"[Robot] Analyze classification: "
-                f"{classification}"
+                f"[Robot] Analyze response: "
+                f"{raw_response!r}"
             )
             print(
                 f"[Robot] Analyze score: "
                 f"addressed_confidence_score: {score_text}"
             )
-            print(f"[Robot] Analyze response: {raw_response}")
             print(
                 f"[Robot] Analyze response time: "
                 f"{elapsed_seconds:.3f}s (API: {api_time:.3f}s)"

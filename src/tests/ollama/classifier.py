@@ -10,6 +10,13 @@ if str(project_path) not in sys.path:
 from lib.Mind import Mind
 
 
+CLASSIFICATION_THRESHOLD = 0.51
+
+# Expected confidence range for ambiguous cases.
+AMBIGUOUS_MIN = 0.20
+AMBIGUOUS_MAX = 0.80
+
+
 # ---------------------------------------------------------------------
 # Test matrix
 # ---------------------------------------------------------------------
@@ -28,7 +35,7 @@ PROMPTS = [
     ("pip who are you", "ADDRESSED"),
     ("hey pip", "ADDRESSED"),
 
-    # Same/similar prompts without explicit address
+    # Meaningful speech without explicit address
     ("what is your name", "AMBIGUOUS"),
     ("what are you doing", "AMBIGUOUS"),
     ("what time is it now", "AMBIGUOUS"),
@@ -60,19 +67,21 @@ PROMPTS = [
 
 
 def run_test(llm, prompt):
-    """Run one classification and return label, score, and elapsed time."""
+    """Run one classification and derive the label from the returned score."""
 
     start = time.perf_counter()
 
+    # classify_conversation() returns the confidence score directly.
     score = llm.classify_conversation(prompt)
 
     elapsed = time.perf_counter() - start
 
-    # classify_conversation() should expose the actual classification.
-    actual = getattr(llm, "last_classification", None)
-
-    if actual is None:
+    if score is None:
         actual = "?"
+    elif score >= CLASSIFICATION_THRESHOLD:
+        actual = "ADDRESSED"
+    else:
+        actual = "NOT_ADDRESSED"
 
     return actual, score, elapsed
 
@@ -87,13 +96,13 @@ def benchmark():
 
         print(
             f"{'Prompt':<42} | "
-            f"{'Expected':<15} | "
-            f"{'Actual':<15} | "
+            f"{'Expected':<14} | "
+            f"{'Actual':<14} | "
             f"{'Confidence':<12} | "
             f"{'Request Time':<12}"
         )
 
-        print("-" * 115)
+        print("-" * 110)
 
         passed = 0
         failed = 0
@@ -113,8 +122,8 @@ def benchmark():
 
             print(
                 f"{prompt:<42} | "
-                f"{expected:<15} | "
-                f"{actual:<15} | "
+                f"{expected:<14} | "
+                f"{actual:<14} | "
                 f"{score_text:<12} | "
                 f"{elapsed:.3f}s"
             )
@@ -123,19 +132,36 @@ def benchmark():
             # Evaluate result
             # ---------------------------------------------------------
 
-            if actual == expected:
-                passed += 1
-            else:
+            if score is None:
                 failed += 1
+                continue
+
+            if expected == "ADDRESSED":
+                if score >= CLASSIFICATION_THRESHOLD:
+                    passed += 1
+                else:
+                    failed += 1
+
+            elif expected == "NOT_ADDRESSED":
+                if score < CLASSIFICATION_THRESHOLD:
+                    passed += 1
+                else:
+                    failed += 1
+
+            elif expected == "AMBIGUOUS":
+                if AMBIGUOUS_MIN < score < AMBIGUOUS_MAX:
+                    passed += 1
+                else:
+                    failed += 1
 
         # -------------------------------------------------------------
         # Results
         # -------------------------------------------------------------
 
         print()
-        print("=" * 115)
+        print("=" * 110)
         print("CLASSIFIER TEST RESULTS")
-        print("=" * 115)
+        print("=" * 110)
 
         print(f"Total:    {len(PROMPTS)}")
         print(f"Passed:   {passed}")
@@ -145,7 +171,16 @@ def benchmark():
             accuracy = passed / len(PROMPTS) * 100
             print(f"Accuracy: {accuracy:.1f}%")
 
-        print("=" * 115)
+        print()
+        print(
+            f"ADDRESSED threshold: >= {CLASSIFICATION_THRESHOLD:.2f}"
+        )
+        print(
+            f"AMBIGUOUS range:     "
+            f"{AMBIGUOUS_MIN:.2f} < score < {AMBIGUOUS_MAX:.2f}"
+        )
+
+        print("=" * 110)
 
 
 if __name__ == "__main__":

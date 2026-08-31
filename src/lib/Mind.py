@@ -1,4 +1,3 @@
-import math
 import ollama
 import os
 import psutil
@@ -255,7 +254,6 @@ class Mind:
                 think=False,
                 keep_alive=-1,
                 logprobs=True,
-                top_logprobs=10,
             )
 
             elapsed_seconds = time.perf_counter() - started_at
@@ -279,38 +277,6 @@ class Mind:
 
             elif normalized_response.startswith("AMBIGUOUS"):
                 classification = "AMBIGUOUS"
-
-            # ---------------------------------------------------------
-            # Fallback: inspect generated tokens
-            #
-            # Qwen may tokenize:
-            #   ADDRESSED     -> ADD + RESSED
-            #   NOT_ADDRESSED -> NOT + _ADDRESSED
-            #   AMBIGUOUS     -> AM + BIGUOUS
-            # ---------------------------------------------------------
-
-            logprobs = (
-                message.get("logprobs")
-                or response.get("logprobs")
-                or []
-            )
-
-            first_token = None
-
-            if logprobs:
-                first_token = str(
-                    logprobs[0].get("token", "")
-                ).strip().upper()
-
-                if classification is None:
-                    if first_token == "ADD":
-                        classification = "ADDRESSED"
-
-                    elif first_token == "NOT":
-                        classification = "NOT_ADDRESSED"
-
-                    elif first_token == "AM":
-                        classification = "AMBIGUOUS"
 
             # ---------------------------------------------------------
             # Map classification directly to score
@@ -358,11 +324,6 @@ class Mind:
                 print(
                     f"[Robot] Analyze response: "
                     f"{raw_response!r}"
-                )
-
-                print(
-                    f"[Robot] Analyze first token: "
-                    f"{first_token!r}"
                 )
 
                 print(

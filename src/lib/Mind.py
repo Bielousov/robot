@@ -220,7 +220,7 @@ class Mind:
 
             return None
 
-    def analyze_conversation(self, text: Optional[str] = None) -> Optional[float]:
+    def classify_conversation(self, text: Optional[str] = None) -> Optional[float]:
         """Estimate probability that an STT fragment was addressed to the robot."""
 
         request = (
@@ -248,6 +248,7 @@ class Mind:
                 think=False,
                 keep_alive=-1,
                 logprobs=True,
+                top_logprobs=5,
             )
 
             elapsed_seconds = time.perf_counter() - started_at
@@ -261,10 +262,11 @@ class Mind:
 
             score = None
 
-            logprobs = message.get("logprobs") or response.get("logprobs")
+            logprobs = response.get("logprobs") or []
 
             if logprobs:
                 for token_info in logprobs:
+                    # Probability of the token actually generated
                     token = str(token_info.get("token", "")).strip().upper()
 
                     if token == "YES":
@@ -274,6 +276,24 @@ class Mind:
                             score = math.exp(float(logprob))
                             break
 
+                    # YES may be an alternative token rather than the
+                    # token actually selected (e.g. model answered NO).
+                    for alternative in token_info.get("top_logprobs", []) or []:
+                        alt_token = (
+                            str(alternative.get("token", ""))
+                            .strip()
+                            .upper()
+                        )
+
+                        if alt_token == "YES":
+                            logprob = alternative.get("logprob")
+
+                            if logprob is not None:
+                                score = math.exp(float(logprob))
+                                break
+
+                    if score is not None:
+                        break
             # ---------------------------------------------------------
             # Timing
             # ---------------------------------------------------------

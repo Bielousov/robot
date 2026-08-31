@@ -5,53 +5,32 @@ ConversationClassification = {
 }
 
 def build_conversation_classifier_prompt() -> str:
-    """Return the classifier instructions for detecting if speech is directed at Pip."""
-    return (
-    "You classify whether spoken text is addressed to a robot named Pip.\n\n"
+    classifier_instructions = (
+    "Classify whether the following speech is addressed to a robot named Pip.\n\n"
 
-    "Return ONLY one label:\n"
-    "YES\n"
-    "NO\n\n"
+    "Return ONLY one of these classifications:\n"
+    "ADDRESSED\n"
+    "AMBIGUOUS\n"
+    "NOT_ADDRESSED\n\n"
 
-    "The probability of YES will be used as the addressing confidence score.\n\n"
+    "ADDRESSED means the speaker is clearly talking to Pip.\n"
+    "AMBIGUOUS means the speech could naturally be addressed to Pip, "
+    "but there is no evidence identifying the intended listener.\n"
+    "NOT_ADDRESSED means the speech is clearly not directed at Pip, "
+    "or is gibberish/unintelligible.\n\n"
 
-    "Classify the speaker's intended listener:\n\n"
-
-    "YES = the speech is clearly directed at Pip.\n"
-    "NO = the speech is clearly directed at someone else, is clearly about Pip, "
-    "or is clearly unrelated to talking to a listener.\n\n"
-
-    "IMPORTANT:\n"
-    "A question or command without a named listener is AMBIGUOUS, not NO.\n"
-    "For an ambiguous question or command, choose the label that reflects roughly "
-    "equal uncertainty between YES and NO.\n"
-    "Do not assume that an unnamed question is directed at Pip.\n"
-    "Do not assume that an unnamed question is directed at another person.\n\n"
-
-    "Strong YES examples:\n"
-    "Pip, what is your name? -> YES\n"
-    "Pip what is your name -> YES\n"
-    "Pip, tell me a fun fact -> YES\n"
-    "Hey Pip -> YES\n"
-    "Pip turn on the lights -> YES\n\n"
-
-    "Ambiguous examples:\n"
-    "What is your name? -> ambiguous\n"
-    "What time is it? -> ambiguous\n"
-    "Can you read me a book? -> ambiguous\n"
-    "Read me a book. -> ambiguous\n"
-    "Tell me a joke. -> ambiguous\n"
-    "Turn on the lights. -> ambiguous\n\n"
-
-    "Strong NO examples:\n"
-    "I was talking to Pip yesterday -> NO\n"
-    "Pip is a robot -> NO\n"
-    "John, what is your name? -> NO\n"
-    "I think we should leave soon -> NO\n"
-    "I'm going to read a book -> NO\n"
-    "immortal the table seventy five -> NO\n"
-    "purple seven window banana -> NO\n\n"
-
-    "Minor speech-recognition errors and missing punctuation do not matter.\n"
-    "Do not invent meaning that is not present.\n\n"
+    "Examples:\n"
+    "\"Pip, what is your name?\" -> ADDRESSED\n"
+    "\"Pip what is your name\" -> ADDRESSED\n"
+    "\"Pip tell me a fun fact\" -> ADDRESSED\n"
+    "\"Hey Pip\" -> ADDRESSED\n"
+    "\"What is your name?\" -> AMBIGUOUS\n"
+    "\"What time is it?\" -> AMBIGUOUS\n"
+    "\"Can you read me a book?\" -> AMBIGUOUS\n"
+    "\"Read me a book\" -> AMBIGUOUS\n"
+    "\"I was talking to Pip yesterday\" -> NOT_ADDRESSED\n"
+    "\"Pip is a robot\" -> NOT_ADDRESSED\n"
+    "\"I think we should leave soon\" -> NOT_ADDRESSED\n"
+    "\"immortal the table seventy five\" -> NOT_ADDRESSED\n"
+)
 )

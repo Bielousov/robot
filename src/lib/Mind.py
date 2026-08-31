@@ -221,7 +221,14 @@ class Mind:
             return None
 
     def classify_conversation(self, text: Optional[str] = None) -> Optional[float]:
-        """Estimate probability that an STT fragment was addressed to the robot."""
+        """Classify whether an STT fragment was addressed to the robot.
+
+        Returns:
+            1.0 = ADDRESSED
+            0.5 = AMBIGUOUS
+            0.0 = NOT_ADDRESSED
+            None = classification could not be parsed
+        """
 
         request = (
             text
@@ -257,7 +264,29 @@ class Mind:
             raw_response = message.get("content", "").strip()
 
             # ---------------------------------------------------------
-            # Extract logprobs
+            # Parse classification
+            # ---------------------------------------------------------
+
+            classification = None
+
+            normalized_response = raw_response.upper()
+
+            if normalized_response.startswith("ADDRESSED"):
+                classification = "ADDRESSED"
+
+            elif normalized_response.startswith("NOT_ADDRESSED"):
+                classification = "NOT_ADDRESSED"
+
+            elif normalized_response.startswith("AMBIGUOUS"):
+                classification = "AMBIGUOUS"
+
+            # ---------------------------------------------------------
+            # Fallback: inspect generated tokens
+            #
+            # Qwen may tokenize:
+            #   ADDRESSED     -> ADD + RESSED
+            #   NOT_ADDRESSED -> NOT + _ADDRESSED
+            #   AMBIGUOUS     -> AM + BIGUOUS
             # ---------------------------------------------------------
 
             logprobs = (
@@ -266,172 +295,38 @@ class Mind:
                 or []
             )
 
-            candidates = {}
-            classification = None
-            score = None
-
-            # ---------------------------------------------------------
-            # First generated token
-            #
-            # Qwen2.5 tokenizes the labels approximately as:
-            #
-            # ADDRESSED     -> ADD + RESSED
-            # AMBIGUOUS     -> AM + ...
-            # NOT_ADDRESSED -> NOT + ...
-            #
-            # Therefore the first token gives us the class probabilities.
-            # ---------------------------------------------------------
+            first_token = None
 
             if logprobs:
-                token_info = logprobs[0]
-
-                # -----------------------------------------------------
-                # Collect first-position candidates
-                # -----------------------------------------------------
-
-                token = str(
-                    token_info.get("token", "")
+                first_token = str(
+                    logprobs[0].get("token", "")
                 ).strip().upper()
 
-                logprob = token_info.get("logprob")
+                if classification is None:
+                    if first_token == "ADD":
+                        classification = "ADDRESSED"
 
-                if token and logprob is not None:
-                    candidates[token] = float(logprob)
+                    elif first_token == "NOT":
+                        classification = "NOT_ADDRESSED"
 
-                for alternative in token_info.get("top_logprobs", []) or []:
-                    token = str(
-                        alternative.get("token", "")
-                    ).strip().upper()
-
-                    logprob = alternative.get("logprob")
-
-                    if token and logprob is not None:
-                        candidates[token] = float(logprob)
-
-                # -----------------------------------------------------
-                # Determine classification from generated token
-                # -----------------------------------------------------
-
-                generated_token = str(
-                    token_info.get("token", "")
-                ).strip().upper()
-
-                if generated_token == "ADD":
-                    classification = "ADDRESSED"
-
-                elif generated_token == "AM":
-                    classification = "AMBIGUOUS"
-
-                elif generated_token == "NOT":
-                    classification = "NOT_ADDRESSED"
-
-                # -----------------------------------------------------
-                # Get class probabilities
-                # -----------------------------------------------------
-
-                add_logprob = candidates.get("ADD")
-                ambiguous_logprob = candidates.get("AM")
-                not_logprob = candidates.get("NOT")
-
-                # -----------------------------------------------------
-                # Convert log probabilities to normalized probabilities
-                #
-                # ADDRESSED     = 1.0
-                # AMBIGUOUS     = 0.5
-                # NOT_ADDRESSED = 0.0
-                #
-                # This produces a continuous 0..1 score.
-                # -----------------------------------------------------
-
-                if (
-                    add_logprob is not None
-                    and ambiguous_logprob is not None
-                    and not_logprob is not None
-                ):
-                    add_prob = math.exp(add_logprob)
-                    ambiguous_prob = math.exp(ambiguous_logprob)
-                    not_prob = math.exp(not_logprob)
-
-                    total = (
-                        add_prob
-                        + ambiguous_prob
-                        + not_prob
-                    )
-
-                    if total > 0:
-                        add_prob /= total
-                        ambiguous_prob /= total
-                        not_prob /= total
-
-                        score = (
-                            add_prob
-                            + (0.5 * ambiguous_prob)
-                        )
-
-                # -----------------------------------------------------
-                # If AM is unavailable, fall back to ADD vs NOT.
-                # -----------------------------------------------------
-
-                elif (
-                    add_logprob is not None
-                    and not_logprob is not None
-                ):
-                    log_odds = add_logprob - not_logprob
-
-                    score = 1.0 / (
-                        1.0 + math.exp(-log_odds)
-                    )
-
-                # -----------------------------------------------------
-                # If only one class is visible, use the generated class.
-                # -----------------------------------------------------
-
-                elif classification == "ADDRESSED":
-                    score = 1.0
-
-                elif classification == "NOT_ADDRESSED":
-                    score = 0.0
-
-                elif classification == "AMBIGUOUS":
-                    score = 0.5
+                    elif first_token == "AM":
+                        classification = "AMBIGUOUS"
 
             # ---------------------------------------------------------
-            # Fallback: determine classification from actual response
+            # Map classification directly to score
             # ---------------------------------------------------------
 
-            if classification is None:
-                normalized_response = (
-                    raw_response
-                    .upper()
-                    .replace(" ", "")
-                    .replace("_", "")
-                    .replace("-", "")
-                )
+            if classification == "ADDRESSED":
+                score = 1.0
 
-                if normalized_response.startswith("ADDRESSED"):
-                    classification = "ADDRESSED"
+            elif classification == "AMBIGUOUS":
+                score = 0.5
 
-                elif normalized_response.startswith("AMBIGUOUS"):
-                    classification = "AMBIGUOUS"
+            elif classification == "NOT_ADDRESSED":
+                score = 0.0
 
-                elif normalized_response.startswith("NOTADDRESSED"):
-                    classification = "NOT_ADDRESSED"
-
-            # ---------------------------------------------------------
-            # If logprobs failed but we have a valid response,
-            # provide a basic fallback score.
-            # ---------------------------------------------------------
-
-            if score is None:
-
-                if classification == "ADDRESSED":
-                    score = 1.0
-
-                elif classification == "AMBIGUOUS":
-                    score = 0.5
-
-                elif classification == "NOT_ADDRESSED":
-                    score = 0.0
+            else:
+                score = None
 
             # ---------------------------------------------------------
             # Timing
@@ -440,7 +335,7 @@ class Mind:
             api_time = response.get("total_duration", 0) / 1e9
 
             score_text = (
-                f"{score:.8f}"
+                f"{score:.1f}"
                 if score is not None
                 else "unavailable"
             )
@@ -455,22 +350,20 @@ class Mind:
             # Logging
             # ---------------------------------------------------------
 
-            print(
-                f"[Robot] Analyze response: "
-                f"{raw_response!r}"
-            )
-
             if self.debug:
-                print(
-                    f"[Robot] Analyze candidates: "
-                    f"{candidates!r}"
-                )
-
                 print(
                     f"[Robot] Analyze request: {request}"
                 )
 
-                
+                print(
+                    f"[Robot] Analyze response: "
+                    f"{raw_response!r}"
+                )
+
+                print(
+                    f"[Robot] Analyze first token: "
+                    f"{first_token!r}"
+                )
 
                 print(
                     f"[Robot] Analyze classification: "
@@ -479,7 +372,7 @@ class Mind:
 
                 print(
                     f"[Robot] Analyze score: "
-                    f"addressed_confidence_score: {score_text}"
+                    f"{score_text}"
                 )
 
                 print(

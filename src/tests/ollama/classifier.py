@@ -121,7 +121,7 @@ def benchmark():
                 f"{elapsed:.3f}s"
             )
 
-            if expected == "ANY" | actual == expected:
+            if expected == "ANY" or actual == expected:
                 passed += 1
             else:
                 failed += 1

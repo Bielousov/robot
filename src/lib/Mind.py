@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from models.llm.classifier import build_conversation_classifier_prompt
+from models.llm.classifier import ConversationClassification, build_conversation_classifier_prompt
 from models.llm.identity import build_identity_system_prompt
 from models.llm.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 
@@ -256,63 +256,28 @@ class Mind:
             raw_response = message.get("content", "").strip()
 
             # ---------------------------------------------------------
-            # Parse YES / NO
+            # Parse classification
             # ---------------------------------------------------------
 
-            classification_match = re.search(
-                r"\b(YES|NO)\b",
-                raw_response,
-                re.IGNORECASE,
-            )
+            classification = None
 
-            classification = (
-                classification_match.group(1).upper()
-                if classification_match
-                else None
-            )
+            for label in ConversationClassification:
+                if re.search(
+                    rf"\b{re.escape(label)}\b",
+                    raw_response,
+                    re.IGNORECASE,
+                ):
+                    classification = label
+                    break
 
             # ---------------------------------------------------------
-            # Extract token probabilities
+            # Calculate score
             # ---------------------------------------------------------
 
             score = None
 
-            logprobs = message.get("logprobs") or response.get("logprobs")
-
-            if logprobs:
-                yes_logprob = None
-                no_logprob = None
-
-                # Ollama may return a list of token logprob objects.
-                for token_info in logprobs:
-                    token = str(token_info.get("token", "")).strip().upper()
-
-                    if token == "YES":
-                        yes_logprob = token_info.get("logprob")
-
-                    elif token == "NO":
-                        no_logprob = token_info.get("logprob")
-
-                # Convert log probabilities to probabilities and
-                # normalize YES vs NO.
-                if yes_logprob is not None and no_logprob is not None:
-                    yes_prob = math.exp(float(yes_logprob))
-                    no_prob = math.exp(float(no_logprob))
-
-                    total = yes_prob + no_prob
-
-                    if total > 0:
-                        score = yes_prob / total
-
-            # ---------------------------------------------------------
-            # Fallback if probability information wasn't returned
-            # ---------------------------------------------------------
-
-            if score is None and classification is not None:
-                score = 1.0 if classification == "YES" else 0.0
-
-            if score is not None:
-                score = max(0.0, min(1.0, float(score)))
+            if classification is not None:
+                score = float(ConversationClassification[classification])
 
             # ---------------------------------------------------------
             # Timing
@@ -338,11 +303,12 @@ class Mind:
 
             print(f"[Robot] Analyze request: {request}")
             print(
-                f"[Robot] Analyze classification: {classification_text}"
+                f"[Robot] Analyze classification: "
+                f"{classification_text}"
             )
             print(
-                f"[Robot] Analyze score: addressed_confidence_score: "
-                f"{score_text}"
+                f"[Robot] Analyze score: "
+                f"addressed_confidence_score: {score_text}"
             )
             print(f"[Robot] Analyze response: {raw_response}")
             print(

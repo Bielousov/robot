@@ -10,19 +10,25 @@ if str(project_path) not in sys.path:
 from lib.Mind import Mind
 
 
-CLASSIFICATION_THRESHOLD = 0.51
+# ---------------------------------------------------------------------
+# Score → classification mapping
+# ---------------------------------------------------------------------
 
-# Expected confidence range for ambiguous cases.
-AMBIGUOUS_MIN = 0.20
-AMBIGUOUS_MAX = 0.80
+SCORE_TO_CLASSIFICATION = {
+    0.0: "NOT_ADDRESSED",
+    0.5: "AMBIGUOUS",
+    1.0: "ADDRESSED",
+}
 
 
 # ---------------------------------------------------------------------
 # Test matrix
 # ---------------------------------------------------------------------
-
 PROMPTS = [
+    # -----------------------------------------------------------------
     # Explicitly addressed to Pip
+    # -----------------------------------------------------------------
+
     ("pip what is your name", "ADDRESSED"),
     ("pip what are you doing", "ADDRESSED"),
     ("pip what time is it now", "ADDRESSED"),
@@ -35,7 +41,10 @@ PROMPTS = [
     ("pip who are you", "ADDRESSED"),
     ("hey pip", "ADDRESSED"),
 
+    # -----------------------------------------------------------------
     # Meaningful speech without explicit address
+    # -----------------------------------------------------------------
+
     ("what is your name", "AMBIGUOUS"),
     ("what are you doing", "AMBIGUOUS"),
     ("what time is it now", "AMBIGUOUS"),
@@ -47,7 +56,32 @@ PROMPTS = [
     ("what is the weather like today", "AMBIGUOUS"),
     ("who are you", "AMBIGUOUS"),
 
+    # Additional AMBIGUOUS cases
+    ("can you read me a book", "AMBIGUOUS"),
+    ("can you help me", "AMBIGUOUS"),
+    ("read me a book", "AMBIGUOUS"),
+    ("what should we do", "AMBIGUOUS"),
+    ("can you tell me the time", "AMBIGUOUS"),
+    ("tell me something interesting", "AMBIGUOUS"),
+    ("what's going on", "AMBIGUOUS"),
+    ("do you know the answer", "AMBIGUOUS"),
+    ("can you explain that", "AMBIGUOUS"),
+    ("what happened", "AMBIGUOUS"),
+    ("could you tell me more", "AMBIGUOUS"),
+    ("what do you think", "AMBIGUOUS"),
+    ("is it going to rain", "AMBIGUOUS"),
+    ("what's the weather tomorrow", "AMBIGUOUS"),
+    ("how does that work", "AMBIGUOUS"),
+    ("tell me something funny", "AMBIGUOUS"),
+    ("what can you do", "AMBIGUOUS"),
+    ("can you do that", "AMBIGUOUS"),
+    ("what's happening here", "AMBIGUOUS"),
+    ("should we leave soon", "AMBIGUOUS"),
+
+    # -----------------------------------------------------------------
     # Clearly not addressed
+    # -----------------------------------------------------------------
+
     ("chips", "NOT_ADDRESSED"),
     ("the dog is outside", "NOT_ADDRESSED"),
     ("i think it will rain", "NOT_ADDRESSED"),
@@ -56,32 +90,52 @@ PROMPTS = [
     ("purple seven window banana", "NOT_ADDRESSED"),
     ("immortal the table seventy five", "NOT_ADDRESSED"),
 
-    # Additional boundary cases
-    ("can you read me a book", "AMBIGUOUS"),
-    ("can you help me", "AMBIGUOUS"),
-    ("read me a book", "AMBIGUOUS"),
     ("i think we should leave soon", "NOT_ADDRESSED"),
+
+    # Additional NOT_ADDRESSED cases
+    ("the car is parked outside", "NOT_ADDRESSED"),
+    ("dinner is almost ready", "NOT_ADDRESSED"),
+    ("i need to remember that tomorrow", "NOT_ADDRESSED"),
+    ("the lights are still on", "NOT_ADDRESSED"),
+    ("someone left the door open", "NOT_ADDRESSED"),
+    ("that movie was really good", "NOT_ADDRESSED"),
+    ("the dog needs to go outside", "NOT_ADDRESSED"),
+    ("it's getting pretty cold", "NOT_ADDRESSED"),
+    ("i wonder where everyone went", "NOT_ADDRESSED"),
+    ("the computer is running slowly", "NOT_ADDRESSED"),
+    ("there's something wrong with the printer", "NOT_ADDRESSED"),
+    ("i forgot to buy milk", "NOT_ADDRESSED"),
+    ("the package should arrive today", "NOT_ADDRESSED"),
+    ("we should probably leave soon", "NOT_ADDRESSED"),
+    ("i don't know what happened", "NOT_ADDRESSED"),
+    ("that doesn't seem right", "NOT_ADDRESSED"),
+    ("the window is open", "NOT_ADDRESSED"),
+    ("someone is calling", "NOT_ADDRESSED"),
+    ("it's starting to rain outside", "NOT_ADDRESSED"),
+    ("i think the battery is dead", "NOT_ADDRESSED"),
+
+    # -----------------------------------------------------------------
+    # Addressing boundary cases
+    # -----------------------------------------------------------------
+
     ("hey what is your name", "ADDRESSED"),
     ("hey what time is it", "ADDRESSED"),
 ]
 
 
 def run_test(llm, prompt):
-    """Run one classification and derive the label from the returned score."""
+    """Run one classification and return label, score, and elapsed time."""
 
     start = time.perf_counter()
 
-    # classify_conversation() returns the confidence score directly.
     score = llm.classify_conversation(prompt)
 
     elapsed = time.perf_counter() - start
 
     if score is None:
         actual = "?"
-    elif score >= CLASSIFICATION_THRESHOLD:
-        actual = "ADDRESSED"
     else:
-        actual = "NOT_ADDRESSED"
+        actual = SCORE_TO_CLASSIFICATION.get(score, "?")
 
     return actual, score, elapsed
 
@@ -96,9 +150,9 @@ def benchmark():
 
         print(
             f"{'Prompt':<42} | "
-            f"{'Expected':<14} | "
-            f"{'Actual':<14} | "
-            f"{'Confidence':<12} | "
+            f"{'Expected':<15} | "
+            f"{'Actual':<15} | "
+            f"{'Score':<7} | "
             f"{'Request Time':<12}"
         )
 
@@ -115,16 +169,16 @@ def benchmark():
             actual, score, elapsed = run_test(llm, prompt)
 
             score_text = (
-                f"{score:.8f}"
+                f"{score:.1f}"
                 if score is not None
                 else "unavailable"
             )
 
             print(
                 f"{prompt:<42} | "
-                f"{expected:<14} | "
-                f"{actual:<14} | "
-                f"{score_text:<12} | "
+                f"{expected:<15} | "
+                f"{actual:<15} | "
+                f"{score_text:<7} | "
                 f"{elapsed:.3f}s"
             )
 
@@ -132,27 +186,10 @@ def benchmark():
             # Evaluate result
             # ---------------------------------------------------------
 
-            if score is None:
+            if actual == expected:
+                passed += 1
+            else:
                 failed += 1
-                continue
-
-            if expected == "ADDRESSED":
-                if score >= CLASSIFICATION_THRESHOLD:
-                    passed += 1
-                else:
-                    failed += 1
-
-            elif expected == "NOT_ADDRESSED":
-                if score < CLASSIFICATION_THRESHOLD:
-                    passed += 1
-                else:
-                    failed += 1
-
-            elif expected == "AMBIGUOUS":
-                if AMBIGUOUS_MIN < score < AMBIGUOUS_MAX:
-                    passed += 1
-                else:
-                    failed += 1
 
         # -------------------------------------------------------------
         # Results
@@ -170,15 +207,6 @@ def benchmark():
         if PROMPTS:
             accuracy = passed / len(PROMPTS) * 100
             print(f"Accuracy: {accuracy:.1f}%")
-
-        print()
-        print(
-            f"ADDRESSED threshold: >= {CLASSIFICATION_THRESHOLD:.2f}"
-        )
-        print(
-            f"AMBIGUOUS range:     "
-            f"{AMBIGUOUS_MIN:.2f} < score < {AMBIGUOUS_MAX:.2f}"
-        )
 
         print("=" * 110)
 

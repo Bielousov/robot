@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from config import Name
 
 from dotenv import load_dotenv
 

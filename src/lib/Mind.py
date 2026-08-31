@@ -1,16 +1,17 @@
+import math
 import ollama
 import os
 import psutil
 import re
-import time
 import signal
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from models.llm.classifier import build_conversation_classifier_prompt
 from models.llm.identity import build_identity_system_prompt
-from models.llm.config import get_llm_model_config, get_llm_model_options
+from models.llm.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -31,10 +32,9 @@ class Mind:
 
         self.debug = debug
         
-        config = get_llm_model_config()
+        config = get_model_config()
         self.base_model = config["base_model"]
         self.model_name = config["model_name"]
-        self.options = get_llm_model_options()
         self.system_prompt = build_identity_system_prompt()
 
         self.is_ready = False
@@ -220,44 +220,146 @@ class Mind:
 
     def analyze_conversation(self, text: Optional[str] = None) -> Optional[float]:
         """Estimate whether an STT fragment was addressed to the robot."""
-        request = (text or (self.history[-1].get("content", "") if self.history else "")).strip()
+
+        request = (
+            text
+            or (self.history[-1].get("content", "") if self.history else "")
+        ).strip()
+
         if not request:
             print("[Robot] Analyze skipped: empty STT fragment")
             return None
 
+        options = get_classifier_model_options()
+
         prompt = build_conversation_classifier_prompt(request)
+
         started_at = time.perf_counter()
+
         try:
             response = self.client.chat(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": prompt},
                 ],
-                options={**self.options, "temperature": 0.2, "num_predict": 16},
+                options=options,
                 stream=False,
                 think=False,
                 keep_alive=-1,
+                logprobs=True,
             )
+
             elapsed_seconds = time.perf_counter() - started_at
-            raw_response = response.get("message", {}).get("content", "").strip()
-            score_match = re.fullmatch(r"\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*", raw_response)
-            score = float(score_match.group(1)) if score_match else None
+
+            message = response.get("message", {})
+            raw_response = message.get("content", "").strip()
+
+            # ---------------------------------------------------------
+            # Parse YES / NO
+            # ---------------------------------------------------------
+
+            classification_match = re.search(
+                r"\b(YES|NO)\b",
+                raw_response,
+                re.IGNORECASE,
+            )
+
+            classification = (
+                classification_match.group(1).upper()
+                if classification_match
+                else None
+            )
+
+            # ---------------------------------------------------------
+            # Extract token probabilities
+            # ---------------------------------------------------------
+
+            score = None
+
+            logprobs = message.get("logprobs") or response.get("logprobs")
+
+            if logprobs:
+                yes_logprob = None
+                no_logprob = None
+
+                # Ollama may return a list of token logprob objects.
+                for token_info in logprobs:
+                    token = str(token_info.get("token", "")).strip().upper()
+
+                    if token == "YES":
+                        yes_logprob = token_info.get("logprob")
+
+                    elif token == "NO":
+                        no_logprob = token_info.get("logprob")
+
+                # Convert log probabilities to probabilities and
+                # normalize YES vs NO.
+                if yes_logprob is not None and no_logprob is not None:
+                    yes_prob = math.exp(float(yes_logprob))
+                    no_prob = math.exp(float(no_logprob))
+
+                    total = yes_prob + no_prob
+
+                    if total > 0:
+                        score = yes_prob / total
+
+            # ---------------------------------------------------------
+            # Fallback if probability information wasn't returned
+            # ---------------------------------------------------------
+
+            if score is None and classification is not None:
+                score = 1.0 if classification == "YES" else 0.0
+
             if score is not None:
-                if score > 1.0:
-                    score /= 100.0
-                score = max(0.0, min(1.0, score))
+                score = max(0.0, min(1.0, float(score)))
+
+            # ---------------------------------------------------------
+            # Timing
+            # ---------------------------------------------------------
 
             api_time = response.get("total_duration", 0) / 1e9
-            score_text = f"{score:.8f}" if score is not None else "unparsed"
+
+            score_text = (
+                f"{score:.8f}"
+                if score is not None
+                else "unavailable"
+            )
+
+            classification_text = (
+                classification
+                if classification is not None
+                else "unparsed"
+            )
+
+            # ---------------------------------------------------------
+            # Logging
+            # ---------------------------------------------------------
+
             print(f"[Robot] Analyze request: {request}")
-            print(f"[Robot] Analyze score: addressed_confidence_score: {score_text}")
+            print(
+                f"[Robot] Analyze classification: {classification_text}"
+            )
+            print(
+                f"[Robot] Analyze score: addressed_confidence_score: "
+                f"{score_text}"
+            )
             print(f"[Robot] Analyze response: {raw_response}")
-            print(f"[Robot] Analyze response time: {elapsed_seconds:.3f}s (API: {api_time:.3f}s)")
+            print(
+                f"[Robot] Analyze response time: "
+                f"{elapsed_seconds:.3f}s (API: {api_time:.3f}s)"
+            )
+
             return score
+
         except Exception as exc:
             elapsed_seconds = time.perf_counter() - started_at
+
             print(f"[Robot] Analyze request: {request}")
-            print(f"[Robot] Analyze failed after {elapsed_seconds:.3f}s: {exc}")
+            print(
+                f"[Robot] Analyze failed after "
+                f"{elapsed_seconds:.3f}s: {exc}"
+            )
+
             return None
 
     def add_to_history(self, role: str, message: str) -> list:

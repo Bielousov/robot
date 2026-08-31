@@ -259,12 +259,7 @@ class Mind:
             # Parse classification
             # ---------------------------------------------------------
 
-            print(
-                f"[Robot] Analyze raw response: {raw_response!r}"
-            )
-
             classification = None
-
             normalized_response = raw_response.strip().upper()
 
             for label in ConversationClassification:
@@ -308,6 +303,10 @@ class Mind:
             # ---------------------------------------------------------
 
             print(f"[Robot] Analyze request: {request}")
+
+            print(
+                f"[Robot] Analyze raw response: {raw_response!r}"
+            )
             print(
                 f"[Robot] Analyze classification: "
                 f"{classification}"

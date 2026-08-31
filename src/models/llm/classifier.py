@@ -33,4 +33,3 @@ def build_conversation_classifier_prompt() -> str:
     "\"I think we should leave soon\" -> NOT_ADDRESSED\n"
     "\"immortal the table seventy five\" -> NOT_ADDRESSED\n"
 )
-)

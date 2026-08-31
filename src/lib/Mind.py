@@ -313,11 +313,6 @@ class Mind:
                 yes_logprob = candidates.get("YES")
                 no_logprob = candidates.get("NO")
 
-                print(
-                    f"[Robot] Analyze candidates: "
-                    f"{candidates!r}"
-                )
-
                 # -----------------------------------------------------
                 # Convert YES/NO log-probability difference to 0..1
                 # -----------------------------------------------------
@@ -383,6 +378,11 @@ class Mind:
             # Logging
             # ---------------------------------------------------------
             if self.debug:
+                print(
+                    f"[Robot] Analyze candidates: "
+                    f"{candidates!r}"
+                )
+
                 print(
                     f"[Robot] Analyze request: {request}"
                 )

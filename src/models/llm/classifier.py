@@ -1,4 +1,4 @@
-ConversationClssification = {
+ConversationClassification = {
     "ADDRESSED": 1.0,
     "AMBIGUOUS": 0.5,
     "NOT_ADDRESSED": 0.0,

@@ -455,6 +455,11 @@ class Mind:
             # Logging
             # ---------------------------------------------------------
 
+            print(
+                f"[Robot] Analyze response: "
+                f"{raw_response!r}"
+            )
+
             if self.debug:
                 print(
                     f"[Robot] Analyze candidates: "
@@ -465,10 +470,7 @@ class Mind:
                     f"[Robot] Analyze request: {request}"
                 )
 
-                print(
-                    f"[Robot] Analyze response: "
-                    f"{raw_response!r}"
-                )
+                
 
                 print(
                     f"[Robot] Analyze classification: "

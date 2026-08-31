@@ -231,9 +231,7 @@ class Mind:
             return None
 
         options = get_classifier_model_options()
-
         prompt = build_conversation_classifier_prompt(request)
-
         started_at = time.perf_counter()
 
         try:
@@ -241,6 +239,7 @@ class Mind:
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": prompt},
+                    {"role": "user", "content": request},
                 ],
                 options=options,
                 stream=False,

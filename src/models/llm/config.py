@@ -32,7 +32,7 @@ def get_conversation_model_options() -> Dict[str, Any]:
 def get_classifier_model_options() -> Dict[str, Any]:
     return {
         "num_ctx": 1024,
-        "num_predict": 5,
+        "num_predict": 1,
         "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
         "repeat_penalty": 1.0,
         "temperature": 0.0,

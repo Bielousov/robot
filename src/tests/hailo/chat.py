@@ -43,8 +43,8 @@ def generate(llm, text):
 
     with llm.generate(
         prompt=prompt,
-        temperature=0.8,
-        max_generated_tokens=100,
+        temperature=0.7,
+        max_generated_tokens=64,
     ) as generation:
         for chunk in generation:
             if chunk == "<|im_end|>":

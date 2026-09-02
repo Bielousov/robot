@@ -33,7 +33,7 @@ MODEL_URL="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$MODEL_NAME.hef"
 
 mkdir -p "$MODELS_DIR"
 
-if [[ -s "$MODEL_FILE" ]]; then
+if [ -s "$MODEL_FILE" ]; then
     echo "[Hailo] $MODEL_NAME is already installed. Skipping download."
 else
     echo "[Hailo] Installing $MODEL_NAME..."
@@ -52,7 +52,7 @@ else
     sync
 fi
 
-if [[ ! -s "$MODEL_FILE" ]]; then
+if [ ! -s "$MODEL_FILE" ]; then
     echo "[Hailo] ERROR: $MODEL_FILE is missing or empty."
     exit 2
 fi

@@ -23,10 +23,10 @@ try:
     start = time.perf_counter()
 
     response = llm.generate_all(
+        max_generated_tokens=100,
         prompt=prompt,
         temperature=0.1,
         seed=42,
-        max_generated_tokens=100,
     )
 
     elapsed = time.perf_counter() - start

@@ -22,7 +22,7 @@ import json
 import urllib.error
 import urllib.request
 
-PORT = int(os.environ.get("PORT", "8000"))
+PORT = int(os.environ.get("PORT", "8001"))
 OLLAMA_URL = "http://127.0.0.1:11434"
 
 class RobotWebHandler(http.server.SimpleHTTPRequestHandler):

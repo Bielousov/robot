@@ -22,7 +22,7 @@ A simple React-based chat interface that communicates with an Ollama language mo
 ### 1. Start the Web Server
 
 ```bash
-./services/web.sh          # Starts on port 8000
+./services/web.sh          # Starts on port 8001
 ./services/web.sh 3000     # Custom port
 ```
 
@@ -56,7 +56,7 @@ Open your browser to:
 
 - **Ollama backend**: `http://127.0.0.1:11434` from the web server
 - **Default Model**: `mistral`
-- **Port**: 8000
+- **Port**: 8001
 
 ## Modifying Models
 

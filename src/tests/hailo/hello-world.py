@@ -15,7 +15,7 @@ MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 
 HEF = Path(sys.argv[1]) if len(sys.argv) > 1 else MODELS_DIR / f"{MODEL_NAME}.hef"
-PROMPT = " ".join(sys.argv[2:]) or "Say you first words"
+PROMPT_TEXT = " ".join(sys.argv[2:]) or "Say hello in your character"
 
 print(f"[Hailo] Model: {MODEL_NAME}")
 print(f"[Hailo] HEF:   {HEF}")
@@ -30,34 +30,40 @@ llm = LLM(vdevice, str(HEF))
 try:
     prompt = [
         {
+            "role": "system",
+            "content": [
+                {"type": "text", "text": "Always respond in English."}
+            ],
+        },
+        {
             "role": "user",
             "content": [
-                {"type": "text", "text": PROMPT}
+                {"type": "text", "text": PROMPT_TEXT}
             ],
         }
     ]
 
-    start = time.perf_counter()
+    print("\nResponse:")
 
-    response = llm.generate_all(
+    start = time.perf_counter()
+    response = ""
+
+    with llm.generate(
         prompt=prompt,
         temperature=0.1,
         seed=42,
         max_generated_tokens=100,
-    )
+    ) as generation:
+        for chunk in generation:
+            if chunk != "<|im_end|>":
+                print(chunk, end="", flush=True)
+                response += chunk
 
     elapsed = time.perf_counter() - start
 
-    print("\nResponse:")
-    print(response)
-
-    tokens = len(response.split())
-    tokens_per_sec = tokens / elapsed if elapsed else 0
-
-    print(f"\nTokens:      ~{tokens}")
-    print(f"Time:        {elapsed:.3f} s")
-    print(f"Tokens/sec:  ~{tokens_per_sec:.2f}")
+    print(f"\n\nTime: {elapsed:.3f} s")
 
 finally:
+    llm.clear_context()
     llm.release()
     vdevice.release()

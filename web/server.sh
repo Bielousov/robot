@@ -46,7 +46,15 @@ if [ -z "$HAILO_BIN" ]; then
 fi
 
 
-if ! curl -fsS "$HAILO_URL/api/version" >/dev/null 2>&1; then
+if curl -fsS "$HAILO_URL/api/version" >/dev/null 2>&1; then
+    echo "[server.sh] Hailo-Ollama is already running."
+
+elif ss -ltn 2>/dev/null | grep -q ":${HAILO_HOST##*:} "; then
+    echo "[server.sh] ERROR: Port ${HAILO_HOST##*:} is already in use."
+    echo "[server.sh] Unable to verify that the process is Hailo-Ollama."
+    exit 1
+
+else
     echo "[server.sh] Starting Hailo-Ollama..."
 
     nohup env \
@@ -88,8 +96,6 @@ if ! curl -fsS "$HAILO_URL/api/version" >/dev/null 2>&1; then
     fi
 
     echo "[server.sh] Hailo-Ollama is ready."
-else
-    echo "[server.sh] Hailo-Ollama is already running."
 fi
 
 

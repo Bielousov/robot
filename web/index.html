@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Chat</title>
+    <title>Hailo Chat</title>
     <link rel="stylesheet" href="styles.css">
     <script src="dist/react.production.min.js"></script>
     <script src="dist/react-dom.production.min.js"></script>
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div id="root"></div>
-    
+
     <script type="text/babel">
         const { useState, useRef, useEffect } = React;
 
@@ -19,9 +19,8 @@
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
-            const [ollamaStatus, setOllamaStatus] = useState('checking');
-            const ollamaUrl = '';
-            const [model, setModel] = useState('pip');
+            const [hailoStatus, setHailoStatus] = useState('checking');
+            const [model, setModel] = useState('');
 
             const messagesEndRef = useRef(null);
             const inputRef = useRef(null);
@@ -29,7 +28,6 @@
             const STORAGE_KEY = 'robot_chat_history';
             const CONTEXT_LENGTH = 8;
 
-            // Load messages from localStorage on mount
             useEffect(() => {
                 try {
                     const stored = localStorage.getItem(STORAGE_KEY);
@@ -41,7 +39,6 @@
                 }
             }, []);
 
-            // Save messages to localStorage whenever they change
             useEffect(() => {
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -50,37 +47,66 @@
                 }
             }, [messages]);
 
-            const getOllamaStatusLabel = () => {
-                switch (ollamaStatus) {
+            const getHailoStatusLabel = () => {
+                switch (hailoStatus) {
                     case 'online':
-                        return 'Ollama online';
+                        return 'Hailo online';
                     case 'offline':
-                        return 'Ollama offline';
+                        return 'Hailo offline';
                     default:
-                        return 'Checking Ollama...';
+                        return 'Checking Hailo...';
                 }
             };
 
-            const fetchOllamaStatus = async () => {
+            const fetchHailoStatus = async () => {
                 try {
-                    const response = await fetch(`${ollamaUrl}/api/version`, {
+                    const response = await fetch('/api/version', {
                         method: 'GET',
                         cache: 'no-store',
                     });
-                    setOllamaStatus(response.ok ? 'online' : 'offline');
+
+                    setHailoStatus(response.ok ? 'online' : 'offline');
                 } catch (error) {
-                    setOllamaStatus('offline');
+                    setHailoStatus('offline');
+                }
+            };
+
+            const fetchModel = async () => {
+                try {
+                    const response = await fetch('/api/tags', {
+                        cache: 'no-store',
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+                    const models = Array.isArray(data.models) ? data.models : [];
+
+                    if (models.length > 0 && models[0].name) {
+                        setModel(models[0].name);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch model:', error);
                 }
             };
 
             useEffect(() => {
-                fetchOllamaStatus();
-                const interval = setInterval(fetchOllamaStatus, 8000);
+                fetchHailoStatus();
+                fetchModel();
+
+                const interval = setInterval(() => {
+                    fetchHailoStatus();
+                }, 8000);
+
                 return () => clearInterval(interval);
             }, []);
 
             const scrollToBottom = () => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                messagesEndRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                });
             };
 
             useEffect(() => {
@@ -94,33 +120,23 @@
             }, [loading, messages]);
 
             const getContextMessages = () => {
-                // Get last 8 non-error messages for Ollama context
-                const nonErrorMessages = messages.filter(m => m.role !== 'error');
-                const recentMessages = nonErrorMessages.slice(-CONTEXT_LENGTH);
-                return recentMessages;
+                const nonErrorMessages = messages.filter(
+                    m => m.role !== 'error'
+                );
+
+                return nonErrorMessages.slice(-CONTEXT_LENGTH);
             };
 
-            const getSafeAssistantContent = (payload) => {
-                const messageContent = typeof payload?.message?.content === 'string' ? payload.message.content : '';
-                const legacyContent = typeof payload?.response === 'string' ? payload.response : '';
-                const content = messageContent || legacyContent;
-                const thinking = typeof payload?.thinking === 'string'
-                    ? payload.thinking
-                    : (typeof payload?.message?.thinking === 'string' ? payload.message.thinking : '');
-
-                if (thinking && content && content === thinking) {
+            const getSafeContent = (content) => {
+                if (typeof content !== 'string') {
                     return '';
                 }
 
-                const contentStripped = content.replace(/^\s+|\s+$/g, '');
-                const thinkingStripped = thinking.replace(/^\s+|\s+$/g, '');
+                const stripped = content.trim();
 
                 if (
-                    (!contentStripped && !thinkingStripped) ||
-                    /^(?:<think|<thinking|thinking\s*:)/i.test(contentStripped) ||
-                    /^(?:<think|<thinking|thinking\s*:)/i.test(thinkingStripped) ||
-                    /<think\b|<thinking\b|thinking\s*:/i.test(contentStripped) ||
-                    /<think\b|<thinking\b|thinking\s*:/i.test(thinkingStripped)
+                    /^(?:<think|<thinking|thinking\s*:)/i.test(stripped) ||
+                    /<think\b|<thinking\b|thinking\s*:/i.test(stripped)
                 ) {
                     return '';
                 }
@@ -130,16 +146,32 @@
 
             const sendMessage = async (e) => {
                 e.preventDefault();
-                if (!input.trim()) return;
 
-                const userMessage = input;
+                if (!input.trim() || loading) {
+                    return;
+                }
+
+                const userMessage = input.trim();
                 setInput('');
-                setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
                 setLoading(true);
+
+                setMessages(prev => [
+                    ...prev,
+                    {
+                        role: 'user',
+                        content: userMessage,
+                    },
+                    {
+                        role: 'assistant',
+                        content: '',
+                        streaming: true,
+                    },
+                ]);
 
                 try {
                     const contextMessages = getContextMessages();
-                    const response = await fetch(`${ollamaUrl}/api/chat`, {
+
+                    const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -148,42 +180,190 @@
                             model: model,
                             messages: [
                                 ...contextMessages,
-                                { role: 'user', content: userMessage }
+                                {
+                                    role: 'user',
+                                    content: userMessage,
+                                },
                             ],
-                            stream: false,
+                            stream: true,
                             think: false,
+                            options: {
+                                temperature: 0.7,
+                                num_predict: 64,
+                            },
                         }),
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Ollama error: ${response.statusText}`);
+                        throw new Error(
+                            `Hailo error: ${response.status} ${response.statusText}`
+                        );
                     }
 
-                    const data = await response.json();
-                    const totalDurationMs = (data.total_duration || 0) / 1_000_000;
-                    const evalCount = Number(data.eval_count || 0);
-                    const evalDurationSeconds = (data.eval_duration || 0) / 1_000_000_000;
-                    const tokensPerSecond = evalDurationSeconds > 0 ? evalCount / evalDurationSeconds : 0;
-                    const assistantContent = getSafeAssistantContent(data);
-
-                    if (!assistantContent) {
-                        throw new Error('The model returned only thinking text.');
+                    if (!response.body) {
+                        throw new Error(
+                            'Streaming is not supported by this browser.'
+                        );
                     }
 
-                    setMessages(prev => [...prev, {
-                        role: 'assistant',
-                        content: assistantContent,
-                        metrics: {
-                            timeMs: totalDurationMs,
-                            tokens: evalCount,
-                            tokensPerSecond: tokensPerSecond,
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+
+                    let buffer = '';
+                    let assistantContent = '';
+
+                    let metrics = {
+                        timeMs: 0,
+                        tokens: 0,
+                        tokensPerSecond: 0,
+                    };
+
+                    const updateAssistant = (extra = {}) => {
+                        setMessages(prev => {
+                            const updated = [...prev];
+
+                            for (let i = updated.length - 1; i >= 0; i--) {
+                                if (updated[i].role === 'assistant') {
+                                    updated[i] = {
+                                        ...updated[i],
+                                        ...extra,
+                                    };
+                                    break;
+                                }
+                            }
+
+                            return updated;
+                        });
+                    };
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+
+                        if (done) {
+                            break;
                         }
-                    }]);
+
+                        buffer += decoder.decode(value, {
+                            stream: true,
+                        });
+
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+
+                            if (!trimmed) {
+                                continue;
+                            }
+
+                            let payload;
+
+                            try {
+                                payload = JSON.parse(trimmed);
+                            } catch (error) {
+                                console.warn(
+                                    'Invalid streaming JSON:',
+                                    trimmed
+                                );
+                                continue;
+                            }
+
+                            const chunk =
+                                typeof payload?.message?.content === 'string'
+                                    ? payload.message.content
+                                    : typeof payload?.response === 'string'
+                                        ? payload.response
+                                        : '';
+
+                            if (chunk) {
+                                assistantContent += chunk;
+
+                                const safeContent =
+                                    getSafeContent(assistantContent);
+
+                                updateAssistant({
+                                    content: safeContent,
+                                    streaming: true,
+                                });
+                            }
+
+                            // Final response contains statistics.
+                            if (payload.done) {
+                                const totalDurationMs =
+                                    Number(payload.total_duration || 0) /
+                                    1_000_000;
+
+                                const evalCount =
+                                    Number(payload.eval_count || 0);
+
+                                const evalDurationSeconds =
+                                    Number(payload.eval_duration || 0) /
+                                    1_000_000_000;
+
+                                const tokensPerSecond =
+                                    evalDurationSeconds > 0
+                                        ? evalCount /
+                                          evalDurationSeconds
+                                        : 0;
+
+                                metrics = {
+                                    timeMs: totalDurationMs,
+                                    tokens: evalCount,
+                                    tokensPerSecond: tokensPerSecond,
+                                };
+
+                                updateAssistant({
+                                    content: getSafeContent(
+                                        assistantContent
+                                    ),
+                                    streaming: false,
+                                    metrics: metrics,
+                                });
+                            }
+                        }
+                    }
+
+                    setMessages(prev => {
+                        const updated = [...prev];
+
+                        for (let i = updated.length - 1; i >= 0; i--) {
+                            if (updated[i].role === 'assistant') {
+                                updated[i] = {
+                                    ...updated[i],
+                                    streaming: false,
+                                };
+                                break;
+                            }
+                        }
+
+                        return updated;
+                    });
+
                 } catch (error) {
-                    setMessages(prev => [...prev, { 
-                        role: 'error', 
-                        content: `Error: ${error.message}. Make sure Ollama is running on the web server.`
-                    }]);
+                    console.error(error);
+
+                    setMessages(prev => {
+                        const updated = [...prev];
+
+                        // Remove empty streaming assistant message.
+                        for (let i = updated.length - 1; i >= 0; i--) {
+                            if (
+                                updated[i].role === 'assistant' &&
+                                updated[i].streaming
+                            ) {
+                                updated.splice(i, 1);
+                                break;
+                            }
+                        }
+
+                        updated.push({
+                            role: 'error',
+                            content: `Error: ${error.message}`,
+                        });
+
+                        return updated;
+                    });
                 } finally {
                     setLoading(false);
                 }
@@ -199,13 +379,21 @@
                 <main className="container">
                     <header className="header">
                         <h1>
-                            {model}...
-                            <span className={`status-pill ${ollamaStatus}`}>
+                            {model || 'Hailo'}...
+                            <span
+                                className={`status-pill ${hailoStatus}`}
+                            >
                                 <span className="status-dot" />
-                                {getOllamaStatusLabel()}
+                                {getHailoStatusLabel()}
                             </span>
                         </h1>
-                        <button onClick={clearHistory} className="clear-button">Clear History</button>
+
+                        <button
+                            onClick={clearHistory}
+                            className="clear-button"
+                        >
+                            Clear History
+                        </button>
                     </header>
 
                     <div className="chat-container">
@@ -217,40 +405,61 @@
                             )}
 
                             {messages.map((msg, idx) => (
-                                <div key={idx} className={`message ${msg.role}`}>
+                                <div
+                                    key={idx}
+                                    className={`message ${msg.role}`}
+                                >
                                     <div className="message-role">
-                                        {msg.role === 'user' ? 'You' : msg.role === 'assistant' ? 'Assistant' : 'Error'}
+                                        {msg.role === 'user'
+                                            ? 'You'
+                                            : msg.role === 'assistant'
+                                                ? 'Assistant'
+                                                : 'Error'}
                                     </div>
+
                                     <div className="message-content">
                                         {msg.content}
-                                        {msg.role === 'assistant' && msg.metrics && (
-                                            <div className="message-metrics">
-                                                {`Time: ${(msg.metrics.timeMs / 1000).toFixed(2)}s | Tokens: ${msg.metrics.tokens} | ${msg.metrics.tokensPerSecond.toFixed(1)} tok/s`}
-                                            </div>
-                                        )}
+
+                                        {msg.role === 'assistant' &&
+                                            msg.metrics && (
+                                                <div className="message-metrics">
+                                                    {`Time: ${(msg.metrics.timeMs / 1000).toFixed(2)}s | Tokens: ${msg.metrics.tokens} | ${msg.metrics.tokensPerSecond.toFixed(1)} tok/s`}
+                                                </div>
+                                            )}
                                     </div>
                                 </div>
                             ))}
-                            {loading && (
-                                <div className="message assistant">
-                                    <div className="message-role">🤖 Assistant</div>
-                                    <div className="message-content typing">Thinking...</div>
-                                </div>
-                            )}
+
+                            {loading &&
+                                messages.length > 0 &&
+                                messages[messages.length - 1].streaming && (
+                                    <div ref={messagesEndRef} />
+                                )}
+
                             <div ref={messagesEndRef} />
                         </div>
 
-                        <form onSubmit={sendMessage} className="input-form">
+                        <form
+                            onSubmit={sendMessage}
+                            className="input-form"
+                        >
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={input}
-                                onChange={(e) => setInput(e.target.value)}
+                                onChange={e =>
+                                    setInput(e.target.value)
+                                }
                                 placeholder="Type your message..."
-                                disabled={loading}
+                                disabled={loading || !model}
                                 className="message-input"
                             />
-                            <button type="submit" disabled={loading} className="send-button">
+
+                            <button
+                                type="submit"
+                                disabled={loading || !model}
+                                className="send-button"
+                            >
                                 {loading ? 'Sending...' : 'Send'}
                             </button>
                         </form>
@@ -259,7 +468,9 @@
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<ChatApp />);
+        ReactDOM.createRoot(
+            document.getElementById('root')
+        ).render(<ChatApp />);
     </script>
 </body>
 </html>

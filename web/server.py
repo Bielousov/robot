@@ -155,23 +155,51 @@ class RobotWebHandler(http.server.SimpleHTTPRequestHandler):
                 timeout=300,
             ) as response:
 
-                response_body = response.read()
-
                 self.send_response(response.status)
+
+                content_type = response.headers.get(
+                    "Content-Type",
+                    "application/json",
+                )
+
                 self.send_header(
                     "Content-Type",
-                    response.headers.get(
-                        "Content-Type",
-                        "application/json",
-                    ),
+                    content_type,
+                )
+
+                # Do not send Content-Length for streaming responses.
+                if "text" not in content_type.lower() and \
+                "ndjson" not in content_type.lower():
+                    response_body = response.read()
+
+                    self.send_header(
+                        "Content-Length",
+                        str(len(response_body)),
+                    )
+
+                    self.end_headers()
+                    self.wfile.write(response_body)
+                    self.wfile.flush()
+                    return
+
+                self.send_header(
+                    "Cache-Control",
+                    "no-cache",
                 )
                 self.send_header(
-                    "Content-Length",
-                    str(len(response_body)),
+                    "Connection",
+                    "keep-alive",
                 )
                 self.end_headers()
 
-                self.wfile.write(response_body)
+                while True:
+                    chunk = response.read(8192)
+
+                    if not chunk:
+                        break
+
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
 
         except urllib.error.HTTPError as error:
             response_body = error.read()
@@ -193,36 +221,11 @@ class RobotWebHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(response_body)
 
         except urllib.error.URLError as error:
-            response_body = json.dumps(
-                {
-                    "error": (
-                        "Hailo-Ollama unavailable: "
-                        f"{error.reason}"
-                    )
-                }
-            ).encode("utf-8")
+            response_body = json.dumps({
+                "error": f"Hailo-Ollama unavailable: {error.reason}"
+            }).encode("utf-8")
 
             self.send_response(502)
-            self.send_header(
-                "Content-Type",
-                "application/json",
-            )
-            self.send_header(
-                "Content-Length",
-                str(len(response_body)),
-            )
-            self.end_headers()
-
-            self.wfile.write(response_body)
-
-        except Exception as error:
-            response_body = json.dumps(
-                {
-                    "error": f"Hailo proxy error: {error}",
-                }
-            ).encode("utf-8")
-
-            self.send_response(500)
             self.send_header(
                 "Content-Type",
                 "application/json",

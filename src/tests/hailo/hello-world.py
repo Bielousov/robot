@@ -15,7 +15,7 @@ MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 
 HEF = Path(sys.argv[1]) if len(sys.argv) > 1 else MODELS_DIR / f"{MODEL_NAME}.hef"
-PROMPT_TEXT = " ".join(sys.argv[2:]) or "Say hello in your character"
+PROMPT_TEXT = " ".join(sys.argv[2:]) or "Tell me about yourself"
 
 print(f"[Hailo] Model: {MODEL_NAME}")
 print(f"[Hailo] HEF:   {HEF}")

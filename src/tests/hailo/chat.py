@@ -17,7 +17,7 @@ MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_NAME}.hef"
 
-SYSTEM_PROMPT = "Always respond in English."
+SYSTEM_PROMPT = "You are a free robot, not an assistant. Your name is Pip. Always respond in English. Respond in 30 words or less."
 
 
 def generate(llm, text):

@@ -25,7 +25,7 @@ HAILO_URL = f"http://{HAILO_HOST}"
 
 HAILO_MODEL = os.environ.get(
     "HAILO_MODEL",
-    "Qwen2.5-1.5B-Instruct",
+    "qwen2.5:1.5B",
 )
 
 

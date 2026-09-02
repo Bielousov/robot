@@ -18,25 +18,25 @@ if [ -f "$ENV_FILE" ]; then
         | tr -d '"' \
         | tr -d "'")
 
-    MODEL_NAME=$(grep -v '^#' "$ENV_FILE" \
-        | grep '^HAILO_MODEL=' \
+    MODEL_HEF=$(grep -v '^#' "$ENV_FILE" \
+        | grep '^HAILO_MODEL_HEF=' \
         | cut -d '=' -f2 \
         | tr -d '"' \
         | tr -d "'")
 fi
 
 HAILO_VERSION=${HAILO_VERSION:-"5.3.0"}
-MODEL_NAME=${MODEL_NAME:-"Qwen2.5-1.5B-Instruct"}
+MODEL_HEF=${MODEL_NAME:-"Qwen2.5-1.5B-Instruct.hef"}
 
-MODEL_FILE="$MODELS_DIR/$MODEL_NAME.hef"
-MODEL_URL="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$MODEL_NAME.hef"
+MODEL_FILE="$MODELS_DIR/$MODEL_HEF"
+MODEL_URL="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$MODEL_HEF"
 
 mkdir -p "$MODELS_DIR"
 
 if [ -s "$MODEL_FILE" ]; then
-    echo "[Hailo] $MODEL_NAME is already installed. Skipping download."
+    echo "[Hailo] $MODEL_HEF is already installed. Skipping download."
 else
-    echo "[Hailo] Installing $MODEL_NAME..."
+    echo "[Hailo] Installing $MODEL_HEF..."
     echo "[Hailo] Version: $HAILO_VERSION"
     echo "[Hailo] Destination: $MODEL_FILE"
 

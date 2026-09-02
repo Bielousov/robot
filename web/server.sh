@@ -30,7 +30,7 @@ HAILO_URL="http://${HAILO_HOST}"
 echo "Starting web server on http://0.0.0.0:$WEB_PORT"
 echo "Serving files from: $SCRIPT_DIR"
 echo "Hailo-Ollama: $HAILO_URL"
-echo "Hailo model: ${HAILO_MODEL:-Qwen2.5-1.5B-Instruct}"
+echo "Hailo model: ${HAILO_MODEL:-qwen2.5:1.5B}"
 echo "Using Python server: $SERVER_PY"
 
 

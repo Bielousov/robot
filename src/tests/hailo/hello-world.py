@@ -11,13 +11,13 @@ from hailo_platform.genai import LLM
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
+MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 
-HEF = Path(sys.argv[1]) if len(sys.argv) > 1 else MODELS_DIR / f"{MODEL_NAME}.hef"
+HEF = Path(sys.argv[1]) if len(sys.argv) > 1 else MODELS_DIR / f"{MODEL_HEF}"
 PROMPT_TEXT = " ".join(sys.argv[2:]) or "Tell me about yourself"
 
-print(f"[Hailo] Model: {MODEL_NAME}")
+print(f"[Hailo] Model: {MODEL_HEF}")
 print(f"[Hailo] HEF:   {HEF}")
 
 if not HEF.is_file():

@@ -14,9 +14,9 @@ from hailo_platform.genai import LLM
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
+MODEL_HEF = os.getenv("MODEL_HEF", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-HEF = MODELS_DIR / f"{MODEL_NAME}.hef"
+NODEL_PATH = MODELS_DIR / f"{MODEL_HEF}"
 
 ITERATIONS = 10
 WARMUP_RUNS = 1
@@ -68,15 +68,15 @@ def benchmark():
     print("[Benchmark] Initializing Hailo...")
 
     if not HEF.is_file():
-        print(f"[Benchmark] ERROR: HEF not found: {HEF}")
+        print(f"[Benchmark] ERROR: HEF not found: {NODEL_PATH}")
         sys.exit(2)
 
-    print(f"[Benchmark] Model: {MODEL_NAME}")
-    print(f"[Benchmark] HEF:   {HEF}")
+    print(f"[Benchmark] Model: {MODEL_HEF}")
+    print(f"[Benchmark] HEF:   {NODEL_PATH}")
 
     # Model creation/loading is NOT timed.
     vdevice = VDevice()
-    llm = LLM(vdevice, str(HEF))
+    llm = LLM(vdevice, str(NODEL_PATH))
 
     try:
         print(f"[Benchmark] Warming up model ({WARMUP_RUNS} runs)...")
@@ -102,7 +102,7 @@ def benchmark():
         print("   BENCHMARK RESULTS   ")
         print("=" * 21)
 
-        print(f"Model:            {MODEL_NAME}")
+        print(f"Model:            {MODEL_HEF}")
         print(f"Total Iterations: {ITERATIONS}")
         print(f"Fastest Run:      {min(times):.2f}s")
         print(f"Average Time:     {statistics.mean(times):.2f}s")

@@ -13,12 +13,11 @@ from hailo_platform.genai import LLM
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_NAME = os.getenv("HAILO_MODEL", "Qwen2.5-1.5B-Instruct")
+MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-HEF = MODELS_DIR / f"{MODEL_NAME}.hef"
+HEF = MODELS_DIR / f"{MODEL_HEF}"
 
 SYSTEM_PROMPT = "You are a free robot, not an assistant. Your name is Pip. Always respond in English. Respond in 30 words or less."
-
 
 def generate(llm, text):
     prompt = [
@@ -85,7 +84,7 @@ def main():
         print(f"[Hailo] ERROR: HEF not found: {HEF}")
         sys.exit(2)
 
-    print(f"[Hailo] Model: {MODEL_NAME}")
+    print(f"[Hailo] Model: {MODEL_HEF}")
     print(f"[Hailo] HEF:   {HEF}")
     print("[Hailo] Loading model...")
 

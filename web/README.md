@@ -28,7 +28,7 @@ A simple React-based chat interface that communicates with an Ollama language mo
 
 The server will output:
 ```
-Starting web server on http://0.0.0.0:8000
+Starting web server on http://0.0.0.0:8001
 Serving files from: /workspaces/robot/web
 ```
 
@@ -42,8 +42,8 @@ ollama serve          # Runs on http://localhost:11434 by default
 ### 3. Access the Chat UI
 
 Open your browser to:
-- `http://localhost:8000` (from the host machine)
-- `http://127.0.0.1:8000` (from within the container)
+- `http://localhost:8001` (from the host machine)
+- `http://127.0.0.1:8001` (from within the container)
 
 ## Using the Chat Interface
 

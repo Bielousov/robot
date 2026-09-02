@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # Simple web server for robot web interface
-# Serves web/index.html on http://localhost:8000
+# Serves web/index.html on http://localhost:8001
 
-PORT="${1:-8000}"
+PORT="${1:-8001}"
 SCRIPT_PATH="${0}"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"

@@ -54,7 +54,7 @@ def run_once(llm):
         prompt=prompt,
         temperature=0.1,
         seed=42,
-        max_generated_tokens=100,
+        max_generated_tokens=50,
     ) as generation:
         for chunk in generation:
             if chunk != "<|im_end|>":

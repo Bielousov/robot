@@ -7,7 +7,7 @@ PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="$PROJECT_ROOT/.env"
 OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
 OLLAMA_URL="http://${OLLAMA_HOST}"
-WEB_PORT="${PORT:-8001}"
+WEB_PORT="${WEB_PORT:-8001}"
 OLLAMA_LOG="/tmp/robot-ollama.log"
 WEB_LOG="/tmp/robot-web.log"
 

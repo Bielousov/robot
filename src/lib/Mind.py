@@ -38,14 +38,14 @@ class Mind:
         while not self.is_ready:
             time.sleep(0.5)
 
-    def load_model(self):
-        """Pull the configured base model via the client and mark the runtime ready."""
+    def load_model(self, model):
+        """Pull the given base model via the client and mark the runtime ready."""
         try:
-            self.client.load_model()
+            self.client.load_model(model)
             self.is_ready = True
         except Exception as exc:
             self.is_ready = False
-            print(f"[Error] Could not load base model '{self.model_name}': {exc}")
+            print(f"[Error] Could not load base model '{model}': {exc}")
             raise
 
     def _build_request_messages(
@@ -129,8 +129,9 @@ class Mind:
     def think(
         self,
         prompt: Union[str, List[str]],
-        callback: Optional[Callable[[Optional[str], Optional[Exception]], None]] = None,
-        context: Optional[List[str]] = None
+        callback: Optional[Callable[[Optional[str], Optional[Exception], bool], None]] = None,
+        context: Optional[List[str]] = None,
+        stream: bool = True,
     ) -> Optional[str]:
 
         # Normalize prompt to a list for consistent processing
@@ -138,14 +139,14 @@ class Mind:
 
         if not prompts or all(not p for p in prompts):
             if callback:
-                callback(None, ValueError("Empty prompt"))
+                callback(None, ValueError("Empty prompt"), True)
             return None
 
         try:
             current_prompt = prompts[-1].strip() if prompts[-1] else ""
             if not current_prompt:
                 if callback:
-                    callback(None, ValueError("Empty prompt"))
+                    callback(None, ValueError("Empty prompt"), True)
                 return None
 
             messages = self._build_request_messages(prompts, context=context)
@@ -154,17 +155,22 @@ class Mind:
             response = self.client.chat(
                 messages=messages,
                 options=options,
+                stream=stream,
             )
-            self._response_metrics(response)
 
-            answer = self._response_format(response['message']['content'])
+            if stream:
+                answer = self._consume_stream(response, callback)
+            else:
+                if self.debug:
+                    self._response_metrics(response)
+                
+                answer = self._response_format(response['message']['content'])
+                if callback:
+                    callback(answer, None, True)
 
             # Persist only the actual completed turn after the model responds.
             self.add_to_history('user', current_prompt)
             self.add_to_history('robot', answer)
-
-            if callback:
-                callback(answer, None)
 
             return answer
 
@@ -172,9 +178,48 @@ class Mind:
             print(f"[Critical] Brain error: {e}")
 
             if callback:
-                callback(None, e)
+                callback(None, e, True)
 
             return None
+
+    def _consume_stream(
+        self,
+        response_stream,
+        callback: Optional[Callable[[Optional[str], Optional[Exception], bool], None]],
+    ) -> str:
+        """Consume a streamed chat response, invoking callback once per chunk.
+
+        callback is called as (text, error, done): text is only populated on
+        the final chunk (once the whole answer has arrived), done is True only
+        for that final chunk.
+        """
+        answer_parts = []
+        final_chunk = None
+
+        started_at = time.perf_counter()
+        first_token_at = None
+
+        for chunk in response_stream:
+            content = (chunk.get('message', {}) or {}).get('content', '')
+            if content:
+                if first_token_at is None:
+                    first_token_at = time.perf_counter()
+                answer_parts.append(content)
+
+            done = bool(chunk.get('done', False))
+            if done:
+                final_chunk = chunk
+
+            if callback:
+                answer = self._response_format("".join(answer_parts)) if done else None
+                callback(answer, None, done)
+
+        if final_chunk is not None:
+            ttft = (first_token_at - started_at) if first_token_at is not None else None
+            if self.debug:
+                self._response_metrics(final_chunk, ttft=ttft)
+
+        return self._response_format("".join(answer_parts))
 
     def classify_conversation(self, text: Optional[str] = None) -> Optional[float]:
         """Classify whether an STT fragment was addressed to the robot.
@@ -374,21 +419,30 @@ class Mind:
 
         return clean_text.strip()
     
-    def _response_metrics(self, response):
+    def _response_metrics(self, response, ttft: Optional[float] = None):
         # Ollama returns these in nanoseconds
         total_dur = response.get('total_duration', 0) / 1e9
         # Time spent loading the model into the GPU/RAM.
         load_dur = response.get('load_duration', 0) / 1e9
+        # Time spent evaluating the prompt, before generation starts.
+        prompt_eval_dur = response.get('prompt_eval_duration', 0) / 1e9
         # Time spent "writing" the response.
         eval_dur = response.get('eval_duration', 0) / 1e9
-        
+
         # Throughput: tokens per second
         eval_count = response.get('eval_count', 1)
         tps = eval_count / eval_dur if eval_dur > 0 else 0
 
+        # Time to first token: measured directly while streaming when available,
+        # otherwise approximated from the load + prompt-eval phases.
+        if ttft is None:
+            ttft = load_dur + prompt_eval_dur
+
         print(f"[Robot] Response: {eval_count} tokens | {tps:.2f} tokens/s")
-        if self.debug:
-            print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
+        print(
+            f"[Robot] Timings: Total {total_dur:.2f}s "
+            f"(TTFT: {ttft:.2f}s, Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)"
+        )
     
     def stop(self):
         self.client.stop()

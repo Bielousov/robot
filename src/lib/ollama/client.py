@@ -62,7 +62,7 @@ class OllamaClient:
         """Passthrough to the underlying ollama.Client.chat(), bound to this
         client's model and using this client's fixed request defaults."""
         kwargs["model"] = self.model
-        kwargs.setdefault("stream", False)
+        kwargs.setdefault("stream", True)
         kwargs.setdefault("think", False)
         kwargs.setdefault("keep_alive", -1)
         return self._client.chat(**kwargs)

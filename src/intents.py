@@ -61,13 +61,15 @@ class IntentHandler:
     def _handle_prompt_intent(self, raw_prompts):
         self.robot.state.is_thinking = True
 
-        def callback(result, error=None):
-            """Callback triggered when the LLM process finishes."""
-            self.robot.state.is_thinking = False
-            if result:
-                self.robot.state.responses.append(result)
+        def callback(result, error=None, done=True):
+            """Callback triggered per streamed chunk, and once more on completion."""
             if error:
                 self._debug(f"LLM Error: {error}", tag="Error")
+
+            if done:
+                self.robot.state.is_thinking = False
+                if result:
+                    self.robot.state.responses.append(result)
 
         processed_prompts = []
         heard_context = self.robot.state.get_eavesdrop_context()

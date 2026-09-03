@@ -7,15 +7,22 @@ from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
 
+# Path Logic
+project_path = Path(__file__).parent.parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
+    
+from models.llm.identity import build_identity_system_prompt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
 MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-
 HEF = MODELS_DIR / f"{MODEL_HEF}"
-PROMPT_TEXT = " ".join(sys.argv[1:]) or "Tell me about yourself"
+
+PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
+SYSTEM_PROMPT = build_identity_system_prompt()
 
 print(f"[Hailo] Model: {MODEL_HEF}")
 print(f"[Hailo] HEF:   {HEF}")
@@ -37,9 +44,7 @@ try:
         },
         {
             "role": "user",
-            "content": [
-                {"type": "text", "text": PROMPT_TEXT}
-            ],
+            "content": PROMPT,
         }
     ]
 

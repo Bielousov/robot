@@ -5,6 +5,11 @@ from pathlib import Path
 import ollama
 from dotenv import load_dotenv
 
+# Path Logic
+project_path = Path(__file__).parent.parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
+
 from models.llm.config import get_conversation_model_options, get_model_config
 from models.llm.identity import build_identity_system_prompt
 
@@ -13,8 +18,7 @@ from models.llm.identity import build_identity_system_prompt
 # Path / environment
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(project_path / ".env")
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +33,7 @@ MODEL_NAME = config["model_name"]
 SYSTEM_PROMPT = build_identity_system_prompt()
 OPTIONS = get_conversation_model_options()
 
-PROMPT_TEXT = " ".join(sys.argv[1:]) or "Tell me about yourself"
+PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
 
 def run_test():
     print("[Test] Initializing Ollama client...")
@@ -77,7 +81,7 @@ def run_test():
                 },
                 {
                     "role": "user",
-                    "content": "System check.",
+                    "content": PROMPT,
                 },
             ],
             options=OPTIONS,

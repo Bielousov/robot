@@ -22,7 +22,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 config = get_model_config()
 
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-HEF = MODELS_DIR / f"{config['model_hef']}"
+MODEL_PATH = MODELS_DIR / f"{config['model_hef']}"
 
 SYSTEM_PROMPT = build_identity_system_prompt()
 OPTIONS = get_conversation_model_options()
@@ -81,16 +81,16 @@ def generate(llm, text):
 
 
 def main():
-    if not HEF.is_file():
-        print(f"[Hailo] ERROR: HEF not found: {HEF}")
+    if not MODEL_PATH.is_file():
+        print(f"[Hailo] ERROR: HEF not found: {MODEL_PATH}")
         sys.exit(2)
 
     print(f"[Hailo] Model: {config['model_hef']}")
-    print(f"[Hailo] HEF:   {HEF}")
+    print(f"[Hailo] HEF:   {MODEL_PATH}")
     print("[Hailo] Loading model...")
 
     vdevice = VDevice()
-    llm = LLM(vdevice, str(HEF))
+    llm = LLM(vdevice, str(MODEL_PATH))
 
     print("[Hailo] Model loaded.")
     print("Type a prompt and press Enter. Ctrl+C to quit.\n")

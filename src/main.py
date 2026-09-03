@@ -122,11 +122,11 @@ class Robot:
             # Text recognized - append to eavesdrop history (auto-limited)
             self.state.append_eavesdrop(text)
             self.state.set_last_spoke()
-            threading.Thread(
-                target=self.mind.classify_conversation,
-                args=(text,),
-                daemon=True,
-            ).start()
+            # threading.Thread(
+            #     target=self.mind.classify_conversation,
+            #     args=(text,),
+            #     daemon=True,
+            # ).start()
     
     def _on_wake_word(self, text: str):
         """Callback triggered by the Ears class when the wake word is detected."""

@@ -99,7 +99,7 @@ def benchmark():
         print("   BENCHMARK RESULTS   ")
         print("=" * 21)
 
-        print(f"Model:            {config['model_hef}")
+        print(f"Model:            {config['model_hef']}")
         print(f"Total Iterations: {ITERATIONS}")
         print(f"Fastest Run:      {min(times):.2f}s")
         print(f"Average Time:     {statistics.mean(times):.2f}s")

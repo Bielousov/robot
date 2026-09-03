@@ -85,7 +85,7 @@ def main():
         print(f"[Hailo] ERROR: HEF not found: {HEF}")
         sys.exit(2)
 
-    print(f"[Hailo] Model: {MODEL_HEF}")
+    print(f"[Hailo] Model: {config['model_hef']}")
     print(f"[Hailo] HEF:   {HEF}")
     print("[Hailo] Loading model...")
 

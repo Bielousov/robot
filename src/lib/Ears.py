@@ -167,7 +167,7 @@ class Ears:
             
             if text:
                 # Print transcript of heard speech
-                self._debug
+                if self._debug:
                     print(f"[Ears] Heard: {text}")
                 
                 # Call on_record callback for ALL detected speech and check gate

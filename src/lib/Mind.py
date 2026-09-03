@@ -189,9 +189,10 @@ class Mind:
     ) -> str:
         """Consume a streamed chat response, invoking callback once per chunk.
 
-        callback is called as (text, error, done): text is only populated on
-        the final chunk (once the whole answer has arrived), done is True only
-        for that final chunk.
+        callback is called as (text, error, done): text carries the raw
+        incremental delta for that chunk (or None on a chunk with no new
+        content, such as the final one), done is True only for the final
+        chunk once the whole answer has arrived.
         """
         answer_parts = []
         final_chunk = None
@@ -210,9 +211,8 @@ class Mind:
             if done:
                 final_chunk = chunk
 
-            if callback:
-                answer = self._response_format("".join(answer_parts)) if done else None
-                callback(answer, None, done)
+            if callback and (content or done):
+                callback(content or None, None, done)
 
         if final_chunk is not None:
             ttft = (first_token_at - started_at) if first_token_at is not None else None

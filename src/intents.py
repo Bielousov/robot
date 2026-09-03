@@ -62,14 +62,22 @@ class IntentHandler:
         self.robot.state.is_thinking = True
 
         def callback(result, error=None, done=True):
-            """Callback triggered per streamed chunk, and once more on completion."""
+            """Callback triggered per streamed chunk, and once more on completion.
+
+            Progressively appends each incoming chunk to the last response so
+            far, creating one if none exists yet.
+            """
             if error:
                 self._debug(f"LLM Error: {error}", tag="Error")
 
+            if result:
+                if self.robot.state.responses:
+                    self.robot.state.responses[-1] += result
+                else:
+                    self.robot.state.responses.append(result)
+
             if done:
                 self.robot.state.is_thinking = False
-                if result:
-                    self.robot.state.responses.append(result)
 
         processed_prompts = []
         heard_context = self.robot.state.get_eavesdrop_context()

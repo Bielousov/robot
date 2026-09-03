@@ -34,6 +34,7 @@ OPTIONS = get_conversation_model_options()
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
 SYSTEM_PROMPT = build_identity_system_prompt()
 
+
 def run_test():
     print("[Ollama] Initializing Ollama client...")
     print(f"[Ollama] Model: {MODEL_NAME}")
@@ -64,40 +65,6 @@ def run_test():
         print(f"[Ollama] ERROR: Could not prepare model: {exc}")
         return
 
-    # -----------------------------------------------------------------------
-    # Warm-up
-    # -----------------------------------------------------------------------
-
-    print("[Ollama] Warming up engine...")
-
-    try:
-        client.chat(
-            model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": PROMPT,
-                },
-            ],
-            options=OPTIONS,
-            stream=False,
-            think=False,
-            keep_alive=-1,
-        )
-    except Exception as exc:
-        print(f"[Ollama] Warm-up failed: {exc}")
-        return
-
-    # -----------------------------------------------------------------------
-    # Timed inference
-    # -----------------------------------------------------------------------
-
-    print(f"[Ollama] Prompting Pip: '{PROMPT}'")
-
     messages = [
         {
             "role": "system",
@@ -109,36 +76,111 @@ def run_test():
         },
     ]
 
-    start_time = time.perf_counter()
+    # -----------------------------------------------------------------------
+    # Warm-up
+    # -----------------------------------------------------------------------
+
+    print("[Ollama] Warming up engine...")
 
     try:
-        response = client.chat(
+        # Consume the stream so the request fully completes.
+        for _ in client.chat(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": "System check.",
+                },
+            ],
+            options=OPTIONS,
+            stream=True,
+            think=False,
+            keep_alive=-1,
+        ):
+            pass
+
+    except Exception as exc:
+        print(f"[Ollama] Warm-up failed: {exc}")
+        return
+
+    # -----------------------------------------------------------------------
+    # Timed inference
+    # -----------------------------------------------------------------------
+
+    print(f"[Ollama] Prompting Pip: '{PROMPT}'")
+    print("\n--- Response ---")
+    print("Pip: ", end="", flush=True)
+
+    start_time = time.perf_counter()
+    first_token_time = None
+    answer_parts = []
+    final_response = None
+
+    try:
+        stream = client.chat(
             model=MODEL_NAME,
             messages=messages,
             options=OPTIONS,
-            stream=False,
+            stream=True,
             think=False,
             keep_alive=-1,
         )
 
+        for chunk in stream:
+            # ollama.ChatResponse supports model_dump()/dict-like access,
+            # but getattr keeps this compatible with different client versions.
+            message = getattr(chunk, "message", None)
+            content = getattr(message, "content", "") if message else ""
+
+            if content:
+                if first_token_time is None:
+                    first_token_time = time.perf_counter()
+
+                answer_parts.append(content)
+                print(content, end="", flush=True)
+
+            # The final chunk contains the timing/token statistics.
+            if getattr(chunk, "done", False):
+                final_response = chunk
+
         end_time = time.perf_counter()
 
     except Exception as exc:
-        print(f"[Ollama] Test failed: {exc}")
+        print(f"\n[Ollama] Test failed: {exc}")
         return
+
+    print("\n----------------------")
 
     # -----------------------------------------------------------------------
     # Results
     # -----------------------------------------------------------------------
 
     execution_time = end_time - start_time
+    ttft = (
+        first_token_time - start_time
+        if first_token_time is not None
+        else 0
+    )
 
-    answer = response.get("message", {}).get("content", "")
+    answer = "".join(answer_parts)
 
-    eval_count = int(response.get("eval_count", 0))
-    eval_duration = response.get("eval_duration", 0) / 1e9
-    total_duration = response.get("total_duration", 0) / 1e9
-    load_duration = response.get("load_duration", 0) / 1e9
+    # Ollama fields are nanoseconds.
+    eval_count = int(getattr(final_response, "eval_count", 0) or 0)
+    eval_duration = (
+        getattr(final_response, "eval_duration", 0) or 0
+    ) / 1e9
+
+    total_duration = (
+        getattr(final_response, "total_duration", 0) or 0
+    ) / 1e9
+
+    load_duration = (
+        getattr(final_response, "load_duration", 0) or 0
+    ) / 1e9
 
     tokens_per_second = (
         eval_count / eval_duration
@@ -146,15 +188,19 @@ def run_test():
         else 0
     )
 
-    print("\n--- Response ---")
-    print(f"Pip: {answer}")
-    print("----------------------")
+    generation_time = (
+        execution_time - ttft
+        if first_token_time is not None
+        else execution_time
+    )
 
-    print(f"Inference Latency: {execution_time:.2f} seconds")
-    print(f"Load Duration:      {load_duration:.2f} seconds")
+    print(f"TTFT:               {ttft:.3f} seconds")
+    print(f"Generation Time:    {generation_time:.3f} seconds")
+    print(f"Inference Latency:  {execution_time:.3f} seconds")
+    print(f"Load Duration:      {load_duration:.3f} seconds")
     print(f"Output Tokens:      {eval_count}")
     print(f"Tokens/sec:         {tokens_per_second:.2f}")
-    print(f"Total Duration:     {total_duration:.2f} seconds")
+    print(f"Total Duration:     {total_duration:.3f} seconds")
 
     if execution_time < 3:
         print("🚀 Note: Exceptional speed.")

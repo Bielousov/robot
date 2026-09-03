@@ -13,14 +13,22 @@ if str(project_path) not in sys.path:
 from models.ollama.config import get_conversation_model_options, get_model_config
 from models.ollama.identity import build_identity_system_prompt
 
-
-OLLAMA_HOST = "http://localhost:11434"
 ITERATIONS = 10
 WARMUP_RUNS = 1
 
+# ---------------------------------------------------------------------------
+# Path / environment
+# ---------------------------------------------------------------------------
+
 load_dotenv(project_path / ".env")
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 config = get_model_config()
 MODEL_NAME = config["model_name"]
+OLLAMA_HOST = config["host"]
+
 OPTIONS = get_conversation_model_options()
 PROMPT = (
     "Briefly explain why the sky appears blue to a human observer, "
@@ -32,6 +40,7 @@ MESSAGES = [
     {"role": "system", "content": SYSTEM_PROMPT},
     {"role": "user", "content": PROMPT},
 ]
+
 
 def run_once(client):
     """Execute one direct Ollama request and return its elapsed time."""

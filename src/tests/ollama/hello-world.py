@@ -13,7 +13,6 @@ if str(project_path) not in sys.path:
 from models.ollama.config import get_conversation_model_options, get_model_config
 from models.ollama.identity import build_identity_system_prompt
 
-
 # ---------------------------------------------------------------------------
 # Path / environment
 # ---------------------------------------------------------------------------
@@ -24,11 +23,9 @@ load_dotenv(project_path / ".env")
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
-OLLAMA_HOST = "http://localhost:11434"
-
 config = get_model_config()
 MODEL_NAME = config["model_name"]
+OLLAMA_HOST = config["host"]
 
 OPTIONS = get_conversation_model_options()
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"

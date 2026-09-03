@@ -1,86 +1,48 @@
-import ollama
 import os
-import psutil
 import re
-import signal
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
+from lib.ollama.client import OllamaClient
+from models.ollama.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 from models.ollama.classifier import build_conversation_classifier_prompt
 from models.ollama.identity import build_identity_system_prompt
-from models.ollama.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
 PROJECT_ROOT = LIB_PATH.parent
-OLLAMA_PATH = LIB_PATH / "ollama" / "dist"
-MODELS_PATH = LIB_PATH / "ollama" / "models"
-OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
-LOGS_PATH = OLLAMA_PATH / "server.log"
-
-OLLAMA_URL = "http://localhost:11434"
 
 class Mind:
     def __init__(
             self,
-            debug: bool = False,
             conversation_history_length: int = 4,
+            debug: bool = False,
         ):
 
         self.debug = debug
-        
-        model = get_ollama_model()
+        self.is_ready = False
+
+        config = get_model_config()
         self.model_name = config["model_name"]
         self.system_prompt = build_identity_system_prompt()
 
-        self.is_ready = False
+        self.client = OllamaClient(host = config['host'])
+        self.load_model()
 
         # Context history
         self.history_limit = conversation_history_length
         self.history = []
 
-        self.process = None
-        self.client = ollama.Client(host=OLLAMA_URL)
-
-        self._prepare_environment()
-        self.start_server()
-        time.sleep(2)
-        self.load_model()
-
         while not self.is_ready:
             time.sleep(0.5)
 
-    def _prepare_environment(self):
-        """RPi5 Stability Flags."""
-        os.makedirs(MODELS_PATH, exist_ok=True)
-        env_vars = {
-            "OLLAMA_MODELS": str(MODELS_PATH),
-            "OLLAMA_MAX_LOADED_MODELS": "1",
-            "OLLAMA_NUM_PARALLEL": "1",
-            "OLLAMA_LLM_LIBRARY": "cpu",
-        }
-        os.environ.update(env_vars)
-
-    def start_server(self):
-        """Checks that the external Ollama service is already running."""
-        try:
-            self.client.ps()
-            print("[Robot] Ollama service is running.")
-            return
-        except Exception as exc:
-            raise RuntimeError(
-                "Ollama service is not running. Start it via 'sudo systemctl start ollama.service'."
-            ) from exc
-        
     def load_model(self):
-        """Pull the configured base model into Ollama and mark the runtime ready."""
+        """Pull the configured base model via the client and mark the runtime ready."""
         try:
-            print(f"[Robot] Pulling base model '{self.model_name}' into Ollama...")
-            self.client.pull(self.model_name)
+            self.client.load_model(self.model_name)
             self.is_ready = True
-            print(f"[Robot] Base model '{self.model_name}' is ready.")
         except Exception as exc:
             self.is_ready = False
             print(f"[Error] Could not load base model '{self.model_name}': {exc}")
@@ -437,18 +399,7 @@ class Mind:
             print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
     
     def stop(self):
-        if self.process:
-            print("[-] Stopping server...")
-            os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-            self.process = None
-
-    def _force_stop_server(self):
-        """Wipes old processes to free up RAM."""
-        for proc in psutil.process_iter(['name']):
-            if 'ollama' in (proc.info['name'] or "").lower():
-                try: os.kill(proc.pid, signal.SIGKILL)
-                except: pass
-        time.sleep(1)
+        self.client.stop()
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

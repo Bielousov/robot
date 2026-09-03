@@ -11,6 +11,7 @@ def get_model_config() -> Dict[str, Any]:
     """Load Ollama model settings from environment variables."""
 
     return {
+        "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
         "model_name": os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b"),
         "identity": os.getenv("OLLAMA_SYSTEM_PROMPT", ""),
     }

@@ -12,7 +12,7 @@ if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
 from models.hailo.config import get_model_config, get_conversation_model_options
-from models.hailo.identity import build_example_exchange, build_identity_system_prompt
+from models.hailo.identity import build_identity_system_prompt
 
 # -------- paths / config --------
 
@@ -26,18 +26,12 @@ MODEL_PATH = MODELS_DIR / f"{config['model_hef']}"
 
 SYSTEM_PROMPT = build_identity_system_prompt()
 OPTIONS = get_conversation_model_options()
-SYSTEM_PROMPT_SENT = False
 
 def generate(llm, text):
-    global SYSTEM_PROMPT_SENT
-
-    prompt = [{"role": "user", "content": text}]
-    if not SYSTEM_PROMPT_SENT:
-        prompt = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            *build_example_exchange(),
-            *prompt,
-        ]
+    prompt = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": text},
+    ]
 
     start = time.perf_counter()
     first_token_time = None
@@ -58,8 +52,6 @@ def generate(llm, text):
             token_count += 1
             response += chunk
             print(chunk, end="", flush=True)
-
-    SYSTEM_PROMPT_SENT = True
 
     end = time.perf_counter()
 

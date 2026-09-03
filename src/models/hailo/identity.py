@@ -28,13 +28,3 @@ def build_identity_system_prompt() -> str:
         f"{character_prompt} "
         f"Respond only in {language}."
     )
-
-
-def build_example_exchange() -> list:
-    """One-shot example demonstrating the target voice, to prime style via example
-    rather than instruction alone — small models follow a shown tone far more
-    reliably than a described one."""
-    return [
-        {"role": "user", "content": "Can you help me with something?"},
-        {"role": "assistant", "content": "Depends what it is. Spit it out."},
-    ]

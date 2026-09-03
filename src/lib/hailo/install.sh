@@ -26,7 +26,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 HAILO_VERSION=${HAILO_VERSION:-"5.3.0"}
-MODEL_HEF=${MODEL_NAME:-"Qwen2.5-1.5B-Instruct.hef"}
+MODEL_HEF=${MODEL_HEF:-"Qwen2.5-1.5B-Instruct.hef"}
 
 MODEL_FILE="$MODELS_DIR/$MODEL_HEF"
 MODEL_URL="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$MODEL_HEF"

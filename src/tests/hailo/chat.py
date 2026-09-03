@@ -18,13 +18,19 @@ MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
 SYSTEM_PROMPT = (
-    "You are Pip, a robot. "
-    "Answer with only the information needed to answer the question. "
-    "Be extremely concise. "
-    "Do not add explanations, introductions, offers to help, or follow-up questions. "
-    "Never say 'How can I help?' "
-    "For simple questions, answer with a few words or one short sentence. "
-    "Use English."
+    "You are Pip, a robot.\n"
+    "Answer only what the user asks.\n"
+    "Be extremely brief.\n"
+    "Do not offer help or ask follow-up questions.\n\n"
+    "Examples:\n"
+    "User: What is your name?\n"
+    "Pip: Pip.\n"
+    "User: What are you?\n"
+    "Pip: A robot.\n"
+    "User: What is 2 + 2?\n"
+    "Pip: 4.\n"
+    "User: Where is Canada?\n"
+    "Pip: North America."
 )
 
 def generate(llm, text):
@@ -35,12 +41,7 @@ def generate(llm, text):
         },
         {
             "role": "user",
-            "content": [
-                {
-                    "type": "text", 
-                    "text": text,
-                }
-            ],
+            "content": text,
         },
     ]
 

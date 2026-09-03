@@ -200,20 +200,27 @@ class Mind:
 
             return None
 
+    # Chunks handed to callback are buffered up to (and including) one of
+    # these, so consumers like Voice get whole clauses instead of single
+    # tokens/words.
+    _SENTENCE_BREAK_CHARS = set(",.!?:;")
+
     def _consume_stream(
         self,
         response_stream,
         callback: Optional[Callable[[Optional[str], Optional[Exception], bool], None]],
     ) -> str:
-        """Consume a streamed chat response, invoking callback once per chunk.
+        """Consume a streamed chat response, invoking callback once per clause.
 
-        callback is called as (text, error, done): text carries the raw
-        incremental delta for that chunk (or None on a chunk with no new
-        content, such as the final one), done is True only for the final
-        chunk once the whole answer has arrived.
+        callback is called as (text, error, done): text carries a buffered
+        chunk up to (and including) the first punctuation mark found since the
+        last flush (or None if nothing new to flush, such as the final chunk
+        with no trailing text), done is True only for the final chunk once the
+        whole answer has arrived.
         """
         answer_parts = []
         final_chunk = None
+        buffer = ""
 
         started_at = time.perf_counter()
         first_token_at = None
@@ -224,13 +231,27 @@ class Mind:
                 if first_token_at is None:
                     first_token_at = time.perf_counter()
                 answer_parts.append(content)
+                buffer += content
 
             done = bool(chunk.get('done', False))
             if done:
                 final_chunk = chunk
 
-            if callback and (content or done):
-                callback(content or None, None, done)
+            split_at = next(
+                (i for i, ch in enumerate(buffer) if ch in self._SENTENCE_BREAK_CHARS),
+                None,
+            )
+            while split_at is not None:
+                piece, buffer = buffer[:split_at + 1], buffer[split_at + 1:]
+                if callback:
+                    callback(piece, None, False)
+                split_at = next(
+                    (i for i, ch in enumerate(buffer) if ch in self._SENTENCE_BREAK_CHARS),
+                    None,
+                )
+
+            if done and callback:
+                callback(buffer or None, None, True)
 
         if final_chunk is not None:
             ttft = (first_token_at - started_at) if first_token_at is not None else None

@@ -52,8 +52,11 @@ def run_once(llm):
 
     with llm.generate(
         prompt=prompt,
-        max_generated_tokens=50,
+        max_generated_tokens=64,
+        do_sample=True,
         temperature=0.8,
+        top_k=40,
+        top_p=0.9,
     ) as generation:
         for chunk in generation:
             if chunk != "<|im_end|>":

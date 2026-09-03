@@ -54,9 +54,9 @@ try:
 
     with llm.generate(
         prompt=prompt,
-        max_generated_tokens=60,
-        frequency_penalty=0.1,
-        temperature=0.1,
+        max_generated_tokens=64,
+        do_sample=True,
+        temperature=0.8,
         top_k=40,
         top_p=0.9,
     ) as generation:

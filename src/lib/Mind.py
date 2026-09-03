@@ -252,7 +252,7 @@ class Mind:
     # Chunks handed to callback are buffered up to (and including) one of
     # these, so consumers like Voice get whole clauses instead of single
     # tokens/words.
-    _SENTENCE_BREAK_CHARS = set(".!?:;")
+    _SENTENCE_BREAK_CHARS = set(".!?:;-")
 
     def _consume_stream(
         self,

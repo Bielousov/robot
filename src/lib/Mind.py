@@ -28,8 +28,8 @@ class Mind:
         self.model_name = config["model_name"]
         self.system_prompt = build_identity_system_prompt()
 
-        self.client = OllamaClient(host = config['host'])
-        self.load_model()
+        self.client = OllamaClient(host=config['host'])
+        self.load_model(model=self.model_name)
 
         # Context history
         self.history_limit = conversation_history_length
@@ -41,7 +41,7 @@ class Mind:
     def load_model(self):
         """Pull the configured base model via the client and mark the runtime ready."""
         try:
-            self.client.load_model(self.model_name)
+            self.client.load_model()
             self.is_ready = True
         except Exception as exc:
             self.is_ready = False
@@ -152,12 +152,8 @@ class Mind:
             options = get_conversation_model_options()
 
             response = self.client.chat(
-                model=self.model_name,
                 messages=messages,
                 options=options,
-                stream=False,
-                think=False,
-                keep_alive=-1
             )
             self._response_metrics(response)
 
@@ -205,7 +201,6 @@ class Mind:
 
         try:
             response = self.client.chat(
-                model=self.model_name,
                 messages=[
                     {
                         "role": "user",
@@ -213,9 +208,6 @@ class Mind:
                     }
                 ],
                 options=options,
-                stream=False,
-                think=False,
-                keep_alive=-1,
                 logprobs=True,
             )
 

@@ -24,6 +24,7 @@ class OllamaClient:
     """
 
     def __init__(self, host: str = OLLAMA_URL):
+        self.model = None
         self.process = None
         self._client = ollama.Client(host=host)
         self._prepare_environment()
@@ -50,15 +51,20 @@ class OllamaClient:
                 "Ollama service is not running. Start it via 'sudo systemctl start ollama.service'."
             ) from exc
 
-    def load_model(self, model_name: str):
-        """Pull the given model into Ollama."""
-        print(f"[Ollama] Pulling model '{model_name}' into Ollama...")
-        self._client.pull(model_name)
-        print(f"[Ollama] Model '{model_name}' is ready.")
-    
+    def load_model(self, model: str):
+        self.model = model
+        """Pull this client's bound model into Ollama."""
+        print(f"[Ollama] Pulling model '{self.model}' into Ollama...")
+        self._client.pull(self.model)
+        print(f"[Ollama] Model '{self.model}' is ready.")
 
     def chat(self, **kwargs):
-        """Passthrough to the underlying ollama.Client.chat()."""
+        """Passthrough to the underlying ollama.Client.chat(), bound to this
+        client's model and using this client's fixed request defaults."""
+        kwargs["model"] = self.model
+        kwargs.setdefault("stream", False)
+        kwargs.setdefault("think", False)
+        kwargs.setdefault("keep_alive", -1)
         return self._client.chat(**kwargs)
 
     def stop(self):

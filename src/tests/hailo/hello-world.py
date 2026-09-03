@@ -29,6 +29,7 @@ SYSTEM_PROMPT = build_identity_system_prompt()
 
 print(f"[Hailo] Model: {config['model_hef']}")
 print(f"[Hailo] HEF:   {HEF}")
+print("[Hailo] Loading model...")
 
 if not HEF.is_file():
     print(f"[Hailo] ERROR: HEF not found: {HEF}")

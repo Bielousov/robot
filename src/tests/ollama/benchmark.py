@@ -51,32 +51,32 @@ def run_once(client):
 
 
 def benchmark():
-    print("[Benchmark] Initializing Ollama client...")
-    print(f"[Benchmark] Model: {MODEL_NAME}")
-    print(f"[Benchmark] Ollama: {OLLAMA_HOST}")
+    print("[Ollama] Initializing Ollama client...")
+    print(f"[Ollama] Model: {MODEL_NAME}")
+    print(f"[Ollama] Ollama: {OLLAMA_HOST}")
 
     client = ollama.Client(host=OLLAMA_HOST)
 
     try:
         client.ps()
-        print("[Benchmark] Ollama service is running.")
+        print("[Ollama] Ollama service is running.")
     except Exception as exc:
-        print(f"[Benchmark] ERROR: Ollama service is unavailable: {exc}")
+        print(f"[Ollama] ERROR: Ollama service is unavailable: {exc}")
         return
 
     try:
-        print(f"[Benchmark] Ensuring model '{MODEL_NAME}' is available...")
+        print(f"[Ollama] Ensuring model '{MODEL_NAME}' is available...")
         client.pull(MODEL_NAME)
-        print(f"[Benchmark] Model '{MODEL_NAME}' is ready.")
+        print(f"[Ollama] Model '{MODEL_NAME}' is ready.")
     except Exception as exc:
-        print(f"[Benchmark] ERROR: Could not prepare model: {exc}")
+        print(f"[Ollama] ERROR: Could not prepare model: {exc}")
         return
 
-    print(f"[Benchmark] Warming up model ({WARMUP_RUNS} runs)...")
+    print(f"[Ollama] Warming up model ({WARMUP_RUNS} runs)...")
     for _ in range(WARMUP_RUNS):
         run_once(client)
 
-    print(f"[Benchmark] Running {ITERATIONS} timed iterations...")
+    print(f"[Ollama] Running {ITERATIONS} timed iterations...")
     times = []
     for index in range(ITERATIONS):
         elapsed = run_once(client)

@@ -61,27 +61,28 @@ def run_once(llm):
 
 
 def benchmark():
-    print("[Benchmark] Initializing Hailo...")
+    print("[Hailo] Initializing Hailo...")
 
-    if not HEF.is_file():
-        print(f"[Benchmark] ERROR: HEF not found: {MODEL_PATH}")
+    if not MODEL_PATH.is_file():
+        print(f"[Hailo] ERROR: HEF not found: {MODEL_PATH}")
         sys.exit(2)
 
-    print(f"[Benchmark] Model: {config['model_hef']}")
-    print(f"[Benchmark] HEF:   {MODEL_PATH}")
+    print(f"[Hailo] Model: {config['model_hef']}")
+    print(f"[Hailo] HEF:   {MODEL_PATH}")
+    print("[Hailo] Loading model...")
 
     # Model creation/loading is NOT timed.
     vdevice = VDevice()
     llm = LLM(vdevice, str(MODEL_PATH))
 
     try:
-        print(f"[Benchmark] Warming up model ({WARMUP_RUNS} runs)...")
+        print(f"[Hailo] Warming up model ({WARMUP_RUNS} runs)...")
 
         for _ in range(WARMUP_RUNS):
             run_once(llm)
             llm.clear_context()
 
-        print(f"[Benchmark] Running {ITERATIONS} timed iterations...")
+        print(f"[Hailo] Running {ITERATIONS} timed iterations...")
 
         times = []
 
@@ -98,7 +99,7 @@ def benchmark():
         print("   BENCHMARK RESULTS   ")
         print("=" * 21)
 
-        print(f"Model:            {MODEL_HEF}")
+        print(f"Model:            {config['model_hef}")
         print(f"Total Iterations: {ITERATIONS}")
         print(f"Fastest Run:      {min(times):.2f}s")
         print(f"Average Time:     {statistics.mean(times):.2f}s")

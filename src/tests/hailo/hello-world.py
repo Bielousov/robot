@@ -11,7 +11,7 @@ from hailo_platform.genai import LLM
 project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
-    
+
 from models.llm.identity import build_identity_system_prompt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -38,9 +38,7 @@ try:
     prompt = [
         {
             "role": "system",
-            "content": [
-                {"type": "text", "text": "You are a free robot, not an assistant. Always respond in English. Keep your responses under 25 words."}
-            ],
+            "content": SYSTEM_PROMPT,
         },
         {
             "role": "user",

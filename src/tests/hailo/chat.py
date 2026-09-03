@@ -11,7 +11,7 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.hailo.config import get_conversation_model_options
+from models.hailo.config import get_model_config, get_conversation_model_options
 from models.hailo.identity import build_identity_system_prompt
 
 # -------- paths / config --------
@@ -19,24 +19,21 @@ from models.hailo.identity import build_identity_system_prompt
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
+config = get_model_config()
+
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-HEF = MODELS_DIR / f"{MODEL_HEF}"
+HEF = MODELS_DIR / f"{config['model_hef']}"
 
 SYSTEM_PROMPT = build_identity_system_prompt()
 OPTIONS = get_conversation_model_options()
+SYSTEM_PROMPT_SENT = False
 
 def generate(llm, text):
-    prompt = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT,
-        },
-        {
-            "role": "user",
-            "content": text,
-        },
-    ]
+    global SYSTEM_PROMPT_SENT
+
+    prompt = [{"role": "user", "content": text}]
+    if not SYSTEM_PROMPT_SENT:
+        prompt.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
 
     start = time.perf_counter()
     first_token_time = None
@@ -57,6 +54,8 @@ def generate(llm, text):
             token_count += 1
             response += chunk
             print(chunk, end="", flush=True)
+
+    SYSTEM_PROMPT_SENT = True
 
     end = time.perf_counter()
 
@@ -121,8 +120,7 @@ def main():
             )
             print()
 
-            # Start each CLI prompt with a clean context.
-            # llm.clear_context()
+            # Keep the model context for multi-turn conversation.
 
     except KeyboardInterrupt:
         print("\n\n[Hailo] Ctrl+C received. Exiting...")

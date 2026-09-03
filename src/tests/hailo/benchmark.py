@@ -12,7 +12,7 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.hailo.config import get_conversation_model_options
+from models.hailo.config import get_model_config, get_conversation_model_options
 from models.hailo.identity import build_identity_system_prompt
 
 # -------- path / config --------
@@ -20,9 +20,10 @@ from models.hailo.identity import build_identity_system_prompt
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_HEF = os.getenv("MODEL_HEF", "Qwen2.5-1.5B-Instruct")
+config = get_model_config()
+
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-NODEL_PATH = MODELS_DIR / f"{MODEL_HEF}"
+MODEL_PATH = MODELS_DIR / f"{config['model_hef']}"
 
 ITERATIONS = 10
 WARMUP_RUNS = 1
@@ -63,15 +64,15 @@ def benchmark():
     print("[Benchmark] Initializing Hailo...")
 
     if not HEF.is_file():
-        print(f"[Benchmark] ERROR: HEF not found: {NODEL_PATH}")
+        print(f"[Benchmark] ERROR: HEF not found: {MODEL_PATH}")
         sys.exit(2)
 
-    print(f"[Benchmark] Model: {MODEL_HEF}")
-    print(f"[Benchmark] HEF:   {NODEL_PATH}")
+    print(f"[Benchmark] Model: {config['model_hef']}")
+    print(f"[Benchmark] HEF:   {MODEL_PATH}")
 
     # Model creation/loading is NOT timed.
     vdevice = VDevice()
-    llm = LLM(vdevice, str(NODEL_PATH))
+    llm = LLM(vdevice, str(MODEL_PATH))
 
     try:
         print(f"[Benchmark] Warming up model ({WARMUP_RUNS} runs)...")

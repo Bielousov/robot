@@ -12,21 +12,22 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.hailo.config import get_conversation_model_options
+from models.hailo.config import get_model_config, get_conversation_model_options
 from models.hailo.identity import build_identity_system_prompt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct")
+config = get_model_config()
+
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-HEF = MODELS_DIR / f"{MODEL_HEF}"
+HEF = MODELS_DIR / f"{config['model_hef']}"
 
 OPTIONS = get_conversation_model_options()
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
 SYSTEM_PROMPT = build_identity_system_prompt()
 
-print(f"[Hailo] Model: {MODEL_HEF}")
+print(f"[Hailo] Model: {config['model_hef']}")
 print(f"[Hailo] HEF:   {HEF}")
 
 if not HEF.is_file():

@@ -1,16 +1,18 @@
-import ollama
 import os
-import psutil
 import re
-import signal
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
+from dotenv import load_dotenv
+from hailo_platform import VDevice
+from hailo_platform.genai import LLM
+
 from models.llm.classifier import build_conversation_classifier_prompt
 from models.llm.identity import build_identity_system_prompt
-from models.llm.config import get_classifier_model_options, get_conversation_model_options, get_model_config
+from models.llm.config import get_classifier_model_options, get_conversation_model_options
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -19,8 +21,9 @@ OLLAMA_PATH = LIB_PATH / "ollama" / "dist"
 MODELS_PATH = LIB_PATH / "ollama" / "models"
 OLLAMA_BIN = OLLAMA_PATH / "bin" / "ollama"
 LOGS_PATH = OLLAMA_PATH / "server.log"
+HAILO_MODELS_PATH = LIB_PATH / "hailo" / "models"
 
-OLLAMA_URL = "http://localhost:11434"
+load_dotenv(PROJECT_ROOT.parent / ".env")
 
 class Mind:
     def __init__(
@@ -31,9 +34,11 @@ class Mind:
 
         self.debug = debug
         
-        config = get_model_config()
-        self.base_model = config["base_model"]
-        self.model_name = config["model_name"]
+        self.base_model = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
+        self.model_name = self.base_model
+        self.model_path = Path(self.base_model)
+        if not self.model_path.is_absolute():
+            self.model_path = HAILO_MODELS_PATH / self.model_path
         self.system_prompt = build_identity_system_prompt()
 
         self.is_ready = False
@@ -42,50 +47,49 @@ class Mind:
         self.history_limit = conversation_history_length
         self.history = []
 
-        self.process = None
-        self.client = ollama.Client(host=OLLAMA_URL)
-
-        self._prepare_environment()
-        self.start_server()
-        time.sleep(2)
+        self.vdevice = None
+        self.llm = None
+        self.generation_lock = threading.Lock()
         self.load_model()
 
         while not self.is_ready:
             time.sleep(0.5)
 
-    def _prepare_environment(self):
-        """RPi5 Stability Flags."""
-        os.makedirs(MODELS_PATH, exist_ok=True)
-        env_vars = {
-            "OLLAMA_MODELS": str(MODELS_PATH),
-            "OLLAMA_MAX_LOADED_MODELS": "1",
-            "OLLAMA_NUM_PARALLEL": "1",
-            "OLLAMA_LLM_LIBRARY": "cpu",
-        }
-        os.environ.update(env_vars)
-
-    def start_server(self):
-        """Checks that the external Ollama service is already running."""
-        try:
-            self.client.ps()
-            print("[Robot] Ollama service is running.")
-            return
-        except Exception as exc:
-            raise RuntimeError(
-                "Ollama service is not running. Start it via 'sudo systemctl start ollama.service'."
-            ) from exc
-        
     def load_model(self):
-        """Pull the configured base model into Ollama and mark the runtime ready."""
+        """Load the configured Hailo GenAI model."""
+        if not self.model_path.is_file():
+            raise FileNotFoundError(f"Hailo model not found at: {self.model_path}")
+
         try:
-            print(f"[Robot] Pulling base model '{self.base_model}' into Ollama...")
-            self.client.pull(self.base_model)
+            print(f"[Robot] Loading Hailo model '{self.model_path}'...")
+            self.vdevice = VDevice()
+            self.llm = LLM(self.vdevice, str(self.model_path))
             self.is_ready = True
-            print(f"[Robot] Base model '{self.base_model}' is ready.")
+            print(f"[Robot] Hailo model '{self.model_path.name}' is ready.")
         except Exception as exc:
             self.is_ready = False
-            print(f"[Error] Could not load base model '{self.base_model}': {exc}")
+            print(f"[Error] Could not load Hailo model '{self.model_path}': {exc}")
+            if self.vdevice is not None:
+                self.vdevice.release()
+                self.vdevice = None
             raise
+
+    def _generate_response(self, messages: List[dict], options: dict) -> str:
+        """Generate one response and isolate Hailo's internal context."""
+        with self.generation_lock:
+            self.llm.clear_context()
+            response = ""
+            with self.llm.generate(
+                prompt=messages,
+                temperature=options.get("temperature", 0.8),
+                max_generated_tokens=options.get("num_predict", 40),
+            ) as generation:
+                for chunk in generation:
+                    if chunk != "<|im_end|>":
+                        response += chunk
+            self.llm.clear_context()
+
+        return response
 
     def _build_request_messages(
         self,
@@ -189,18 +193,9 @@ class Mind:
 
             messages = self._build_request_messages(prompts, context=context)
             options = get_conversation_model_options()
-
-            response = self.client.chat(
-                model=self.model_name,
-                messages=messages,
-                options=options,
-                stream=False,
-                think=False,
-                keep_alive=-1
+            answer = self._response_format(
+                self._generate_response(messages, options)
             )
-            self._response_metrics(response)
-
-            answer = self._response_format(response['message']['content'])
 
             # Persist only the actual completed turn after the model responds.
             self.add_to_history('user', current_prompt)
@@ -243,25 +238,12 @@ class Mind:
         started_at = time.perf_counter()
 
         try:
-            response = self.client.chat(
-                model=self.model_name,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                options=options,
-                stream=False,
-                think=False,
-                keep_alive=-1,
-                logprobs=True,
-            )
+            raw_response = self._generate_response(
+                [{"role": "user", "content": prompt}],
+                options,
+            ).strip()
 
             elapsed_seconds = time.perf_counter() - started_at
-
-            message = response.get("message", {})
-            raw_response = message.get("content", "").strip()
 
             # ---------------------------------------------------------
             # Parse classification
@@ -299,8 +281,6 @@ class Mind:
             # ---------------------------------------------------------
             # Timing
             # ---------------------------------------------------------
-
-            api_time = response.get("total_duration", 0) / 1e9
 
             score_text = (
                 f"{score:.1f}"
@@ -340,8 +320,7 @@ class Mind:
 
                 print(
                     f"[Robot] Analyze response time: "
-                    f"{elapsed_seconds:.3f}s "
-                    f"(API: {api_time:.3f}s)"
+                    f"{elapsed_seconds:.3f}s"
                 )
 
             return score
@@ -421,35 +400,15 @@ class Mind:
 
         return clean_text.strip()
     
-    def _response_metrics(self, response):
-        # Ollama returns these in nanoseconds
-        total_dur = response.get('total_duration', 0) / 1e9
-        # Time spent loading the model into the GPU/RAM.
-        load_dur = response.get('load_duration', 0) / 1e9
-        # Time spent "writing" the response.
-        eval_dur = response.get('eval_duration', 0) / 1e9
-        
-        # Throughput: tokens per second
-        eval_count = response.get('eval_count', 1)
-        tps = eval_count / eval_dur if eval_dur > 0 else 0
-
-        print(f"[Robot] Response: {eval_count} tokens | {tps:.2f} tokens/s")
-        if self.debug:
-            print(f"[Robot] Timings: Total {total_dur:.2f}s (Load: {load_dur:.2f}s, Eval: {eval_dur:.2f}s)")
-    
     def stop(self):
-        if self.process:
-            print("[-] Stopping server...")
-            os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-            self.process = None
-
-    def _force_stop_server(self):
-        """Wipes old processes to free up RAM."""
-        for proc in psutil.process_iter(['name']):
-            if 'ollama' in (proc.info['name'] or "").lower():
-                try: os.kill(proc.pid, signal.SIGKILL)
-                except: pass
-        time.sleep(1)
+        if self.llm is not None:
+            self.llm.clear_context()
+            self.llm.release()
+            self.llm = None
+        if self.vdevice is not None:
+            self.vdevice.release()
+            self.vdevice = None
+        self.is_ready = False
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

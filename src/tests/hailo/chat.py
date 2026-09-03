@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
+from hailo_apps.python.gen_ai_apps.gen_ai_utils.llm_utils import message_formatter
 
 
 # -------- paths / config --------
@@ -17,28 +18,20 @@ MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
-SYSTEM_PROMPT = "You are a free robot, not an assistant. Your name is Pip. Always respond in English. Respond in 30 words or less."
+# SYSTEM_PROMPT = (
+#     "You are Pip, a free robot, not an assistant. "
+#     "Always respond in English. "
+#     "Respond in 30 words or less."
+# )
 
 def generate(llm, text):
     prompt = [
-        # {
-        #     "role": "system",
-        #     "content": [
-        #         {"type": "text", "text": SYSTEM_PROMPT}
-        #     ],
-        # },
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": (
-                        f"{SYSTEM_PROMPT}\n\n"
-                        f"{text}"
-                    ),
-                }
-            ],
-        },
+        message_formatter.messages_system(
+            "You are Pip, a free robot, not an assistant. "
+            "Always respond in English. "
+            "Respond in 30 words or less."
+        ),
+        message_formatter.messages_user(text),
     ]
 
     start = time.perf_counter()

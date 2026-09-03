@@ -46,6 +46,39 @@ try:
         }
     ]
 
+    # ------------------------------------------------------------------
+    # Warm-up
+    # ------------------------------------------------------------------
+
+    print("[Hailo] Warming up...")
+
+    warmup_prompt = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT,
+        },
+        {
+            "role": "user",
+            "content": "Hello.",
+        },
+    ]
+
+    with llm.generate(
+        prompt=warmup_prompt,
+        temperature=0.7,
+        max_generated_tokens=16,
+    ) as generation:
+        for _ in generation:
+            pass
+
+    llm.clear_context()
+
+    print("[Hailo] Warm-up complete.")
+
+    # ------------------------------------------------------------------
+    # Timed inference
+    # ------------------------------------------------------------------
+
     print("\nResponse:")
 
     start = time.perf_counter()

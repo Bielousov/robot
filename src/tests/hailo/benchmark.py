@@ -8,6 +8,12 @@ from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
 
+project_path = Path(__file__).parent.parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
+
+from models.hailo.config import get_conversation_model_options
+from models.hailo.identity import build_identity_system_prompt
 
 # -------- path / config --------
 
@@ -21,42 +27,28 @@ NODEL_PATH = MODELS_DIR / f"{MODEL_HEF}"
 ITERATIONS = 10
 WARMUP_RUNS = 1
 
+OPTIONS = get_conversation_model_options()
 PROMPT = (
     "Briefly explain why the sky appears blue to a human observer, "
     "using exactly one sentence without using the word 'scattering'."
 )
+SYSTEM_PROMPT = build_identity_system_prompt()
 
-SYSTEM_PROMPT = "Always respond in English."
-
+MESSAGES = [
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": PROMPT},
+]
 
 def run_once(llm):
     """Executes a single inference and returns the duration."""
-    prompt = [
-        {
-            "role": "system",
-            "content": [
-                {"type": "text", "text": SYSTEM_PROMPT}
-            ],
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": PROMPT}
-            ],
-        },
-    ]
 
     start = time.perf_counter()
 
     response = ""
 
     with llm.generate(
-        prompt=prompt,
-        max_generated_tokens=64,
-        do_sample=True,
-        temperature=0.8,
-        top_k=40,
-        top_p=0.9,
+        prompt=MESSAGES,
+        **OPTIONS,
     ) as generation:
         for chunk in generation:
             if chunk != "<|im_end|>":
@@ -120,8 +112,8 @@ def benchmark():
 
     finally:
         llm.clear_context()
-        llm.release()
-        vdevice.release()
+        #llm.release()
+        #vdevice.release()
 
 
 if __name__ == "__main__":

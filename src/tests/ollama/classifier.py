@@ -145,7 +145,7 @@ def benchmark():
 
     # Model initialization/loading is not included in request timing.
     with Mind() as llm:
-        print(f"[Classifier Test] Base Model: {llm.base_model}")
+        print(f"[Classifier Test]  Model: {llm.model_name}")
         print()
 
         print(

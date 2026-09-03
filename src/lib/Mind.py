@@ -8,9 +8,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from models.llm.classifier import build_conversation_classifier_prompt
-from models.llm.identity import build_identity_system_prompt
-from models.llm.config import get_classifier_model_options, get_conversation_model_options, get_model_config
+from models.ollama.classifier import build_conversation_classifier_prompt
+from models.ollama.identity import build_identity_system_prompt
+from models.ollama.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -31,8 +31,7 @@ class Mind:
 
         self.debug = debug
         
-        config = get_model_config()
-        self.base_model = config["base_model"]
+        model = get_ollama_model()
         self.model_name = config["model_name"]
         self.system_prompt = build_identity_system_prompt()
 
@@ -78,13 +77,13 @@ class Mind:
     def load_model(self):
         """Pull the configured base model into Ollama and mark the runtime ready."""
         try:
-            print(f"[Robot] Pulling base model '{self.base_model}' into Ollama...")
-            self.client.pull(self.base_model)
+            print(f"[Robot] Pulling base model '{self.model_name}' into Ollama...")
+            self.client.pull(self.model_name)
             self.is_ready = True
-            print(f"[Robot] Base model '{self.base_model}' is ready.")
+            print(f"[Robot] Base model '{self.model_name}' is ready.")
         except Exception as exc:
             self.is_ready = False
-            print(f"[Error] Could not load base model '{self.base_model}': {exc}")
+            print(f"[Error] Could not load base model '{self.model_name}': {exc}")
             raise
 
     def _build_request_messages(

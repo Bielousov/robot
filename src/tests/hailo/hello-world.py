@@ -12,7 +12,8 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.llm.identity import build_identity_system_prompt
+from models.hailo.config import get_conversation_model_options
+from models.hailo.identity import build_identity_system_prompt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
@@ -21,6 +22,7 @@ MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
+OPTIONS = get_conversation_model_options()
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
 SYSTEM_PROMPT = build_identity_system_prompt()
 
@@ -47,35 +49,6 @@ try:
     ]
 
     # ------------------------------------------------------------------
-    # Warm-up
-    # ------------------------------------------------------------------
-
-    print("[Hailo] Warming up...")
-
-    warmup_prompt = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT,
-        },
-        {
-            "role": "user",
-            "content": "Hello.",
-        },
-    ]
-
-    with llm.generate(
-        prompt=warmup_prompt,
-        temperature=0.7,
-        max_generated_tokens=16,
-    ) as generation:
-        for _ in generation:
-            pass
-
-    llm.clear_context()
-
-    print("[Hailo] Warm-up complete.")
-
-    # ------------------------------------------------------------------
     # Timed inference
     # ------------------------------------------------------------------
 
@@ -87,11 +60,7 @@ try:
 
     with llm.generate(
         prompt=prompt,
-        max_generated_tokens=64,
-        do_sample=True,
-        temperature=0.8,
-        top_k=40,
-        top_p=0.9,
+        **OPTIONS,
     ) as generation:
         for chunk in generation:
             if chunk == "<|im_end|>":
@@ -117,5 +86,5 @@ try:
 
 finally:
     llm.clear_context()
-    llm.release()
-    vdevice.release()
+    # llm.release()
+    # vdevice.release()

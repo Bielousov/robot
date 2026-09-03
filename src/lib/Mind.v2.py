@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
 
-from models.llm.classifier import build_conversation_classifier_prompt
-from models.llm.identity import build_identity_system_prompt
-from models.llm.config import get_classifier_model_options, get_conversation_model_options
+from models.hailo.classifier import build_conversation_classifier_prompt
+from models.hailo.identity import build_identity_system_prompt
+from models.hailo.config import get_classifier_model_options, get_conversation_model_options
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -34,9 +34,8 @@ class Mind:
 
         self.debug = debug
         
-        self.base_model = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
-        self.model_name = self.base_model
-        self.model_path = Path(self.base_model)
+        self.model_name = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
+        self.model_path = Path(self.model_name)
         if not self.model_path.is_absolute():
             self.model_path = HAILO_MODELS_PATH / self.model_path
         self.system_prompt = build_identity_system_prompt()
@@ -79,11 +78,7 @@ class Mind:
         with self.generation_lock:
             self.llm.clear_context()
             response = ""
-            with self.llm.generate(
-                prompt=messages,
-                temperature=options.get("temperature", 0.8),
-                max_generated_tokens=options.get("num_predict", 40),
-            ) as generation:
+            with self.llm.generate(prompt=messages, **options) as generation:
                 for chunk in generation:
                     if chunk != "<|im_end|>":
                         response += chunk

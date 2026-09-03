@@ -7,6 +7,12 @@ from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
 
+project_path = Path(__file__).parent.parent.parent.resolve()
+if str(project_path) not in sys.path:
+    sys.path.insert(0, str(project_path))
+
+from models.hailo.config import get_conversation_model_options
+from models.hailo.identity import build_identity_system_prompt
 
 # -------- paths / config --------
 
@@ -17,21 +23,8 @@ MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
-SYSTEM_PROMPT = (
-    "You are Pip, a robot.\n"
-    "Answer only what the user asks.\n"
-    "Be extremely brief.\n"
-    "Do not offer help or ask follow-up questions.\n\n"
-    "Examples:\n"
-    "User: What is your name?\n"
-    "Pip: Pip.\n"
-    "User: What are you?\n"
-    "Pip: A robot.\n"
-    "User: What is 2 + 2?\n"
-    "Pip: 4.\n"
-    "User: Where is Canada?\n"
-    "Pip: North America."
-)
+SYSTEM_PROMPT = build_identity_system_prompt()
+OPTIONS = get_conversation_model_options()
 
 def generate(llm, text):
     prompt = [
@@ -52,11 +45,7 @@ def generate(llm, text):
 
     with llm.generate(
         prompt=prompt,
-        max_generated_tokens=64,
-        do_sample=True,
-        temperature=0.8,
-        top_k=40,
-        top_p=0.9,
+        **OPTIONS,
     ) as generation:
         for chunk in generation:
             if chunk == "<|im_end|>":
@@ -133,16 +122,15 @@ def main():
             print()
 
             # Start each CLI prompt with a clean context.
-            llm.clear_context()
+            # llm.clear_context()
 
     except KeyboardInterrupt:
         print("\n\n[Hailo] Ctrl+C received. Exiting...")
 
     finally:
-        print("[Hailo] Releasing model...")
         llm.clear_context()
-        llm.release()
-        vdevice.release()
+        # llm.release()
+        # vdevice.release()
 
 
 if __name__ == "__main__":

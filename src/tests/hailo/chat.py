@@ -6,7 +6,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from hailo_platform import VDevice
 from hailo_platform.genai import LLM
-from hailo_apps.python.gen_ai_apps.gen_ai_utils.llm_utils import message_formatter
 
 
 # -------- paths / config --------

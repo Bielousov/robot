@@ -12,7 +12,7 @@ if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
 from models.hailo.config import get_model_config, get_conversation_model_options
-from models.hailo.identity import build_identity_system_prompt
+from models.hailo.identity import build_example_exchange, build_identity_system_prompt
 
 # -------- paths / config --------
 
@@ -33,7 +33,11 @@ def generate(llm, text):
 
     prompt = [{"role": "user", "content": text}]
     if not SYSTEM_PROMPT_SENT:
-        prompt.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
+        prompt = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *build_example_exchange(),
+            *prompt,
+        ]
 
     start = time.perf_counter()
     first_token_time = None

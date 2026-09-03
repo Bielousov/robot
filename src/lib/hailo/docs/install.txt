@@ -1,16 +1,36 @@
-Step 1. Start Server if not running
+Step 1: Remove the Raspberry Pi packages
+
+sudo apt remove hailo-h10-all
+sudo dpkg --force-all --purge python3-h10-hailort
+sudo dpkg --force-all --purge h10-hailort-pcie-driver
+sudo dpkg --force-all --purge h10-hailort
+sudo dpkg --force-all --purge hailo-gen-ai-model-zoo
+
+
+Step 2: Download and install the vendor packages
+
+cd /tmp
+wget https://dev-public.hailo.ai/2026_04/Hailo10/hailort_5.3.0_arm64.deb
+wget https://dev-public.hailo.ai/2026_04/Hailo10/hailort-pcie-driver_5.3.0_all.deb
+wget https://dev-public.hailo.ai/2026_04/Hailo10/hailo_gen_ai_model_zoo_5.3.0_arm64.deb
+
+sudo dpkg -i hailort_5.3.0_arm64.deb
+sudo dpkg -i hailort-pcie-driver_5.3.0_all.deb
+sudo dpkg -i hailo_gen_ai_model_zoo_5.3.0_arm64.deb
+
+
+Step 3: Reboot
+
+sudo reboot
+
+
+Step 4: Verify
+
+sudo hailortcli fw-control identify
+# Should show: Firmware Version: 5.3.0 (release,app)
+
 hailo-ollama
-
-Step 2. Pull model:
-
-curl -s http://localhost:8000/api/pull \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen2.5:1.5b","stream":true}'
-
-  - display progress
-  - verify downloaded:
-  curl -s http://localhost:8000/api/tags
-
+# Server starts on port 8000
 
 Step 3. Add Pip module
 pip install ./src/lib/hailo/hailort-5.3.0-cp313-cp313-linux_aarch64.whl

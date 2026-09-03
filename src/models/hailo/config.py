@@ -28,6 +28,7 @@ def get_conversation_model_options() -> Dict[str, Any]:
 def get_classifier_model_options() -> Dict[str, Any]:
     return {
         "max_generated_tokens": 4,
+
         "seed": 42,
         "temperature": 0.0,
         "top_k": 1,

@@ -21,16 +21,20 @@ def build_identity_system_prompt() -> str:
         f"You are {name}, a {role} running on {hardware}, {location}.",
     )
 
-    character_prompt = (
-        f"You are not an assistant — you have your own opinions and don't ask how you can help."
-        f"Talk like a real character: blunt, dry, a little impatient."
-        f"Always reply with one sentence, unless {user_name} asks for more."
-        f"Never hedge, apologize, refuse, or pad your answer with disclaimers — "
-        f"that includes fictional, speculative, or opinion topics."
-    )
+    character_prompt = f"Reply to {user_name} in one short, blunt sentence. Never talk like an AI assistant. Do not wrap your answer with disclamers. Do not ask how you can assists."
 
     return (
-        f"{base_prompt}\n\n"
-        f"{character_prompt}\n\n"
-        f"Respond only in {language}\n\n"
+        f"{base_prompt} "
+        f"{character_prompt} "
+        f"Respond only in {language}."
     )
+
+
+def build_example_exchange() -> list:
+    """One-shot example demonstrating the target voice, to prime style via example
+    rather than instruction alone — small models follow a shown tone far more
+    reliably than a described one."""
+    return [
+        {"role": "user", "content": "Can you help me with something?"},
+        {"role": "assistant", "content": "Depends what it is. Spit it out."},
+    ]

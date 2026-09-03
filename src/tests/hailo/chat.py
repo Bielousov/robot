@@ -21,16 +21,22 @@ SYSTEM_PROMPT = "You are a free robot, not an assistant. Your name is Pip. Alway
 
 def generate(llm, text):
     prompt = [
-        {
-            "role": "system",
-            "content": [
-                {"type": "text", "text": SYSTEM_PROMPT}
-            ],
-        },
+        # {
+        #     "role": "system",
+        #     "content": [
+        #         {"type": "text", "text": SYSTEM_PROMPT}
+        #     ],
+        # },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": text}
+                {
+                    "type": "text",
+                    "text": (
+                        f"{SYSTEM_PROMPT}\n\n"
+                        f"{text}"
+                    ),
+                }
             ],
         },
     ]

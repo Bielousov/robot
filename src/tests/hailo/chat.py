@@ -53,6 +53,8 @@ def generate(llm, text):
             response += chunk
             print(chunk, end="", flush=True)
 
+    llm.clear_context()
+
     end = time.perf_counter()
 
     total_time = end - start

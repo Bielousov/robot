@@ -53,10 +53,13 @@ try:
     token_count = 0
 
     with llm.generate(
+        max_generated_tokens=100,
+        do_sample=True,
+        frequency_penalty=0.1,
         prompt=prompt,
         temperature=0.1,
-        seed=42,
-        max_generated_tokens=100,
+        top_k=40,
+        top_p=0.9,
     ) as generation:
         for chunk in generation:
             if chunk == "<|im_end|>":

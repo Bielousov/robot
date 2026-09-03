@@ -7,6 +7,8 @@ import signal
 from pathlib import Path
 from typing import Callable, Optional
 
+from lib.Threads import Process
+
 # Paths (Assuming same structure)
 LIB_PATH = Path(__file__).parent.resolve() / "piper"
 MODELS_PATH = LIB_PATH / "models"
@@ -33,15 +35,21 @@ class Voice:
         ):
         self._model_path = MODELS_PATH / f"{voice_model_name}.onnx"
         self._sample_rate = voice_sample_rate
-        self._playback_lock = threading.Lock()
         self._aplay = None
 
-        # Utterances are queued here in call order; a single worker thread
+        # Utterances are queued here in call order; a single warm worker
         # plays them out strictly one at a time, in that order, while
         # synthesis for later utterances can run concurrently in the background.
         self._playback_queue = queue.Queue()
-        self._playback_thread = threading.Thread(target=self._playback_worker, daemon=True)
-        self._playback_thread.start()
+        self._playback_process = Process()
+        self._playback_process.run(self._playback_worker)
+
+        # Utterances to synthesize are queued here too, and drained by one
+        # warm, long-lived worker (via lib.Threads.Process) instead of
+        # spinning up a new thread for every chunk.
+        self._synthesis_queue = queue.Queue()
+        self._synthesis_process = Process()
+        self._synthesis_process.run(self._synthesis_worker)
 
         # Callback handlers
         self.__on_speak = on_speak
@@ -60,13 +68,23 @@ class Voice:
     def say(self, text):
         """Queue one utterance for speech.
 
-        Synthesis starts right away in the background; playback is handled by
-        the dedicated worker thread, strictly in the order utterances were
-        queued, one at a time.
+        Both queues are fed immediately (never blocking); the warm synthesis
+        and playback workers pick utterances up in the order they were queued.
         """
         utterance = _Utterance(text)
         self._playback_queue.put(utterance)
-        threading.Thread(target=self._synthesize, args=(utterance,), daemon=True).start()
+        self._synthesis_queue.put(utterance)
+
+    def _synthesis_worker(self):
+        """Warm worker: runs for Voice's whole lifetime, synthesizing queued
+        utterances one at a time instead of starting/stopping a thread and a
+        Piper process for every chunk.
+        """
+        while True:
+            utterance = self._synthesis_queue.get()
+            if utterance is None:
+                break
+            self._synthesize(utterance)
 
     def _synthesize(self, utterance: "_Utterance"):
         """Run Piper for one utterance and buffer its raw PCM output.
@@ -113,19 +131,18 @@ class Voice:
             if not utterance.audio:
                 continue
 
-            with self._playback_lock:
-                try:
-                    self._aplay = subprocess.Popen(
-                        ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                    self._aplay.communicate(input=utterance.audio)
-                except Exception as e:
-                    print(f"[Voice Error]: {e}")
-                finally:
-                    self._aplay = None
+            try:
+                self._aplay = subprocess.Popen(
+                    ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                self._aplay.communicate(input=utterance.audio)
+            except Exception as e:
+                print(f"[Voice Error]: {e}")
+            finally:
+                self._aplay = None
 
     def _handle_signal(self, signum, frame):
         self.stop()
@@ -140,4 +157,5 @@ class Voice:
                 self._aplay.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 pass
+        self._synthesis_queue.put(None)
         self._playback_queue.put(None)

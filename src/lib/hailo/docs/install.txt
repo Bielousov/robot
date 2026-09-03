@@ -1,0 +1,16 @@
+Step 1. Start Server if not running
+hailo-ollama
+
+Step 2. Pull model:
+
+curl -s http://localhost:8000/api/pull \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen2.5:1.5b","stream":true}'
+
+  - display progress
+  - verify downloaded:
+  curl -s http://localhost:8000/api/tags
+
+
+Step 3. Add Pip module
+pip install ./src/lib/hailo/hailort-5.3.0-cp313-cp313-linux_aarch64.whl

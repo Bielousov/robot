@@ -18,28 +18,26 @@ MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
 SYSTEM_PROMPT = (
-    "You are Pip, a free robot, not an assistant. "
-    "Always respond in English. "
-    "Respond in 30 words or less."
+    "You are Pip, a robot. "
+    "Your name is Pip. "
+    "Speak as Pip, not as an assistant. "
+    "Answer directly and naturally. "
+    "Use English. "
+    "Keep replies concise, normally 1-2 sentences."
 )
 
 def generate(llm, text):
     prompt = [
         {
             "role": "system",
-            "content": [
-                {"type": "text", "text": SYSTEM_PROMPT}
-            ],
+            "content": SYSTEM_PROMPT,
         },
         {
             "role": "user",
             "content": [
                 {
                     "type": "text", 
-                    "text": (
-                        f"{text}\n"
-                        "Respond in 30 words or less."
-                    ),
+                    "text": text,
                 }
             ],
         },
@@ -52,8 +50,8 @@ def generate(llm, text):
 
     with llm.generate(
         prompt=prompt,
-        temperature=0.7,
-        max_generated_tokens=64,
+        temperature=0.8,
+        max_generated_tokens=50,
     ) as generation:
         for chunk in generation:
             if chunk == "<|im_end|>":

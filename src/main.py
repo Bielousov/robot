@@ -42,6 +42,7 @@ class Robot:
 
         # 3. Voice Setup
         self.voice = Voice(
+            debug=Env.Debug,
             voice_model_name=Env.Voice,
             voice_sample_rate=Env.VoiceSampleRate,
             on_speak=self._on_speak, # Treat spoken text as eavesdrop input

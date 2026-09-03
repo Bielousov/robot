@@ -2,6 +2,7 @@ import os
 import queue
 import subprocess
 import threading
+import time
 import atexit
 import signal
 from pathlib import Path
@@ -32,7 +33,9 @@ class Voice:
             voice_model_name="en_US-danny-low.onnx",
             voice_sample_rate=16000,
             on_speak: Optional[Callable[[bool], None]] = None,
+            debug: bool = False,
         ):
+        self._debug = debug
         self._model_path = MODELS_PATH / f"{voice_model_name}.onnx"
         self._sample_rate = voice_sample_rate
         self._aplay = None
@@ -99,6 +102,8 @@ class Voice:
         if self.__on_speak:
             self.__on_speak(True)
 
+        started_at = time.perf_counter()
+
         try:
             proc = subprocess.Popen(
                 [str(PIPER_BIN), "--model", str(self._model_path), "--output_raw"],
@@ -111,6 +116,13 @@ class Voice:
         except Exception as e:
             utterance.error = e
         finally:
+            if self._debug:
+                elapsed = time.perf_counter() - started_at
+                print(
+                    f"[Voice] Synthesized {len(utterance.text)} chars in "
+                    f"{elapsed:.3f}s: {utterance.text!r}"
+                )
+
             if self.__on_speak:
                 self.__on_speak(False)
             utterance.ready.set()

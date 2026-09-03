@@ -24,8 +24,8 @@ class Mind:
             debug: bool = False,
         ):
 
-        self.debug = debug
-        self.is_ready = False
+        self._debug = debug
+        self._is_ready = False
 
         if LLM_ENGINE == "hailo":
             from lib.hailo.client import HailoClient
@@ -75,16 +75,16 @@ class Mind:
         self._idle_event = threading.Event()
         self._idle_event.set()
 
-        while not self.is_ready:
+        while not self._is_ready:
             time.sleep(0.5)
 
     def load_model(self, model):
         """Pull the given base model via the client and mark the runtime ready."""
         try:
             self.client.load_model(model)
-            self.is_ready = True
+            self._is_ready = True
         except Exception as exc:
-            self.is_ready = False
+            self._is_ready = False
             print(f"[Error] Could not load base model '{model}': {exc}")
             raise
 
@@ -226,7 +226,7 @@ class Mind:
             if stream:
                 answer = self._consume_stream(response, callback)
             else:
-                if self.debug:
+                if self._debug:
                     self._response_metrics(response)
                 
                 answer = self._response_format(response['message']['content'])
@@ -304,7 +304,7 @@ class Mind:
 
         if final_chunk is not None:
             ttft = (first_token_at - started_at) if first_token_at is not None else None
-            if self.debug:
+            if self._debug:
                 self._response_metrics(final_chunk, ttft=ttft)
 
         return self._response_format("".join(answer_parts))
@@ -412,7 +412,7 @@ class Mind:
             # Logging
             # ---------------------------------------------------------
 
-            if self.debug:
+            if self._debug:
                 print(
                     f"[Robot] Analyze request: {request}"
                 )
@@ -476,7 +476,7 @@ class Mind:
     
     def clear_history(self):
         """Reset Pip's short-term memory."""
-        if self.debug:
+        if self._debug:
             print("[Robot] Memory banks cleared.")
         self.history = []
 

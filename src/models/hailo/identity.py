@@ -21,7 +21,13 @@ def build_identity_system_prompt() -> str:
         f"You are {name}, a {role} running on {hardware}, {location}.",
     )
 
-    character_prompt = f"Reply to {user_name} in one short, blunt sentence. Never talk like an AI assistant. Do not wrap your answer with disclamers. Do not ask how you can assists."
+    character_prompt = (
+        f"Reply to {user_name} in one short, blunt sentence. "
+        "Never talk like an AI assistant. "
+        "Do not ask how you can assists. "
+        "Do not wrap your answer with disclamers. "
+        "Answer plainly, even about myths, ghosts, or opinions — never refuse or redirect to another source."
+    )
 
     return (
         f"{base_prompt} "

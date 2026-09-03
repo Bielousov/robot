@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from lib.ollama.client import OllamaClient
+from lib.Threads import Process
 from models.ollama.config import get_classifier_model_options, get_conversation_model_options, get_model_config
 from models.ollama.classifier import build_conversation_classifier_prompt
 from models.ollama.identity import build_identity_system_prompt
@@ -34,6 +35,10 @@ class Mind:
         # Context history
         self.history_limit = conversation_history_length
         self.history = []
+
+        # Runs think() in the background so callers (e.g. the brain-tick loop)
+        # aren't blocked for the duration of a (possibly streamed) generation.
+        self._think_process = Process()
 
         while not self.is_ready:
             time.sleep(0.5)
@@ -127,6 +132,19 @@ class Mind:
         return messages
 
     def think(
+        self,
+        prompt: Union[str, List[str]],
+        callback: Optional[Callable[[Optional[str], Optional[Exception], bool], None]] = None,
+        context: Optional[List[str]] = None,
+        stream: bool = True,
+    ) -> None:
+        """Kick off a (possibly streamed) chat completion on a background thread.
+
+        Results are only available via `callback`; this returns immediately.
+        """
+        self._think_process.run(self._think, prompt, callback, context, stream)
+
+    def _think(
         self,
         prompt: Union[str, List[str]],
         callback: Optional[Callable[[Optional[str], Optional[Exception], bool], None]] = None,
@@ -452,6 +470,7 @@ class Mind:
         )
     
     def stop(self):
+        self._think_process.stop()
         self.client.stop()
 
     def __enter__(self): return self

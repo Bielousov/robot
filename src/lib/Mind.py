@@ -256,10 +256,17 @@ class Mind:
                 logprobs=True,
             )
 
-            elapsed_seconds = time.perf_counter() - started_at
+            raw_response = ""
+            final_chunk = {}
+            for chunk in response:
+                content = (chunk.get("message", {}) or {}).get("content", "")
+                if content:
+                    raw_response += content
+                if chunk.get("done", False):
+                    final_chunk = chunk
 
-            message = response.get("message", {})
-            raw_response = message.get("content", "").strip()
+            raw_response = raw_response.strip()
+            elapsed_seconds = time.perf_counter() - started_at
 
             # ---------------------------------------------------------
             # Parse classification
@@ -298,7 +305,7 @@ class Mind:
             # Timing
             # ---------------------------------------------------------
 
-            api_time = response.get("total_duration", 0) / 1e9
+            api_time = final_chunk.get("total_duration", 0) / 1e9
 
             score_text = (
                 f"{score:.1f}"

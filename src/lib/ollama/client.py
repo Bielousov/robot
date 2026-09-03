@@ -52,9 +52,10 @@ class OllamaClient:
 
     def load_model(self, model_name: str):
         """Pull the given model into Ollama."""
-        print(f"[Ollama] Pulling base model '{model_name}' into Ollama...")
+        print(f"[Ollama] Pulling model '{model_name}' into Ollama...")
         self._client.pull(model_name)
-        print(f"[Ollama] Base model '{model_name}' is ready.")
+        print(f"[Ollama] Model '{model_name}' is ready.")
+    
 
     def chat(self, **kwargs):
         """Passthrough to the underlying ollama.Client.chat()."""

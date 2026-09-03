@@ -21,14 +21,14 @@ class Ears:
             model_name: str,
             sample_rate: int = 16000,
             wake_aliases = '',
-            debug: bool = False,
             on_listen: Optional[Callable[[str], bool]] = None,
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
+            debug: bool = False,
         ):
     
-        self.debug = debug;
-        SetLogLevel(0 if self.debug else -1)
+        self._debug = debug;
+        SetLogLevel(0 if self._debug else -1)
 
         # Paths
         model_full_path = MODELS_PATH / model_name
@@ -137,8 +137,7 @@ class Ears:
                         break
         except Exception as e:
             has_speech = True  # Default to True if VAD fails
-            if self.debug:
-                print(f"[VAD] Error: {e}")
+            print(f"[VAD] Error: {e}")
 
         # Keep feeding a short silence tail so Vosk can finalize the utterance.
         if has_speech:
@@ -157,7 +156,7 @@ class Ears:
         )
         if accepted or silence_timeout:
             process_time = time.time() - start_time
-            if self.debug:
+            if self._debug:
                 print(f"[Vosk] Processing time: {process_time*1000:.2f}ms")
             
             result_method = self.recognizer.Result if accepted else self.recognizer.FinalResult
@@ -168,7 +167,8 @@ class Ears:
             
             if text:
                 # Print transcript of heard speech
-                print(f"[Ears] Heard: {text}")
+                self._debug
+                    print(f"[Ears] Heard: {text}")
                 
                 # Call on_record callback for ALL detected speech and check gate
                 gate_check = True  # Default to allow processing

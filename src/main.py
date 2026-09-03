@@ -156,6 +156,9 @@ class Robot:
         time.sleep(3)
         self.threads.stop()
         self.ears.stop_listening()
+        # Let any pending speech (e.g. a goodbye said during the grace period
+        # above) finish playing before tearing down Voice's subprocesses.
+        self.voice.wait_until_idle()
         self.voice.stop()
         self.mind.stop()
 

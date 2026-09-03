@@ -4,7 +4,6 @@ import subprocess
 import threading
 import time
 import atexit
-import signal
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -63,10 +62,14 @@ class Voice:
 
         os.chmod(PIPER_BIN, 0o755)
 
-        # Register cleanup to kill processes on exit
+        # Safety net for abnormal exits; the normal shutdown path is
+        # Robot.stop() (main.py), which calls wait_until_idle()/stop() in
+        # coordination with Mind and the rest of the system. Voice must not
+        # install its own SIGINT/SIGTERM handler: doing so replaces the
+        # process-wide default handler and calling exit(0) from it bypasses
+        # Robot.stop() entirely, so Mind never gets a chance to release the
+        # LLM/device safely.
         atexit.register(self.stop)
-        signal.signal(signal.SIGINT, self._handle_signal)
-        signal.signal(signal.SIGTERM, self._handle_signal)
 
     def say(self, text):
         """Queue one utterance for speech.
@@ -119,8 +122,7 @@ class Voice:
             if self._debug:
                 elapsed = time.perf_counter() - started_at
                 print(
-                    f"[Voice] Synthesized {len(utterance.text)} chars in "
-                    f"{elapsed:.3f}s: {utterance.text!r}"
+                    f"[Voice] Synthesized {len(utterance.text)} chars in {elapsed:.3f}s"
                 )
 
             if self.__on_speak:
@@ -180,11 +182,6 @@ class Voice:
 
         threading.Thread(target=_join, daemon=True).start()
         done.wait(timeout)
-
-    def _handle_signal(self, signum, frame):
-        self.wait_until_idle()
-        self.stop()
-        exit(0)
 
     def stop(self):
         """Clean shutdown of subprocesses."""

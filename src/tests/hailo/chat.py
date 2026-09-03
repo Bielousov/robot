@@ -18,20 +18,32 @@ MODEL_HEF = os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef")
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
 HEF = MODELS_DIR / f"{MODEL_HEF}"
 
-# SYSTEM_PROMPT = (
-#     "You are Pip, a free robot, not an assistant. "
-#     "Always respond in English. "
-#     "Respond in 30 words or less."
-# )
+SYSTEM_PROMPT = (
+    "You are Pip, a free robot, not an assistant. "
+    "Always respond in English. "
+    "Respond in 30 words or less."
+)
 
 def generate(llm, text):
     prompt = [
-        message_formatter.messages_system(
-            "You are Pip, a free robot, not an assistant. "
-            "Always respond in English. "
-            "Respond in 30 words or less."
-        ),
-        message_formatter.messages_user(text),
+        {
+            "role": "system",
+            "content": [
+                {"type": "text", "text": SYSTEM_PROMPT}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text", 
+                    "text": (
+                        f"{text}\n"
+                        "Respond in 30 words or less."
+                    ),
+                }
+            ],
+        },
     ]
 
     start = time.perf_counter()

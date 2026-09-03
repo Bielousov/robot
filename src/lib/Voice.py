@@ -82,9 +82,12 @@ class Voice:
         """
         while True:
             utterance = self._synthesis_queue.get()
-            if utterance is None:
-                break
-            self._synthesize(utterance)
+            try:
+                if utterance is None:
+                    break
+                self._synthesize(utterance)
+            finally:
+                self._synthesis_queue.task_done()
 
     def _synthesize(self, utterance: "_Utterance"):
         """Run Piper for one utterance and buffer its raw PCM output.
@@ -120,31 +123,54 @@ class Voice:
         """
         while True:
             utterance = self._playback_queue.get()
-            if utterance is None:
-                break
-
-            utterance.ready.wait()
-
-            if utterance.error:
-                print(f"[Voice Error]: {utterance.error}")
-                continue
-            if not utterance.audio:
-                continue
-
             try:
-                self._aplay = subprocess.Popen(
-                    ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                self._aplay.communicate(input=utterance.audio)
-            except Exception as e:
-                print(f"[Voice Error]: {e}")
+                if utterance is None:
+                    break
+
+                utterance.ready.wait()
+
+                if utterance.error:
+                    print(f"[Voice Error]: {utterance.error}")
+                    continue
+                if not utterance.audio:
+                    continue
+
+                try:
+                    self._aplay = subprocess.Popen(
+                        ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    self._aplay.communicate(input=utterance.audio)
+                except Exception as e:
+                    print(f"[Voice Error]: {e}")
+                finally:
+                    self._aplay = None
             finally:
-                self._aplay = None
+                self._playback_queue.task_done()
+
+    def wait_until_idle(self, timeout: float = 5.0):
+        """Block (up to `timeout` seconds) until every utterance queued so
+        far has finished synthesizing and playing.
+
+        Without this, a shutdown right after `say()` (e.g. a goodbye phrase
+        followed by Ctrl+C) can kill the daemon worker threads before Piper
+        or aplay ever produce sound - the log line prints instantly, but the
+        actual synthesis/playback work is still in flight.
+        """
+        done = threading.Event()
+
+        def _join():
+            self._synthesis_queue.join()
+            self._playback_queue.join()
+            done.set()
+
+        threading.Thread(target=_join, daemon=True).start()
+        done.wait(timeout)
 
     def _handle_signal(self, signum, frame):
+        self.wait_until_idle()
         self.stop()
         exit(0)
 

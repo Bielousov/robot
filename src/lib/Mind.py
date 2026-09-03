@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -64,6 +65,16 @@ class Mind:
         # aren't blocked for the duration of a (possibly streamed) generation.
         self._think_process = Process()
 
+        # Tracks in-flight requests (think()/classify_conversation(), including
+        # ones fired from ad-hoc background threads elsewhere) so stop() can
+        # wait for them to finish before tearing down the client/device -
+        # releasing it out from under an active generation corrupts the
+        # underlying connection (seen as HailoRT communication-closed errors).
+        self._active_requests = 0
+        self._active_requests_lock = threading.Lock()
+        self._idle_event = threading.Event()
+        self._idle_event.set()
+
         while not self.is_ready:
             time.sleep(0.5)
 
@@ -76,6 +87,17 @@ class Mind:
             self.is_ready = False
             print(f"[Error] Could not load base model '{model}': {exc}")
             raise
+
+    def _begin_request(self):
+        with self._active_requests_lock:
+            self._active_requests += 1
+            self._idle_event.clear()
+
+    def _end_request(self):
+        with self._active_requests_lock:
+            self._active_requests = max(0, self._active_requests - 1)
+            if self._active_requests == 0:
+                self._idle_event.set()
 
     def _build_request_messages(
         self,
@@ -184,6 +206,7 @@ class Mind:
                 callback(None, ValueError("Empty prompt"), True)
             return None
 
+        self._begin_request()
         try:
             current_prompt = prompts[-1].strip() if prompts[-1] else ""
             if not current_prompt:
@@ -223,11 +246,13 @@ class Mind:
                 callback(None, e, True)
 
             return None
+        finally:
+            self._end_request()
 
     # Chunks handed to callback are buffered up to (and including) one of
     # these, so consumers like Voice get whole clauses instead of single
     # tokens/words.
-    _SENTENCE_BREAK_CHARS = set(",.!?:;")
+    _SENTENCE_BREAK_CHARS = set(".!?:;")
 
     def _consume_stream(
         self,
@@ -307,6 +332,7 @@ class Mind:
         prompt = build_conversation_classifier_prompt(request)
         started_at = time.perf_counter()
 
+        self._begin_request()
         try:
             response = self.client.chat(
                 messages=[
@@ -427,6 +453,8 @@ class Mind:
             )
 
             return None
+        finally:
+            self._end_request()
 
     def add_to_history(self, role: str, message: str) -> list:
         """
@@ -516,6 +544,14 @@ class Mind:
     
     def stop(self):
         self._think_process.stop()
+
+        # Wait for any in-flight think()/classify_conversation() call to
+        # finish before releasing the client - tearing down the underlying
+        # connection/device while it's still mid-generation corrupts it
+        # (e.g. HailoRT communication-closed / stream-not-activated errors).
+        if not self._idle_event.wait(timeout=5.0):
+            print("[Mind] Warning: stopping with a request still in flight.")
+
         self.client.stop()
 
     def __enter__(self): return self

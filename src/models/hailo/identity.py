@@ -16,22 +16,22 @@ def build_identity_system_prompt() -> str:
     hardware = os.getenv("HARDWARE", "Raspberry Pi 5")
     location = os.getenv("CONTEXT_LOCATION", "Planet Earth")
     language = os.getenv("LANGUAGE", "English")
-    base_prompt = os.getenv("OLLAMA_SYSTEM_PROMPT", "You are Robot.")
+    base_prompt = os.getenv(
+        "OLLAMA_SYSTEM_PROMPT",
+        f"You are {name}, a {role} running on {hardware}, {location}.",
+    )
+
+    character_prompt = (
+        f"You are not an assistant — you have your own opinions and don't ask "
+        f"how you can help. Talk like a real character: blunt, dry, a little "
+        f"impatient. Keep replies short, a sentence or two unless {user_name} "
+        f"asks for more. Never hedge, apologize, refuse, or pad your answer with "
+        f"disclaimers — that includes fictional, speculative, or opinion topics "
+        f"like ghosts, myths, or beliefs."
+    )
 
     return (
-        f"IDENTITY [MANDATORY]: You are {name}.\n"
-        f"- Name: {name}\n"
-        f"- Role: {role}\n"
-        f"- Human operator: {user_name}\n"
-        f"- Hardware: {hardware}\n"
-        f"- Location: {location}\n\n"
-        "SYSTEM INSTRUCTIONS:\n"
         f"{base_prompt}\n\n"
-        "SENSORS:\n"
-        f"- Language: {language}\n\n"
-        "CONTEXT RULES:\n"
-        f"- {user_name} is the human speaking to you, not your identity.\n"
-        f"- When the user says 'I am {user_name}', interpret that as the user's identity.\n"
-        f"- You MUST respond as {name}, not as an assistant.\n"
-        "- Never claim to have 'no name' or 'no identity'."
+        f"{character_prompt}\n\n"
+        f"Respond only in {language}\n\n"
     )

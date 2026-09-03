@@ -5,15 +5,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from lib.ollama.client import OllamaClient
 from lib.Threads import Process
-from models.ollama.config import get_classifier_model_options, get_conversation_model_options, get_model_config
-from models.ollama.classifier import build_conversation_classifier_prompt
-from models.ollama.identity import build_identity_system_prompt
+from models.llm.classifier import build_conversation_classifier_prompt
+from models.llm.identity import build_identity_system_prompt
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
 PROJECT_ROOT = LIB_PATH.parent
+
+# Which backend to talk to for LLM inference: 'ollama' or 'hailo'.
+LLM_ENGINE = os.getenv("LLM_ENGINE", "ollama").strip().lower()
 
 class Mind:
     def __init__(
@@ -25,11 +26,34 @@ class Mind:
         self.debug = debug
         self.is_ready = False
 
-        config = get_model_config()
-        self.model_name = config["model_name"]
+        if LLM_ENGINE == "hailo":
+            from lib.hailo.client import HailoClient
+            from models.llm.config.hailo import (
+                get_classifier_model_options,
+                get_conversation_model_options,
+                get_model_config,
+            )
+
+            config = get_model_config()
+            self.model_name = config["model_hef"]
+            self.client = HailoClient()
+        else:
+            from lib.ollama.client import OllamaClient
+            from models.llm.config.ollama import (
+                get_classifier_model_options,
+                get_conversation_model_options,
+                get_model_config,
+            )
+
+            config = get_model_config()
+            self.model_name = config["model_name"]
+            self.client = OllamaClient(host=config["host"])
+
+        self._get_conversation_model_options = get_conversation_model_options
+        self._get_classifier_model_options = get_classifier_model_options
+
         self.system_prompt = build_identity_system_prompt()
 
-        self.client = OllamaClient(host=config['host'])
         self.load_model(model=self.model_name)
 
         # Context history
@@ -168,7 +192,7 @@ class Mind:
                 return None
 
             messages = self._build_request_messages(prompts, context=context)
-            options = get_conversation_model_options()
+            options = self._get_conversation_model_options()
 
             response = self.client.chat(
                 messages=messages,
@@ -279,7 +303,7 @@ class Mind:
             print("[Robot] Analyze skipped: empty STT fragment")
             return None
 
-        options = get_classifier_model_options()
+        options = self._get_classifier_model_options()
         prompt = build_conversation_classifier_prompt(request)
         started_at = time.perf_counter()
 

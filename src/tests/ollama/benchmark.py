@@ -10,8 +10,8 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.ollama.config import get_conversation_model_options, get_model_config
-from models.ollama.identity import build_identity_system_prompt
+from models.llm.config.ollama import get_conversation_model_options, get_model_config
+from models.llm.identity import build_identity_system_prompt
 
 ITERATIONS = 10
 WARMUP_RUNS = 1

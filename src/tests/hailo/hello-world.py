@@ -12,7 +12,7 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.hailo.config import get_model_config, get_conversation_model_options
+from models.llm.config.hailo import get_model_config, get_conversation_model_options
 from models.hailo.identity import build_identity_system_prompt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]

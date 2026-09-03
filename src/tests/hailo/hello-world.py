@@ -53,10 +53,9 @@ try:
     token_count = 0
 
     with llm.generate(
-        max_generated_tokens=100,
-        do_sample=True,
-        frequency_penalty=0.1,
         prompt=prompt,
+        max_generated_tokens=60,
+        frequency_penalty=0.1,
         temperature=0.1,
         top_k=40,
         top_p=0.9,

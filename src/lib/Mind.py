@@ -546,13 +546,16 @@ class Mind:
         self._think_process.stop()
 
         # Wait for any in-flight think()/classify_conversation() call to
-        # finish before releasing the client - tearing down the underlying
-        # connection/device while it's still mid-generation corrupts it
-        # (e.g. HailoRT communication-closed / stream-not-activated errors).
+        # finish before this object goes away.
         if not self._idle_event.wait(timeout=5.0):
             print("[Mind] Warning: stopping with a request still in flight.")
 
-        self.client.stop()
+        # Deliberately not calling self.client.stop() here: explicitly
+        # releasing HailoRT's VDevice/LLM during process shutdown throws
+        # CHECK_SUCCESS/HAILO_COMMUNICATION_CLOSED errors, whereas leaving
+        # cleanup to the client's own __del__ during interpreter shutdown is
+        # silent and clean. Mind is only ever torn down once, at process
+        # exit, so skipping the explicit release here is safe.
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

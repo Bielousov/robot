@@ -12,7 +12,6 @@ def get_model_config() -> Dict[str, Any]:
 
     return {
         "model_hef": os.getenv("HAILO_MODEL_HEF", "Qwen2.5-1.5B-Instruct.hef"),
-        "model_name": os.getenv("HAILO_MODEL", "qwen2.5:1.5b"),
         "identity": os.getenv("OLLAMA_SYSTEM_PROMPT", ""),
     }
 

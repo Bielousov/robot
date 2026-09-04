@@ -23,44 +23,61 @@ if [ -f "$ENV_FILE" ]; then
         | cut -d '=' -f2 \
         | tr -d '"' \
         | tr -d "'")
+
+    WHISPER_MODEL_HEF=$(grep -v '^#' "$ENV_FILE" \
+        | grep '^HAILO_WHISPER_MODEL_HEF=' \
+        | cut -d '=' -f2 \
+        | tr -d '"' \
+        | tr -d "'")
 fi
 
 HAILO_VERSION=${HAILO_VERSION:-"5.3.0"}
 MODEL_HEF=${MODEL_HEF:-"Qwen2.5-1.5B-Instruct.hef"}
 
-MODEL_FILE="$MODELS_DIR/$MODEL_HEF"
-MODEL_URL="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$MODEL_HEF"
+install_model() {
+    local model_hef="$1"
+    local model_file="$MODELS_DIR/$model_hef"
+    local model_url="https://dev-public.hailo.ai/v$HAILO_VERSION/blob/$model_hef"
 
-mkdir -p "$MODELS_DIR"
+    mkdir -p "$MODELS_DIR"
 
-if [ -s "$MODEL_FILE" ]; then
-    echo "[Hailo] $MODEL_HEF is already installed. Skipping download."
+    if [ -s "$model_file" ]; then
+        echo "[Hailo] $model_hef is already installed. Skipping download."
+    else
+        echo "[Hailo] Installing $model_hef..."
+        echo "[Hailo] Version: $HAILO_VERSION"
+        echo "[Hailo] Destination: $model_file"
+
+        rm -f "$model_file"
+
+        wget \
+            --continue \
+            --tries=5 \
+            --show-progress \
+            "$model_url" \
+            -O "$model_file"
+
+        sync
+    fi
+
+    if [ ! -s "$model_file" ]; then
+        echo "[Hailo] ERROR: $model_file is missing or empty."
+        exit 2
+    fi
+
+    echo "[Hailo] Model installed:"
+    ls -lh "$model_file"
+
+    echo "[Hailo] SHA256:"
+    sha256sum "$model_file"
+}
+
+install_model "$MODEL_HEF"
+
+if [ -n "$WHISPER_MODEL_HEF" ]; then
+    install_model "$WHISPER_MODEL_HEF"
 else
-    echo "[Hailo] Installing $MODEL_HEF..."
-    echo "[Hailo] Version: $HAILO_VERSION"
-    echo "[Hailo] Destination: $MODEL_FILE"
-
-    rm -f "$MODEL_FILE"
-
-    wget \
-        --continue \
-        --tries=5 \
-        --show-progress \
-        "$MODEL_URL" \
-        -O "$MODEL_FILE"
-
-    sync
+    echo "[Hailo] HAILO_WHISPER_MODEL_HEF not set. Skipping Whisper model download."
 fi
-
-if [ ! -s "$MODEL_FILE" ]; then
-    echo "[Hailo] ERROR: $MODEL_FILE is missing or empty."
-    exit 2
-fi
-
-echo "[Hailo] Model installed:"
-ls -lh "$MODEL_FILE"
-
-echo "[Hailo] SHA256:"
-sha256sum "$MODEL_FILE"
 
 echo "[Hailo] Done."

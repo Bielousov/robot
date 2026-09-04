@@ -20,7 +20,7 @@ Env = Enum (
   VoskModel                 = getenv('VOSK_MODEL_NAME'),
   VoskSampleRate            = int(getenv('VOSK_SAMPLE_RATE', '16000')),
   VoskAliases               = getenv('VOSK_ALIASES', 'robot'),
-  WhisperModel              = getenv('WHISPER_MODEL_NAME', 'base.en'),
+  WhisperModel              = getenv('HAILO_WHISPER_MODEL_HEF', 'base.en'),
   WhisperSampleRate         = int(getenv('WHISPER_SAMPLE_RATE', '16000'))
 )
 

@@ -18,11 +18,11 @@ Usage:
     python src/tests/whisper/compare.py
 
 Env vars (all optional, see src/config.py for the same names used elsewhere):
-    VOSK_MODEL_NAME           Vosk model dir name under lib/vosk/models (required)
+    MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
     HAILO_WHISPER_MODEL_HEF   Whisper HEF file name under lib/hailo/models (required
                               for the Hailo side; e.g. "whisper-tiny.hef")
+    VOSK_MODEL_NAME           Vosk model dir name under lib/vosk/models (required)
     VOSK_SAMPLE_RATE          Mic/recognizer sample rate, default 16000
-    MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
     WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold for Whisper, default -40.0
 """
 

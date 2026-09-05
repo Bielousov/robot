@@ -88,7 +88,6 @@ class Ears:
         self.__speech_bytes = 0
         self.__utterance_frames = []
         self.__utterance_start = 0.0
-        self.__gate_open = False
 
         # Callback handlers
         self.__on_listen = on_listen
@@ -151,11 +150,6 @@ class Ears:
         # Noise gate: only treat this chunk as speech if it's loud enough.
         level = rms_dbfs(data)
         has_speech = level >= self.noise_gate_dbfs
-
-        if self._debug and has_speech != self.__gate_open:
-            self.__gate_open = has_speech
-            state = "open" if has_speech else "closed"
-            print(f"[Ears] Gate {state} ({level:.1f} dBFS, threshold {self.noise_gate_dbfs:.1f})")
 
         if has_speech:
             if not self.__speech_active:

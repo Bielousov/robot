@@ -1,4 +1,6 @@
+import time
 from pathlib import Path
+from typing import Optional
 
 from hailo_platform.genai import LLM
 
@@ -66,10 +68,36 @@ class HailoClient:
         if stream:
             return self._stream(generation)
 
-        content = self._generate_all(generation)
-        return {"message": {"content": content}, "done": True}
+        return self._generate_all(generation)
+
+    @staticmethod
+    def _metrics(start_time: float, first_token_time: Optional[float], end_time: float, token_count: int) -> dict:
+        """Ollama-shaped timing/throughput fields, in nanoseconds like Ollama's own.
+
+        HailoRT's genai LLM reports none of this itself (no token counts or
+        phase timings), so it's approximated from wall-clock measurements
+        taken around the generation loop: prompt_eval covers the time before
+        the first token arrives, eval covers everything after. load_duration
+        is always 0 here since the model stays resident between calls - there
+        is no per-call load cost to measure. eval_count is the number of
+        chunks HailoRT yielded, which approximates but isn't guaranteed to
+        equal the model's actual token count.
+        """
+        prompt_eval_duration = (first_token_time - start_time) if first_token_time else (end_time - start_time)
+        eval_duration = (end_time - first_token_time) if first_token_time else 0
+        return {
+            "total_duration": int((end_time - start_time) * 1e9),
+            "load_duration": 0,
+            "prompt_eval_duration": int(prompt_eval_duration * 1e9),
+            "eval_duration": int(eval_duration * 1e9),
+            "eval_count": token_count,
+        }
 
     def _stream(self, generation):
+        start_time = time.perf_counter()
+        first_token_time = None
+        token_count = 0
+
         # HailoRT only allows a system-role message as the very first prompt
         # sent to a context; clear_context() after each turn resets that so
         # every call can safely include a fresh system message again.
@@ -77,21 +105,43 @@ class HailoClient:
             for chunk in tokens:
                 if chunk == END_OF_TURN_TOKEN:
                     continue
+                if first_token_time is None:
+                    first_token_time = time.perf_counter()
+                token_count += 1
                 yield {"message": {"content": chunk}, "done": False}
 
+        end_time = time.perf_counter()
         self._llm.clear_context()
-        yield {"message": {"content": ""}, "done": True}
 
-    def _generate_all(self, generation) -> str:
+        yield {
+            "message": {"content": ""},
+            "done": True,
+            **self._metrics(start_time, first_token_time, end_time, token_count),
+        }
+
+    def _generate_all(self, generation) -> dict:
+        start_time = time.perf_counter()
+        first_token_time = None
+        token_count = 0
         content = ""
+
         with generation as tokens:
             for chunk in tokens:
                 if chunk == END_OF_TURN_TOKEN:
                     continue
+                if first_token_time is None:
+                    first_token_time = time.perf_counter()
+                token_count += 1
                 content += chunk
 
+        end_time = time.perf_counter()
         self._llm.clear_context()
-        return content
+
+        return {
+            "message": {"content": content},
+            "done": True,
+            **self._metrics(start_time, first_token_time, end_time, token_count),
+        }
 
     def stop(self):
         # Deliberately not releasing self._vdevice here: it's the shared

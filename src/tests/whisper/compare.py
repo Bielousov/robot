@@ -1,11 +1,18 @@
 """
 Side-by-side speech-to-text comparison: Vosk (CPU) vs Whisper (HailoRT).
 
-Listens to the mic continuously, gates out silence/noise with WebRTC VAD
-(same approach as lib/Ears.py), and on every detected utterance runs it
-through both engines in parallel background workers. Prints each model's
-transcript plus timing (utterance length, inference latency) to the console
-so the two can be compared for accuracy and speed.
+Listens to the mic continuously and runs two independent utterance
+segmenters over the same audio stream:
+    - Vosk is fed utterances gated by WebRTC VAD (same approach as
+      lib/Ears.py) - a speech/non-speech classifier.
+    - Whisper is fed utterances gated by a simple RMS noise gate instead.
+      Whisper's acoustic model is sensitive enough that VAD-passed hums,
+      electrical noise and near-silence get transcribed as hallucinated
+      text ("the", "going to be...") rather than rejected outright, so it
+      needs a level-based gate rather than a speech classifier.
+
+Each engine's transcript plus timing (utterance length, inference latency)
+is printed to the console so the two can be compared for accuracy and speed.
 
 Usage:
     python src/tests/whisper/compare.py
@@ -16,6 +23,7 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                               for the Hailo side; e.g. "whisper-tiny.hef")
     VOSK_SAMPLE_RATE          Mic/recognizer sample rate, default 16000
     MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
+    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold for Whisper, default -40.0
 """
 
 import json
@@ -49,6 +57,75 @@ VAD_FRAME_BYTES = int((SAMPLE_RATE / 1000) * VAD_FRAME_MS * 2)
 READ_CHUNK_BYTES = VAD_FRAME_BYTES * 4
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
+
+# Whisper noise gate: a plain RMS/dBFS threshold instead of a speech
+# classifier, since VAD happily passes hums/electrical noise that Whisper
+# then hallucinates text for.
+NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-40.0"))
+
+
+def rms_dbfs(data: bytes) -> float:
+    """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
+    samples = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+    if samples.size == 0:
+        return -float("inf")
+    rms = np.sqrt(np.mean(np.square(samples)))
+    if rms <= 0:
+        return -float("inf")
+    return 20 * np.log10(rms / 32768.0)
+
+
+class UtteranceSegmenter:
+    """Turns a stream of raw PCM chunks into finished utterances.
+
+    `is_speech_fn(chunk) -> bool` decides whether a given chunk counts as
+    speech; everything else about buffering, the silence hangover and the
+    max-length cutoff is shared, so Vosk (VAD-gated) and Whisper
+    (noise-gated) can each run their own instance over the same audio.
+    """
+
+    def __init__(self, is_speech_fn, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int):
+        self._is_speech_fn = is_speech_fn
+        self._sample_rate = sample_rate
+        self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
+        self._max_utterance_ms = max_utterance_ms
+
+        self._speech_active = False
+        self._silence_bytes = 0
+        self._frames = []
+        self._start_time = 0.0
+
+    def process(self, data: bytes):
+        """Feed one chunk of audio. Returns (pcm_bytes, utterance_ms) when
+        an utterance just finished, otherwise None."""
+        has_speech = self._is_speech_fn(data)
+
+        if has_speech:
+            if not self._speech_active:
+                self._start_time = time.time()
+            self._speech_active = True
+            self._silence_bytes = 0
+            self._frames.append(data)
+            return None
+
+        if not self._speech_active:
+            return None
+
+        self._silence_bytes += len(data)
+        self._frames.append(data)
+
+        elapsed_ms = (time.time() - self._start_time) * 1000
+        silence_timeout = self._silence_bytes >= self._silence_timeout_bytes
+        if not (silence_timeout or elapsed_ms >= self._max_utterance_ms):
+            return None
+
+        pcm_bytes = b"".join(self._frames)
+        utterance_ms = (time.time() - self._start_time) * 1000
+
+        self._speech_active = False
+        self._silence_bytes = 0
+        self._frames = []
+        return pcm_bytes, utterance_ms
 
 
 class VoskEngine:
@@ -171,12 +248,24 @@ def main():
             print(f"[WARN] {e} - running Vosk only.")
 
     vad = webrtcvad.Vad(2)
-    process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
-    speech_active = False
-    silence_bytes = 0
-    utterance_frames = []
-    utterance_start = 0.0
+    def vad_is_speech(data: bytes) -> bool:
+        for i in range(0, len(data), VAD_FRAME_BYTES):
+            frame = data[i:i + VAD_FRAME_BYTES]
+            if len(frame) == VAD_FRAME_BYTES and vad.is_speech(frame, SAMPLE_RATE):
+                return True
+        return False
+
+    def noise_gate_is_speech(data: bytes) -> bool:
+        return rms_dbfs(data) >= NOISE_GATE_DBFS
+
+    vosk_worker = workers[0]
+    whisper_worker = workers[1] if len(workers) > 1 else None
+
+    vosk_segmenter = UtteranceSegmenter(vad_is_speech, SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS)
+    whisper_segmenter = UtteranceSegmenter(noise_gate_is_speech, SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS)
+
+    process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Compare] Listening on {SAMPLE_RATE}Hz... (Ctrl+C to stop)")
 
@@ -186,34 +275,14 @@ def main():
             if not data:
                 break
 
-            has_speech = False
-            for i in range(0, len(data), VAD_FRAME_BYTES):
-                frame = data[i:i + VAD_FRAME_BYTES]
-                if len(frame) == VAD_FRAME_BYTES and vad.is_speech(frame, SAMPLE_RATE):
-                    has_speech = True
-                    break
+            vosk_utterance = vosk_segmenter.process(data)
+            if vosk_utterance:
+                vosk_worker.submit(*vosk_utterance)
 
-            if has_speech:
-                if not speech_active:
-                    utterance_start = time.time()
-                speech_active = True
-                silence_bytes = 0
-                utterance_frames.append(data)
-            elif speech_active:
-                silence_bytes += len(data)
-                utterance_frames.append(data)
-
-                elapsed_ms = (time.time() - utterance_start) * 1000
-                silence_timeout = silence_bytes >= (SAMPLE_RATE * 2 * SILENCE_TIMEOUT_MS / 1000)
-                if silence_timeout or elapsed_ms >= MAX_UTTERANCE_MS:
-                    pcm_bytes = b"".join(utterance_frames)
-                    utterance_ms = (time.time() - utterance_start) * 1000
-                    for worker in workers:
-                        worker.submit(pcm_bytes, utterance_ms)
-
-                    speech_active = False
-                    silence_bytes = 0
-                    utterance_frames = []
+            if whisper_worker:
+                whisper_utterance = whisper_segmenter.process(data)
+                if whisper_utterance:
+                    whisper_worker.submit(*whisper_utterance)
     except KeyboardInterrupt:
         print("\n[Compare] Stopping...")
     finally:

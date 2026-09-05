@@ -23,7 +23,9 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                               for the Hailo side; e.g. "whisper-tiny.hef")
     VOSK_MODEL_NAME           Vosk model dir name under lib/vosk/models (required)
     VOSK_SAMPLE_RATE          Mic/recognizer sample rate, default 16000
-    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold for Whisper, default -40.0
+    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold for Whisper, default -55.0
+    WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before a Whisper
+                              utterance is sent, default 300
 """
 
 import json
@@ -67,6 +69,14 @@ MAX_UTTERANCE_MS = 15_000
 # quiet real speech - as happened at the previous -40 default).
 NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-55.0"))
 
+# Whisper hallucinates filler words ("So,", "You", "The") when fed a
+# sliver of near-silence/noise rather than real speech - a single noise
+# blip that briefly crosses the gate is enough to trigger this. Require at
+# least this much actual gated-open audio (not counting the silence tail)
+# before a Whisper utterance is sent at all. Vosk doesn't need this - it
+# just returns empty text on short/noisy input rather than hallucinating.
+MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "300"))
+
 
 def rms_dbfs(data: bytes) -> float:
     """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
@@ -88,14 +98,16 @@ class UtteranceSegmenter:
     (noise-gated) can each run their own instance over the same audio.
     """
 
-    def __init__(self, is_speech_fn, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int):
+    def __init__(self, is_speech_fn, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0):
         self._is_speech_fn = is_speech_fn
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
+        self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
 
         self._speech_active = False
         self._silence_bytes = 0
+        self._speech_bytes = 0
         self._frames = []
         self._start_time = 0.0
 
@@ -107,8 +119,10 @@ class UtteranceSegmenter:
         if has_speech:
             if not self._speech_active:
                 self._start_time = time.time()
+                self._speech_bytes = 0
             self._speech_active = True
             self._silence_bytes = 0
+            self._speech_bytes += len(data)
             self._frames.append(data)
             return None
 
@@ -125,10 +139,16 @@ class UtteranceSegmenter:
 
         pcm_bytes = b"".join(self._frames)
         utterance_ms = (time.time() - self._start_time) * 1000
+        speech_bytes = self._speech_bytes
 
         self._speech_active = False
         self._silence_bytes = 0
+        self._speech_bytes = 0
         self._frames = []
+
+        if speech_bytes < self._min_speech_bytes:
+            return None
+
         return pcm_bytes, utterance_ms
 
 
@@ -275,7 +295,9 @@ def main():
     whisper_worker = workers[1] if len(workers) > 1 else None
 
     vosk_segmenter = UtteranceSegmenter(vad_is_speech, SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS)
-    whisper_segmenter = UtteranceSegmenter(noise_gate_is_speech, SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS)
+    whisper_segmenter = UtteranceSegmenter(
+        noise_gate_is_speech, SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS
+    )
 
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 

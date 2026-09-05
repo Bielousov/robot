@@ -16,6 +16,8 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
     MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
     VOSK_SAMPLE_RATE          Mic sample rate, default 16000
     WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold, default -55.0
+    WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before an utterance
+                              is sent to Whisper, default 300
 """
 
 import os
@@ -50,6 +52,13 @@ MAX_UTTERANCE_MS = 15_000
 # runtime and raise/lower WHISPER_NOISE_GATE_DBFS to match your input level.
 NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-55.0"))
 
+# Whisper hallucinates filler words ("So,", "You", "The") when fed a
+# sliver of near-silence/noise rather than real speech - a single noise
+# blip that briefly crosses the gate is enough to trigger this. Require at
+# least this much actual gated-open audio (not counting the silence tail)
+# before an utterance is sent to Whisper at all.
+MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "300"))
+
 
 def rms_dbfs(data: bytes) -> float:
     """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
@@ -66,13 +75,15 @@ class UtteranceSegmenter:
     """Turns a stream of raw PCM chunks into finished utterances, gated by
     a simple RMS noise gate."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
+        self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
 
         self._speech_active = False
         self._silence_bytes = 0
+        self._speech_bytes = 0
         self._frames = []
         self._start_time = 0.0
         self._gate_open = False
@@ -91,8 +102,10 @@ class UtteranceSegmenter:
         if has_speech:
             if not self._speech_active:
                 self._start_time = time.time()
+                self._speech_bytes = 0
             self._speech_active = True
             self._silence_bytes = 0
+            self._speech_bytes += len(data)
             self._frames.append(data)
             return None
 
@@ -109,10 +122,17 @@ class UtteranceSegmenter:
 
         pcm_bytes = b"".join(self._frames)
         utterance_ms = (time.time() - self._start_time) * 1000
+        speech_bytes = self._speech_bytes
 
         self._speech_active = False
         self._silence_bytes = 0
+        self._speech_bytes = 0
         self._frames = []
+
+        if speech_bytes < self._min_speech_bytes:
+            print(f"[Whisper Gate] dropped short utterance ({speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms speech)")
+            return None
+
         return pcm_bytes, utterance_ms
 
 
@@ -163,7 +183,7 @@ def main():
         sys.exit(1)
 
     engine = HailoWhisperEngine(whisper_model_name)
-    segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS)
+    segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS)
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Compare] Listening on {SAMPLE_RATE}Hz... (Ctrl+C to stop)")

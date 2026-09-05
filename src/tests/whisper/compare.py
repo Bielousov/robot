@@ -25,6 +25,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import webrtcvad
@@ -49,6 +50,16 @@ VAD_FRAME_BYTES = int((SAMPLE_RATE / 1000) * VAD_FRAME_MS * 2)
 READ_CHUNK_BYTES = VAD_FRAME_BYTES * 4
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
+MIN_AUDIO_RMS = int(os.getenv("WHISPER_MIN_RMS", "400"))
+MIN_VOICED_FRAMES = int(os.getenv("WHISPER_MIN_VOICED_FRAMES", "2"))
+
+
+def pcm_rms(pcm_bytes: bytes) -> float:
+    """Return the RMS amplitude of signed 16-bit mono PCM."""
+    samples = np.frombuffer(pcm_bytes, dtype=np.int16)
+    if samples.size == 0:
+        return 0.0
+    return float(np.sqrt(np.mean(samples.astype(np.float32) ** 2)))
 
 
 class VoskEngine:
@@ -90,6 +101,8 @@ class HailoWhisperEngine:
 
     def transcribe(self, pcm_bytes: bytes) -> str:
         # Speech2Text expects mono float32 PCM normalized to [-1.0, 1.0) @ 16kHz.
+        if pcm_rms(pcm_bytes) < MIN_AUDIO_RMS:
+            return ""
         audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
         return self._s2t.generate_all_text(audio_data=audio, task=self._task, language="en").strip()
 
@@ -138,7 +151,7 @@ class EngineWorker:
             self._engine.stop()
 
 
-def start_mic(sample_rate: int, device: str | None) -> subprocess.Popen:
+def start_mic(sample_rate: int, device: Optional[str]) -> subprocess.Popen:
     cmd = ["arecord", "-f", "S16_LE", "-r", str(sample_rate), "-c", "1", "-t", "raw"]
     if device:
         cmd[1:1] = ["-D", device]
@@ -177,6 +190,8 @@ def main():
     silence_bytes = 0
     utterance_frames = []
     utterance_start = 0.0
+    voiced_frames = 0
+    voiced_signal_frames = 0
 
     print(f"[Compare] Listening on {SAMPLE_RATE}Hz... (Ctrl+C to stop)")
 
@@ -187,17 +202,28 @@ def main():
                 break
 
             has_speech = False
+            chunk_voiced_frames = 0
+            chunk_voiced_signal_frames = 0
             for i in range(0, len(data), VAD_FRAME_BYTES):
                 frame = data[i:i + VAD_FRAME_BYTES]
-                if len(frame) == VAD_FRAME_BYTES and vad.is_speech(frame, SAMPLE_RATE):
-                    has_speech = True
-                    break
+                if len(frame) != VAD_FRAME_BYTES:
+                    continue
+                if vad.is_speech(frame, SAMPLE_RATE):
+                    chunk_voiced_frames += 1
+                    if pcm_rms(frame) >= MIN_AUDIO_RMS:
+                        chunk_voiced_signal_frames += 1
+
+            has_speech = chunk_voiced_signal_frames > 0
 
             if has_speech:
                 if not speech_active:
                     utterance_start = time.time()
+                    voiced_frames = 0
+                    voiced_signal_frames = 0
                 speech_active = True
                 silence_bytes = 0
+                voiced_frames += chunk_voiced_frames
+                voiced_signal_frames += chunk_voiced_signal_frames
                 utterance_frames.append(data)
             elif speech_active:
                 silence_bytes += len(data)
@@ -208,12 +234,26 @@ def main():
                 if silence_timeout or elapsed_ms >= MAX_UTTERANCE_MS:
                     pcm_bytes = b"".join(utterance_frames)
                     utterance_ms = (time.time() - utterance_start) * 1000
-                    for worker in workers:
-                        worker.submit(pcm_bytes, utterance_ms)
+                    utterance_rms = pcm_rms(pcm_bytes)
+                    if (
+                        voiced_signal_frames >= MIN_VOICED_FRAMES
+                        and utterance_rms >= MIN_AUDIO_RMS
+                    ):
+                        for worker in workers:
+                            worker.submit(pcm_bytes, utterance_ms)
+                    else:
+                        print(
+                            f"[Compare] Discarded low-energy segment: "
+                            f"utterance={utterance_ms:.0f}ms "
+                            f"rms={utterance_rms:.0f} "
+                            f"voiced_frames={voiced_signal_frames}"
+                        )
 
                     speech_active = False
                     silence_bytes = 0
                     utterance_frames = []
+                    voiced_frames = 0
+                    voiced_signal_frames = 0
     except KeyboardInterrupt:
         print("\n[Compare] Stopping...")
     finally:

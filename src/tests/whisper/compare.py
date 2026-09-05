@@ -60,8 +60,12 @@ MAX_UTTERANCE_MS = 15_000
 
 # Whisper noise gate: a plain RMS/dBFS threshold instead of a speech
 # classifier, since VAD happily passes hums/electrical noise that Whisper
-# then hallucinates text for.
-NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-40.0"))
+# then hallucinates text for. -55 dBFS is a starting point for mic setups
+# with no hardware/AGC gain; watch the "[Whisper Gate]" transitions printed
+# at runtime and raise/lower WHISPER_NOISE_GATE_DBFS to match your input
+# level (louder threshold = fewer false triggers, but risks gating out
+# quiet real speech - as happened at the previous -40 default).
+NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-55.0"))
 
 
 def rms_dbfs(data: bytes) -> float:
@@ -256,8 +260,16 @@ def main():
                 return True
         return False
 
+    gate_state = {"open": False}
+
     def noise_gate_is_speech(data: bytes) -> bool:
-        return rms_dbfs(data) >= NOISE_GATE_DBFS
+        level = rms_dbfs(data)
+        is_speech = level >= NOISE_GATE_DBFS
+        if is_speech != gate_state["open"]:
+            gate_state["open"] = is_speech
+            state = "open" if is_speech else "closed"
+            print(f"[Whisper Gate] {state} ({level:.1f} dBFS, threshold {NOISE_GATE_DBFS:.1f})")
+        return is_speech
 
     vosk_worker = workers[0]
     whisper_worker = workers[1] if len(workers) > 1 else None

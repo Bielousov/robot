@@ -47,11 +47,12 @@ class Ears:
             raise FileNotFoundError(f"Hailo Whisper model not found at {model_full_path}")
 
         # Hailo Whisper Setup
-        from hailo_platform import VDevice
         from hailo_platform.genai import Speech2Text, Speech2TextTask
 
+        from .hailo.device import get_vdevice
+
         self._task = Speech2TextTask.TRANSCRIBE
-        self._vdevice = VDevice()
+        self._vdevice = get_vdevice()
         print(f"[Ears] Loading Whisper model '{model_full_path.name}'...")
         self._s2t = Speech2Text(self._vdevice, str(model_full_path))
         print(f"[Ears] Whisper model '{model_full_path.name}' is ready.")
@@ -242,18 +243,20 @@ class Ears:
         print(f"[Ears]: Started listening for '{self.wake_word}'...")
 
     def stop_listening(self):
-        """Stops threads, kills arecord and releases the Hailo device."""
+        """Stops threads and kills arecord.
+
+        Deliberately not releasing self._s2t/self._vdevice here: the
+        vdevice is the shared HailoRT device (lib/hailo/device.py) also
+        used by Mind's HailoClient, so this must not tear it down - and
+        explicitly releasing HailoRT resources during process shutdown is
+        known to throw (see Mind.stop()'s comment for the same reasoning).
+        Leaving cleanup to the interpreter during shutdown is silent and
+        clean.
+        """
         self.__threads.stop()
         if self.__process_handle:
             self.__process_handle.terminate()
             self.__process_handle.wait()
             self.__process_handle = None
-
-        if getattr(self, "_s2t", None) is not None:
-            self._s2t.release()
-            self._s2t = None
-        if getattr(self, "_vdevice", None) is not None:
-            self._vdevice.release()
-            self._vdevice = None
 
         print("[Ears]: Stopped.")

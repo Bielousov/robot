@@ -12,7 +12,7 @@ if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
 from models.llm.config.hailo import get_model_config, get_conversation_model_options
-from models.hailo.identity import build_identity_system_prompt
+from models.llm.identity import build_identity_system_prompt
 
 # -------- paths / config --------
 

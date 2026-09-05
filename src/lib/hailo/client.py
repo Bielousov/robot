@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from hailo_platform import VDevice
 from hailo_platform.genai import LLM
+
+from lib.hailo.device import get_vdevice
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.parent.resolve()
@@ -24,7 +25,7 @@ class HailoClient:
 
     def __init__(self):
         self.model = None
-        self._vdevice = VDevice()
+        self._vdevice = get_vdevice()
         self._llm = None
 
     def load_model(self, model: str):
@@ -93,10 +94,10 @@ class HailoClient:
         return content
 
     def stop(self):
+        # Deliberately not releasing self._vdevice here: it's the shared
+        # HailoRT device (lib/hailo/device.py) used by Ears' Whisper engine
+        # too, so this client must not tear it down on its own.
         if self._llm is not None:
             self._llm.clear_context()
             self._llm.release()
             self._llm = None
-        if self._vdevice is not None:
-            self._vdevice.release()
-            self._vdevice = None

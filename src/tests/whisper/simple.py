@@ -2,10 +2,10 @@
 Simple speech-to-text test: Whisper on HailoRT only.
 
 Listens to the mic continuously, gates out silence/noise with a plain RMS
-noise gate (not VAD - Whisper's acoustic model is sensitive enough that
-VAD-passed hums/electrical noise get transcribed as hallucinated text
-rather than rejected outright), and prints each utterance's transcript
-plus timing (utterance length, inference latency) to the console.
+noise gate (Whisper's acoustic model is sensitive enough that quiet
+hums/electrical noise get transcribed as hallucinated text rather than
+rejected outright), and prints each utterance's transcript plus timing
+(utterance length, inference latency) to the console.
 
 Usage:
     python src/tests/whisper/simple.py
@@ -14,10 +14,10 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
     HAILO_WHISPER_MODEL_HEF   Whisper HEF file name under lib/hailo/models
                               (required; e.g. "Whisper-Small.hef")
     MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
-    VOSK_SAMPLE_RATE          Mic sample rate, default 16000
-    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold, default -55.0
+    WHISPER_SAMPLE_RATE       Mic sample rate, default 16000
+    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold, default -45.0
     WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before an utterance
-                              is sent to Whisper, default 300
+                              is sent to Whisper, default 500
 """
 
 import os
@@ -37,7 +37,7 @@ from config import Env
 
 HAILO_MODELS_PATH = PROJECT_PATH / "lib" / "hailo" / "models"
 
-SAMPLE_RATE = Env.VoskSampleRate
+SAMPLE_RATE = Env.WhisperSampleRate
 MIC_DEVICE = os.getenv("MIC_DEVICE")
 
 # Utterance segmentation
@@ -50,14 +50,14 @@ MAX_UTTERANCE_MS = 15_000
 # classifier. -55 dBFS is a starting point for mic setups with no
 # hardware/AGC gain; watch the "[Whisper Gate]" transitions printed at
 # runtime and raise/lower WHISPER_NOISE_GATE_DBFS to match your input level.
-NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-55.0"))
+NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-45.0"))
 
 # Whisper hallucinates filler words ("So,", "You", "The") when fed a
 # sliver of near-silence/noise rather than real speech - a single noise
 # blip that briefly crosses the gate is enough to trigger this. Require at
 # least this much actual gated-open audio (not counting the silence tail)
 # before an utterance is sent to Whisper at all.
-MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "300"))
+MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "500"))
 
 
 def rms_dbfs(data: bytes) -> float:

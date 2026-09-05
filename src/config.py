@@ -17,11 +17,11 @@ Env = Enum (
   EavesdropHistoryLimit     = int(getenv('EAVESDROP_HISTORY_LIMIT', '8')),
   Voice                     = getenv('PIPER_MODEL_NAME', 'en_US-danny-low'),
   VoiceSampleRate           = int(getenv('PIPER_SAMPLE_RATE', '16000')),
-  VoskModel                 = getenv('VOSK_MODEL_NAME'),
-  VoskSampleRate            = int(getenv('VOSK_SAMPLE_RATE', '16000')),
-  VoskAliases               = getenv('VOSK_ALIASES', 'robot'),
-  WhisperModel              = getenv('HAILO_WHISPER_MODEL_HEF', 'base.en'),
-  WhisperSampleRate         = int(getenv('WHISPER_SAMPLE_RATE', '16000'))
+  WhisperWakeAliases        = getenv('WHISPER_WAKE_ALIASES', 'robot'),
+  WhisperModel              = getenv('HAILO_WHISPER_MODEL_HEF'),
+  WhisperSampleRate         = int(getenv('WHISPER_SAMPLE_RATE', '16000')),
+  WhisperNoiseGateDbfs      = float(getenv('WHISPER_NOISE_GATE_DBFS', '-45.0')),
+  WhisperMinSpeechMs        = float(getenv('WHISPER_MIN_SPEECH_MS', '500'))
 )
 
 # --- Model Instance Setup ---

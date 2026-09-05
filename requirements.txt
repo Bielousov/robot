@@ -6,5 +6,3 @@ pandas
 psutil
 python-dotenv
 scikit-learn
-vosk
-webrtcvad

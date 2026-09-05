@@ -31,10 +31,12 @@ class Robot:
         # 2. Prefrontal Cortex (LLM)
         self.ears = Ears(
             debug=Env.Debug,
-            model_name=Env.VoskModel, 
-            sample_rate=Env.VoskSampleRate,
+            model_name=Env.WhisperModel,
+            sample_rate=Env.WhisperSampleRate,
             wake_word=Name,
-            wake_aliases=Env.VoskAliases,
+            wake_aliases=Env.WhisperWakeAliases,
+            noise_gate_dbfs=Env.WhisperNoiseGateDbfs,
+            min_speech_ms=Env.WhisperMinSpeechMs,
             on_listen=self._on_listen,
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
@@ -116,7 +118,7 @@ class Robot:
         """Callback for audio gating and recognized text handling.
         
         Called twice:
-        1. With no text: gate check before Vosk processing
+        1. With no text: gate check before speech recognition
         2. With text: after speech recognition to append to eavesdrop
         """
         if text:

@@ -1,18 +1,28 @@
-import json
-import subprocess
 import atexit
+import subprocess
+import time
 from pathlib import Path
 from typing import Callable, Optional
-from vosk import Model, KaldiRecognizer, SetLogLevel
-import webrtcvad
-import time
+
+import numpy as np
 
 # Use the existing Process architecture
 from .Threads import Threads
 
 LIB_PATH = Path(__file__).parent.resolve()
-VOSK_PATH = LIB_PATH / "vosk"
-MODELS_PATH = VOSK_PATH / "models"
+HAILO_PATH = LIB_PATH / "hailo"
+MODELS_PATH = HAILO_PATH / "models"
+
+def rms_dbfs(data: bytes) -> float:
+    """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
+    samples = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+    if samples.size == 0:
+        return -float("inf")
+    rms = np.sqrt(np.mean(np.square(samples)))
+    if rms <= 0:
+        return -float("inf")
+    return 20 * np.log10(rms / 32768.0)
+
 
 class Ears:
     def __init__(
@@ -25,53 +35,70 @@ class Ears:
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
             debug: bool = False,
+            noise_gate_dbfs: float = -45.0,
+            min_speech_ms: float = 500,
         ):
-    
-        self._debug = debug;
-        SetLogLevel(0 if self._debug else -1)
+
+        self._debug = debug
 
         # Paths
         model_full_path = MODELS_PATH / model_name
         if not model_full_path.exists():
-            raise FileNotFoundError(f"Vosk model not found at {model_full_path}")
+            raise FileNotFoundError(f"Hailo Whisper model not found at {model_full_path}")
 
-        # Vosk Setup
-        self.model = Model(str(model_full_path))
-        self.recognizer = KaldiRecognizer(self.model, sample_rate)
-        
+        # Hailo Whisper Setup
+        from hailo_platform import VDevice
+        from hailo_platform.genai import Speech2Text, Speech2TextTask
+
+        self._task = Speech2TextTask.TRANSCRIBE
+        self._vdevice = VDevice()
+        print(f"[Ears] Loading Whisper model '{model_full_path.name}'...")
+        self._s2t = Speech2Text(self._vdevice, str(model_full_path))
+        print(f"[Ears] Whisper model '{model_full_path.name}' is ready.")
+
         # Audio Config
         self.sample_rate = sample_rate
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
-        
+
         # Keep chunks short enough for responsive capture without excessive
-        # per-call recognizer overhead on the Pi.
+        # per-call overhead on the Pi.
         self.sample_length_ms = 160
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
         self.silence_timeout_ms = 300
         self.silence_bytes = 0
 
-        # VAD Setup
-        self.vad = webrtcvad.Vad(2)
-        # VAD frame size: 20ms * 2 bytes per sample (16-bit)
-        self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
+        # Noise gate: a plain RMS/dBFS threshold. Whisper's acoustic model
+        # is sensitive enough that quiet hums/electrical noise get
+        # transcribed as hallucinated text rather than rejected outright,
+        # so a level-based gate is needed to keep it from being fed
+        # anything at all below the threshold. min_speech_ms additionally
+        # drops utterances that are mostly silence tail with only a noise
+        # blip of real gated-open audio, since Whisper hallucinates filler
+        # words ("So,", "You", "The") on slivers of near-silence.
+        self.noise_gate_dbfs = noise_gate_dbfs
+        self.min_speech_bytes = int(self.sample_rate * 2 * min_speech_ms / 1000)
+        self.max_utterance_ms = 15_000
 
-        
         # Threading Management
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
         self.__speech_active = False
+        self.__speech_bytes = 0
+        self.__utterance_frames = []
+        self.__utterance_start = 0.0
+        self.__gate_open = False
 
         # Callback handlers
         self.__on_listen = on_listen
         self.__on_record = on_record
         self.__on_wake = on_wake
-        
+
         # Cleanup on exit
         atexit.register(self.stop_listening)
 
     def _cleanup(self, text: str) -> str:
-        text = text.lower().strip()        
+        text = text.lower().strip()
         wake_aliases = self.wake_aliases
         for alias in wake_aliases:
             text = text.replace(alias, self.wake_word)
@@ -82,14 +109,14 @@ class Ears:
 
         # Filter out very short utterances (noise/false positives)
         has_wake_word = self.wake_word in text
-        
+
         # Only keep if: contains wake word OR has 2+ words
         # Reject all single short words (articles, prepositions, etc.)
         if not (has_wake_word or len(text) >= 5):
             return ""  # Filter out noise like single "the", "a", "is", etc.
 
         return text
-    
+
     def _validate(self, text: str) -> bool:
         return self.wake_word in text
 
@@ -106,7 +133,7 @@ class Ears:
 
         # Read audio - blocking, waits for data to arrive
         data = self.__process_handle.stdout.read(self.buffer_size)
-        
+
         # Check for arecord errors
         if self.__process_handle.poll() is not None:
             # Subprocess exited, check stderr
@@ -116,77 +143,90 @@ class Ears:
                     print(f"[Ears] arecord error: {stderr}")
             except:
                 pass
-        
+
         if not data:
             return
 
-        # Check if audio has voice activity before processing with Vosk
-        # VAD requires 10ms, 20ms, or 30ms frames
-        # At 16kHz: 20ms = 320 samples * 2 bytes (16-bit) = 640 bytes
-        
-        has_speech = False
-        try:
-            # Process audio in 20ms chunks through VAD
-            for i in range(0, len(data), self.vad_frame_size):
-                frame = data[i:i+self.vad_frame_size]
-                if len(frame) == self.vad_frame_size:  # Only process complete frames
-                    if self.vad.is_speech(frame, self.sample_rate):
-                        has_speech = True
-                        if self.__on_listen:
-                            self.__on_listen(True)
-                        break
-        except Exception as e:
-            has_speech = True  # Default to True if VAD fails
-            print(f"[VAD] Error: {e}")
+        # Noise gate: only treat this chunk as speech if it's loud enough.
+        level = rms_dbfs(data)
+        has_speech = level >= self.noise_gate_dbfs
 
-        # Keep feeding a short silence tail so Vosk can finalize the utterance.
+        if self._debug and has_speech != self.__gate_open:
+            self.__gate_open = has_speech
+            state = "open" if has_speech else "closed"
+            print(f"[Ears] Gate {state} ({level:.1f} dBFS, threshold {self.noise_gate_dbfs:.1f})")
+
         if has_speech:
+            if not self.__speech_active:
+                self.__utterance_start = time.time()
+                self.__speech_bytes = 0
             self.__speech_active = True
             self.silence_bytes = 0
-        elif not self.__speech_active:
+            self.__speech_bytes += len(data)
+            self.__utterance_frames.append(data)
+            if self.__on_listen:
+                self.__on_listen(True)
             return
-        else:
-            self.silence_bytes += len(data)
 
-        # Process with Vosk
-        start_time = time.time()
-        accepted = self.recognizer.AcceptWaveform(data)
+        if not self.__speech_active:
+            return
+
+        # Keep feeding a short silence tail so the utterance can be finalized.
+        self.silence_bytes += len(data)
+        self.__utterance_frames.append(data)
+
+        elapsed_ms = (time.time() - self.__utterance_start) * 1000
         silence_timeout = self.silence_bytes >= (
             self.sample_rate * 2 * self.silence_timeout_ms / 1000
         )
-        if accepted or silence_timeout:
-            process_time = time.time() - start_time
+        if not (silence_timeout or elapsed_ms >= self.max_utterance_ms):
+            return
+
+        pcm_bytes = b"".join(self.__utterance_frames)
+        speech_bytes = self.__speech_bytes
+
+        self.__speech_active = False
+        self.silence_bytes = 0
+        self.__speech_bytes = 0
+        self.__utterance_frames = []
+
+        if speech_bytes < self.min_speech_bytes:
             if self._debug:
-                print(f"[Vosk] Processing time: {process_time*1000:.2f}ms")
-            
-            result_method = self.recognizer.Result if accepted else self.recognizer.FinalResult
-            result = json.loads(result_method())
-            self.__speech_active = False
-            self.silence_bytes = 0
-            text = self._cleanup(result.get("text", ""))
-            
-            if text:
-                # Print transcript of heard speech
-                if self._debug:
-                    print(f"[Ears] Heard: {text}")
-                
-                # Call on_record callback for ALL detected speech and check gate
-                gate_check = True  # Default to allow processing
-                if self.__on_record:
-                    gate_check = self.__on_record(text)
-                
-                # If gate returned False, stop processing further
-                if gate_check is False:
-                    self.recognizer.Reset()
-                    return
-                
-                # Call on_wake callback ONLY if wake word is detected
-                if self._validate(text):
-                    self._on_wake_word_detected(text)
-        else:
-            # You can handle partial results here if needed
-            # partial = json.loads(self.recognizer.PartialResult())
-            pass
+                dropped_ms = speech_bytes / (self.sample_rate * 2) * 1000
+                print(f"[Ears] Dropped short utterance ({dropped_ms:.0f}ms speech)")
+            return
+
+        # Process with Whisper
+        start_time = time.time()
+        try:
+            audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            text = self._s2t.generate_all_text(audio_data=audio, task=self._task, language="en").strip()
+        except Exception as e:
+            print(f"[Ears] Whisper transcribe error: {e}")
+            return
+        process_time = time.time() - start_time
+        if self._debug:
+            print(f"[Ears] Processing time: {process_time*1000:.2f}ms")
+
+        text = self._cleanup(text)
+
+        if text:
+            # Print transcript of heard speech
+            if self._debug:
+                print(f"[Ears] Heard: {text}")
+
+            # Call on_record callback for ALL detected speech and check gate
+            gate_check = True  # Default to allow processing
+            if self.__on_record:
+                gate_check = self.__on_record(text)
+
+            # If gate returned False, stop processing further
+            if gate_check is False:
+                return
+
+            # Call on_wake callback ONLY if wake word is detected
+            if self._validate(text):
+                self._on_wake_word_detected(text)
 
 
     def _on_wake_word_detected(self, text):
@@ -202,11 +242,18 @@ class Ears:
         print(f"[Ears]: Started listening for '{self.wake_word}'...")
 
     def stop_listening(self):
-        """Stops threads and kills arecord."""
+        """Stops threads, kills arecord and releases the Hailo device."""
         self.__threads.stop()
         if self.__process_handle:
             self.__process_handle.terminate()
             self.__process_handle.wait()
             self.__process_handle = None
-        
+
+        if getattr(self, "_s2t", None) is not None:
+            self._s2t.release()
+            self._s2t = None
+        if getattr(self, "_vdevice", None) is not None:
+            self._vdevice.release()
+            self._vdevice = None
+
         print("[Ears]: Stopped.")

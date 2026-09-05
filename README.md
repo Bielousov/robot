@@ -1,27 +1,29 @@
 # AI Robot
+
 On-board offline AI-powered robot / assistant
 
 ## Tech Stack
+
 - Hradware:
   - Raspberry Pi (optimized for 4GB version)
     - Raspbian OS
     - Python 3
     - I2S or USB Sound
     - I2S or USB Mic
+  - AI Hat+ 2 (Hailo-10H), 8GB RAM
 
 - Text to Speech: [Piper](https://github.com/OHF-Voice/piper1-gpl)
   - `low` model is fast enough, `medium` has some noticeable latency on RPi5
 
-- Speech to Text: [Vosk](https://alphacephei.com/vosk/)
+- Speech to Text: Whisper on HailoRT (AI Hat+ 2, Hailo-10H)
 
-- GPT Model: [Ollama](https://docs.ollama.com/)
-  - [models](https://ollama.com/library) up to 1.5B run ok-ish on RPi5 with 4GB RAM
-  - TODO: RPi AI Hailo-10H (8GB) module support to increase the supported model context, to offload LLM service and also to include web chat access to it.
+- LLM Model: [Hailo-Ollama]
+  - RPi AI Hailo-10H (8GB) module support to offload LLM service and also to include web chat access to it.
 
 ## Local Setup
 
 - Create `.env` alias to `src/.env.example`:
-    `ln -s src/.env.example .env`
+  `ln -s src/.env.example .env`
 - Install Docker
 - In VSCode install Dev Containers extension
 - Open the Command Palette (Command + Shift + P)
@@ -33,12 +35,12 @@ On-board offline AI-powered robot / assistant
 
 - TTS and STT are not supported in local setup
 
-
 ## Board Configuration
 
 ### Enable I2S Sound:
 
 ##### /boot/firmware/config.txt
+
 ```
 # Enable I2S
 dtparam=i2s=on
@@ -55,12 +57,14 @@ hdmi_ignore_edid_audio=1
 ```
 
 ##### /etc/asound.conf
+
 ```
 defaults.pcm.card 0
 defaults.ctl.card 0
 ```
 
 ### System dependencies install
+
 ```bash
   sudo apt-get update &&
   sudo apt-get install -y \
@@ -86,7 +90,6 @@ alsamixer
 speaker-test -t wav -c 2
 ```
 
-
 ### Clone Git repo
 
 ```bash
@@ -95,25 +98,30 @@ speaker-test -t wav -c 2
 ```
 
 ### Enable python virtual environment
+
 ```bash
   python3 -m venv .venv --upgrade-deps
-  source .venv/bin/activate  
-```  
+  source .venv/bin/activate
+```
 
 ### Python dependencies install
+
 ```
   pip install -r requirements.txt
 ```
 
-
 ### Create ENV file:
+
 Run:
+
 ```
   cp .env.example .env
 ```
 
 ### Project dependency install:
+
 Run:
+
 ```
   bash install.sh
 ```
@@ -121,7 +129,8 @@ Run:
 ## State
 
 ### Awake status
-0	Steady Sleep	Was asleep, still asleep.
-1	Steady Awake	Was awake, still awake.
-2	Falling Asleep	Was awake, now asleep (Trigger "Goodbye").
--1	Waking Up	Was asleep, now awake (Trigger "Hello").
+
+0 Steady Sleep Was asleep, still asleep.
+1 Steady Awake Was awake, still awake.
+2 Falling Asleep Was awake, now asleep (Trigger "Goodbye").
+-1 Waking Up Was asleep, now awake (Trigger "Hello").

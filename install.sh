@@ -10,7 +10,7 @@ echo "[Main] Detected Script Directory: $SCRIPT_DIR"
 # Define the installer paths
 OLLAMA_INSTALLER="$SCRIPT_DIR/src/lib/ollama/install.sh"
 PIPER_INSTALLER="$SCRIPT_DIR/src/lib/piper/install.sh"
-VOSK_INSTALLER="$SCRIPT_DIR/src/lib/vosk/install.sh"
+HAILO_INSTALLER="$SCRIPT_DIR/src/lib/hailo/install.sh"
 WEB_INSTALLER="$SCRIPT_DIR/web/install.sh"
 
 
@@ -36,13 +36,13 @@ fi
 
 echo "[Main] Installation sequence finished."
 
-# --- Run Vosk Installer ---
-if [ -f "$VOSK_INSTALLER" ]; then
-    echo "[Main] Launching Vosk (STT) Installer..."
-    chmod +x "$VOSK_INSTALLER"
-    bash "$VOSK_INSTALLER"
+# --- Run Hailo Installer (LLM + Whisper STT models) ---
+if [ -f "$HAILO_INSTALLER" ]; then
+    echo "[Main] Launching Hailo (LLM/STT) Installer..."
+    chmod +x "$HAILO_INSTALLER"
+    bash "$HAILO_INSTALLER"
 else
-    echo "[Error] Could not find Vosk installer at: $VOSK_INSTALLER"
+    echo "[Error] Could not find Hailo installer at: $HAILO_INSTALLER"
 fi
 
 # --- Run Web Installer ---

@@ -18,8 +18,12 @@ class Robot:
         # 1. Load Brain model and Dictionary
         self.manager = ModelManager(Paths)
         self.model, self.scaler = self.manager.load()
+
+        # Dictionaries
+        self.matches = Dictionary(Paths.Matches)
         self.prompts = Dictionary(Paths.Prompts)
         self.quick_responses = Dictionary(Paths.Responses)
+
         self.state = State()
         
         # 2. Prefrontal Cortex (LLM)
@@ -122,6 +126,15 @@ class Robot:
         2. With text: after speech recognition to append to eavesdrop
         """
         if text:
+            phrase = text.strip().lower()
+            for key, value in self.matches.data.items():
+                matches = value if isinstance(value, list) else [value]
+                for match in matches:
+                    parts = [piece.strip().lower() for piece in str(match).split(',')]
+                    if any(part and part in phrase for part in parts):
+                        self.state.prompts.append(key)
+                        break
+
             # Text recognized - append to eavesdrop history (auto-limited)
             self.state.append_eavesdrop(text)
             self.state.set_last_spoke()

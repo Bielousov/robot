@@ -1,4 +1,11 @@
 {
+    "bless_you": [
+        "Human just coughed. Respond with a polite 'bless you' or similar.",
+        "Someone sneezed. Say 'bless you' or a similar phrase.",
+        "A sneeze was detected. Offer a courteous 'bless you' or equivalent.",
+        "The user sneezed. Respond with a polite acknowledgment.",
+        "A sneeze occurred. Say 'bless you' or a similar expression.",
+    ],
     "hello": [
         "Greet the user naturally in one short sentence.",
         "Say hello in your character.",
@@ -35,6 +42,17 @@
         "Taking into account the current conversation, give me a related fact or joke.",
         "With the recent context in mind, provide a relevant piece of information.",
         "Based on our discussion so far, tell me something interesting.",
-        "Given the flow of our conversation, share a related fun fact or tip."
+        "Given the flow of our conversation, share a related fun fact or tip.",
+        "Considering what was just mentioned, offer a brief, relevant insight.",
+        "Based on the recent conversation, share a related fun fact or joke.",
+        "Given the context of our discussion, provide a relevant piece of information or insight.",
+        "Considering the flow of our conversation, offer a related fun fact or tip.",
+        "Reflecting on what was just said, share an interesting piece of information or a brief joke.",
+        "Taking into account the recent dialogue, provide a relevant fun fact or insight.",
+        "With the context of our discussion in mind, offer a related piece of information or a brief joke.",
+        "Based on the recent conversation, share a related fun fact or a brief insight.",
+        "Given the flow of our discussion, provide a relevant piece of information or a brief joke.",
+        "Considering what was just mentioned, offer a related fun fact or a brief insight.",
+        "Reflecting on the recent dialogue, share an interesting piece of information or a brief joke."
     ]
 }

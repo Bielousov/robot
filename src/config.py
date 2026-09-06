@@ -29,6 +29,8 @@ Paths = Enum (
   Model = path.join(BASE_DIR, "models/robot_model.pkg"),
   ModelScaler = path.join(BASE_DIR, "models/scaler.pkg"),
   ModelTrainingData = path.join(BASE_DIR, "models/training_data.json"),
+
+  Matches = path.join(BASE_DIR, "dictionary/matches.json"),
   Prompts = path.join(BASE_DIR, "dictionary/prompts.json"),
   Responses = path.join(BASE_DIR, "dictionary/responses.json")
 )

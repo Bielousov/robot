@@ -17,7 +17,7 @@ class IntentHandler:
         # --- PHASE 1: ACTION EXECUTION ---
         if action == 1: # SLEEP
             self._debug("Action: SLEEP", tag="ROBOT")
-            self._handle_sleep_intent();
+            self._handle_sleep_intent()
         
         elif action == 2: # WAKE UP
             self._debug("Action: WAKE UP", tag="ROBOT")

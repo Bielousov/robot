@@ -20,7 +20,7 @@ Env = Enum (
   WhisperWakeAliases        = getenv('WHISPER_WAKE_ALIASES', 'robot'),
   WhisperModel              = getenv('HAILO_WHISPER_MODEL_HEF'),
   WhisperSampleRate         = int(getenv('WHISPER_SAMPLE_RATE', '16000')),
-  WhisperNoiseGateDbfs      = float(getenv('WHISPER_NOISE_GATE_DBFS', '-45.0')),
+  WhisperNoiseGateDbfs      = float(getenv('WHISPER_NOISE_GATE_DBFS', '-48.0')),
   WhisperMinSpeechMs        = float(getenv('WHISPER_MIN_SPEECH_MS', '500'))
 )
 

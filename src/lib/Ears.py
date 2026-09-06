@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import numpy as np
+import webrtcvad
 
 # Use the existing Process architecture
 from .Threads import Threads
@@ -35,7 +36,7 @@ class Ears:
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
             debug: bool = False,
-            noise_gate_dbfs: float = -45.0,
+            noise_gate_dbfs: float = -48.0,
             min_speech_ms: float = 500,
         ):
 
@@ -68,6 +69,11 @@ class Ears:
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
         self.silence_timeout_ms = 300
         self.silence_bytes = 0
+
+        # Use permissive VAD mode 1 as the primary speech detector. The RMS
+        # gate below remains a secondary guard against quiet electrical noise.
+        self.vad = webrtcvad.Vad(1)
+        self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
 
         # Noise gate: a plain RMS/dBFS threshold. Whisper's acoustic model
         # is sensitive enough that quiet hums/electrical noise get
@@ -147,9 +153,28 @@ class Ears:
         if not data:
             return
 
-        # Noise gate: only treat this chunk as speech if it's loud enough.
+        # Require both voice activity and sufficient signal energy. VAD mode 1
+        # is intentionally permissive; RMS remains the secondary noise gate.
         level = rms_dbfs(data)
-        has_speech = level >= self.noise_gate_dbfs
+        rms_speech = level >= self.noise_gate_dbfs
+        vad_speech = False
+        try:
+            for offset in range(0, len(data), self.vad_frame_size):
+                frame = data[offset:offset + self.vad_frame_size]
+                if (
+                    len(frame) == self.vad_frame_size
+                    and self.vad.is_speech(frame, self.sample_rate)
+                ):
+                    vad_speech = True
+                    break
+        except Exception as exc:
+            # Keep the RMS gate as a safe fallback if VAD rejects a frame or
+            # the audio stream is not in a supported format.
+            vad_speech = rms_speech
+            if self._debug:
+                print(f"[VAD] Error: {exc}; using RMS gate fallback")
+
+        has_speech = vad_speech and rms_speech
 
         if has_speech:
             if not self.__speech_active:

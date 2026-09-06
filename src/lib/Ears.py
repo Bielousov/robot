@@ -14,16 +14,6 @@ LIB_PATH = Path(__file__).parent.resolve()
 HAILO_PATH = LIB_PATH / "hailo"
 MODELS_PATH = HAILO_PATH / "models"
 
-def rms_dbfs(data: bytes) -> float:
-    """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
-    samples = np.frombuffer(data, dtype=np.int16).astype(np.float32)
-    if samples.size == 0:
-        return -float("inf")
-    rms = np.sqrt(np.mean(np.square(samples)))
-    if rms <= 0:
-        return -float("inf")
-    return 20 * np.log10(rms / 32768.0)
-
 
 class Ears:
     def __init__(
@@ -70,20 +60,12 @@ class Ears:
         self.silence_timeout_ms = 300
         self.silence_bytes = 0
 
-        # Use permissive VAD mode 1 as the primary speech detector. The RMS
-        # gate below remains a secondary guard against quiet electrical noise.
+        # VAD is the only gate used here. Whisper can hallucinate on near-
+        # silent noise, so the listener intentionally does not apply a separate
+        # RMS/Whisper noise gate; the VAD decision alone controls speech.
         self.vad = webrtcvad.Vad(1)
         self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
-
-        # Noise gate: a plain RMS/dBFS threshold. Whisper's acoustic model
-        # is sensitive enough that quiet hums/electrical noise get
-        # transcribed as hallucinated text rather than rejected outright,
-        # so a level-based gate is needed to keep it from being fed
-        # anything at all below the threshold. min_speech_ms additionally
-        # drops utterances that are mostly silence tail with only a noise
-        # blip of real gated-open audio, since Whisper hallucinates filler
-        # words ("So,", "You", "The") on slivers of near-silence.
-        self.noise_gate_dbfs = noise_gate_dbfs
+        self.noise_gate_dbfs = None
         self.min_speech_bytes = int(self.sample_rate * 2 * min_speech_ms / 1000)
         self.max_utterance_ms = 15_000
 
@@ -153,10 +135,8 @@ class Ears:
         if not data:
             return
 
-        # Require both voice activity and sufficient signal energy. VAD mode 1
-        # is intentionally permissive; RMS remains the secondary noise gate.
-        level = rms_dbfs(data)
-        rms_speech = level >= self.noise_gate_dbfs
+        # VAD-only gate: low-energy hum/noise is not rejected by an RMS check,
+        # it is simply ignored unless the VAD identifies actual speech.
         vad_speech = False
         try:
             for offset in range(0, len(data), self.vad_frame_size):
@@ -168,13 +148,11 @@ class Ears:
                     vad_speech = True
                     break
         except Exception as exc:
-            # Keep the RMS gate as a safe fallback if VAD rejects a frame or
-            # the audio stream is not in a supported format.
-            vad_speech = rms_speech
+            vad_speech = False
             if self._debug:
-                print(f"[VAD] Error: {exc}; using RMS gate fallback")
+                print(f"[VAD] Error: {exc}; no RMS fallback enabled")
 
-        has_speech = vad_speech and rms_speech
+        has_speech = vad_speech
 
         if has_speech:
             if not self.__speech_active:

@@ -4,7 +4,7 @@
         "Someone sneezed. Say 'bless you' or a similar phrase.",
         "A sneeze was detected. Offer a courteous 'bless you' or equivalent.",
         "The user sneezed. Respond with a polite acknowledgment.",
-        "A sneeze occurred. Say 'bless you' or a similar expression.",
+        "A sneeze occurred. Say 'bless you' or a similar expression."
     ],
     "hello": [
         "Greet the user naturally in one short sentence.",

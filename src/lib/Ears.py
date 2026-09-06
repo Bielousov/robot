@@ -26,8 +26,6 @@ class Ears:
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
             debug: bool = False,
-            noise_gate_dbfs: float = -48.0,
-            min_speech_ms: float = 500,
         ):
 
         self._debug = debug
@@ -63,19 +61,23 @@ class Ears:
         # VAD is the only gate used here. Whisper can hallucinate on near-
         # silent noise, so the listener intentionally does not apply a separate
         # RMS/Whisper noise gate; the VAD decision alone controls speech.
-        self.vad = webrtcvad.Vad(1)
+        #
+        # Use the most sensitive mode and require a tiny burst of VAD-positive
+        # frames before declaring speech. This keeps the gate out of the old
+        # dBFS/noise-threshold design while making quiet speech much less likely
+        # to be dropped by a single-frame miss.
+        self.vad = webrtcvad.Vad(0)
         self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
-        self.noise_gate_dbfs = None
-        self.min_speech_bytes = int(self.sample_rate * 2 * min_speech_ms / 1000)
+        self.vad_frames_to_start = 2
         self.max_utterance_ms = 15_000
 
         # Threading Management
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
         self.__speech_active = False
-        self.__speech_bytes = 0
         self.__utterance_frames = []
         self.__utterance_start = 0.0
+        self.__vad_hits_in_row = 0
 
         # Callback handlers
         self.__on_listen = on_listen
@@ -108,6 +110,28 @@ class Ears:
     def _validate(self, text: str) -> bool:
         return self.wake_word in text
 
+    def _has_voice_activity(self, data: bytes) -> bool:
+        """Return True once a small burst of VAD-positive frames appears."""
+        try:
+            vad_hits = 0
+            for offset in range(0, len(data), self.vad_frame_size):
+                frame = data[offset:offset + self.vad_frame_size]
+                if len(frame) == self.vad_frame_size and self.vad.is_speech(frame, self.sample_rate):
+                    vad_hits += 1
+                    if vad_hits >= self.vad_frames_to_start:
+                        self.__vad_hits_in_row = vad_hits
+                        return True
+                else:
+                    vad_hits = 0
+
+            self.__vad_hits_in_row = 0
+            return False
+        except Exception as exc:
+            self.__vad_hits_in_row = 0
+            if self._debug:
+                print(f"[VAD] Error: {exc}; no RMS fallback enabled")
+            return False
+
     def _capture_audio(self):
         """The core loop called by the Threads manager."""
         # Ensure the subprocess is alive
@@ -136,35 +160,23 @@ class Ears:
             return
 
         # VAD-only gate: low-energy hum/noise is not rejected by an RMS check,
-        # it is simply ignored unless the VAD identifies actual speech.
-        vad_speech = False
-        try:
-            for offset in range(0, len(data), self.vad_frame_size):
-                frame = data[offset:offset + self.vad_frame_size]
-                if (
-                    len(frame) == self.vad_frame_size
-                    and self.vad.is_speech(frame, self.sample_rate)
-                ):
-                    vad_speech = True
-                    break
-        except Exception as exc:
-            vad_speech = False
-            if self._debug:
-                print(f"[VAD] Error: {exc}; no RMS fallback enabled")
-
-        has_speech = vad_speech
+        # it is simply ignored unless the VAD identifies a brief burst of speech.
+        has_speech = self._has_voice_activity(data)
 
         if has_speech:
             if not self.__speech_active:
                 self.__utterance_start = time.time()
-                self.__speech_bytes = 0
             self.__speech_active = True
             self.silence_bytes = 0
-            self.__speech_bytes += len(data)
             self.__utterance_frames.append(data)
             if self.__on_listen:
                 self.__on_listen(True)
             return
+
+        # If we are already inside a valid utterance, keep the speech state alive
+        # even though there may be a few non-speech frames in the tail.
+        if self.__speech_active and self.__vad_hits_in_row > 0:
+            self.__vad_hits_in_row = 0
 
         if not self.__speech_active:
             return
@@ -181,18 +193,10 @@ class Ears:
             return
 
         pcm_bytes = b"".join(self.__utterance_frames)
-        speech_bytes = self.__speech_bytes
 
         self.__speech_active = False
         self.silence_bytes = 0
-        self.__speech_bytes = 0
         self.__utterance_frames = []
-
-        if speech_bytes < self.min_speech_bytes:
-            if self._debug:
-                dropped_ms = speech_bytes / (self.sample_rate * 2) * 1000
-                print(f"[Ears] Dropped short utterance ({dropped_ms:.0f}ms speech)")
-            return
 
         # Process with Whisper
         start_time = time.time()

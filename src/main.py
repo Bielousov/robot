@@ -39,8 +39,6 @@ class Robot:
             sample_rate=Env.WhisperSampleRate,
             wake_word=Name,
             wake_aliases=Env.WhisperWakeAliases,
-            noise_gate_dbfs=Env.WhisperNoiseGateDbfs,
-            min_speech_ms=Env.WhisperMinSpeechMs,
             on_listen=self._on_listen,
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,

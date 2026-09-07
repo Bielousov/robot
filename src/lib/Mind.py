@@ -51,6 +51,7 @@ class Mind:
             self.client = OllamaClient(
                 host=config["host"],
                 lora_path=get_lora_path(),
+                personalized_model=config["personalized_model"],
             )
 
         self._get_conversation_model_options = get_conversation_model_options

@@ -1,5 +1,4 @@
 import os
-import hashlib
 import signal
 import time
 from pathlib import Path
@@ -24,10 +23,16 @@ class OllamaClient:
     its own logic.
     """
 
-    def __init__(self, host: str = OLLAMA_URL, lora_path: str = ""):
+    def __init__(
+        self,
+        host: str = OLLAMA_URL,
+        lora_path: str = "",
+        personalized_model: str = "",
+    ):
         self.model = None
         self.process = None
         self.lora_path = Path(lora_path).expanduser() if lora_path else None
+        self.personalized_model = personalized_model.strip()
         self._client = ollama.Client(host=host)
         self._prepare_environment()
         self.start_server()
@@ -64,20 +69,21 @@ class OllamaClient:
                     f"Ollama LoRA adapter not found at: {self.lora_path}"
                 )
 
-            adapter_id = hashlib.sha256(
-                str(self.lora_path.resolve()).encode("utf-8")
-            ).hexdigest()[:10]
-            derived_model = f"robot-personality-{adapter_id}"
+            if not self.personalized_model:
+                raise ValueError(
+                    "PERSONALIZED_MODEL must be set when LLM_LORA_PATH is configured."
+                )
+
             print(
-                f"[Ollama] Creating '{derived_model}' from '{model}' "
+                f"[Ollama] Creating '{self.personalized_model}' from '{model}' "
                 f"with adapter '{self.lora_path}'..."
             )
             self._client.create(
-                model=derived_model,
+                model=self.personalized_model,
                 from_=model,
                 adapters=[str(self.lora_path.resolve())],
             )
-            self.model = derived_model
+            self.model = self.personalized_model
         else:
             self.model = model
 

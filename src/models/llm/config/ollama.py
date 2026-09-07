@@ -13,6 +13,7 @@ def get_model_config() -> Dict[str, Any]:
     return {
         "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
         "model_name": os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b"),
+        "personalized_model": os.getenv("PERSONALIZED_MODEL", ""),
         "identity": os.getenv("OLLAMA_SYSTEM_PROMPT", ""),
     }
 

@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from lib.ollama.client import OllamaClient
 
@@ -16,6 +16,7 @@ class LoraClientTests(unittest.TestCase):
             ollama_client = OllamaClient(
                 host="http://localhost:11434",
                 lora_path=adapter.name,
+                personalized_model="pip-personality",
             )
             ollama_client.load_model("qwen2.5:1.5b")
 
@@ -23,6 +24,7 @@ class LoraClientTests(unittest.TestCase):
         client.create.assert_called_once()
         create_kwargs = client.create.call_args.kwargs
         self.assertEqual(create_kwargs["from_"], "qwen2.5:1.5b")
+        self.assertEqual(create_kwargs["model"], "pip-personality")
         self.assertEqual(len(create_kwargs["adapters"]), 1)
         self.assertEqual(ollama_client.model, create_kwargs["model"])
 
@@ -31,11 +33,25 @@ class LoraClientTests(unittest.TestCase):
         client = client_type.return_value
         client.ps.return_value = {}
         ollama_client = OllamaClient(
-            lora_path=Path("/tmp/missing-robot-personality.lora")
+            lora_path=Path("/tmp/missing-robot-personality.lora"),
+            personalized_model="pip-personality",
         )
 
         with self.assertRaises(FileNotFoundError):
             ollama_client.load_model("qwen2.5:1.5b")
+
+        client.create.assert_not_called()
+
+    @patch("lib.ollama.client.ollama.Client")
+    def test_lora_requires_personalized_model_name(self, client_type):
+        client = client_type.return_value
+        client.ps.return_value = {}
+
+        with tempfile.NamedTemporaryFile() as adapter:
+            ollama_client = OllamaClient(lora_path=adapter.name)
+
+            with self.assertRaisesRegex(ValueError, "PERSONALIZED_MODEL"):
+                ollama_client.load_model("qwen2.5:1.5b")
 
         client.create.assert_not_called()
 

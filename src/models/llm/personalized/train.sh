@@ -7,10 +7,10 @@ PROJECT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../../.." && pwd)
 PYTHON=${PYTHON:-$PROJECT_ROOT/.venv-mlx/bin/python}
 BASE_MODEL=${BASE_MODEL:-$HOME/.cache/mlx-models/Qwen2.5-1.5B-Instruct-4bit}
 LLAMA_CPP_DIR=${LLAMA_CPP_DIR:-$HOME/src/llama.cpp}
-ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/adapters/pip-qwen2.5}
-FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/fused/pip-qwen2.5}
-F16_GGUF=${F16_GGUF:-$SCRIPT_DIR/pip-qwen2.5-f16.gguf}
-Q4_GGUF=${Q4_GGUF:-$SCRIPT_DIR/pip-qwen2.5-q4_k_m.gguf}
+ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/pip-qwen2.5}
+FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/pip-qwen2.5}
+F16_GGUF=${F16_GGUF:-$SCRIPT_DIR/build/pip-qwen2.5-f16.gguf}
+Q4_GGUF=${Q4_GGUF:-$SCRIPT_DIR/build/pip-qwen2.5-q4_k_m.gguf}
 OLLAMA_MODEL=${OLLAMA_MODEL:-pip-personality}
 DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/data}
 TRAIN_ITERS=${TRAIN_ITERS:-300}
@@ -67,7 +67,7 @@ printf '%s\n' "[train] Training LoRA adapter"
     --learning-rate "$LEARNING_RATE" \
     --adapter-path "$ADAPTER_DIR"
 
-require_file "$ADAPTER_DIR/adapters.safetensors"
+require_file "$ADAPTER_DIR/build/adapters.safetensors"
 
 printf '%s\n' "[train] Fusing adapter into dequantized model"
 rm -rf "$FUSED_DIR"

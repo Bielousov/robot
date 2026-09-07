@@ -12,6 +12,6 @@
 **/lib/**/models
 **/web/**/dist
 
-src/models/llm/personalized/adapters/
-src/models/llm/personalized/fused/
+src/models/llm/personalized/build/adapters/
+src/models/llm/personalized/build/fused/
 src/models/llm/personalized/*.gguf

@@ -32,7 +32,7 @@ src/models/llm/personalized/personality.jsonl
 MLX expects separate JSONL files for training and validation. From the repository root:
 
 ```bash
-mkdir -p src/models/llm/personalized/data
+mkdir -p src/models/llm/personalized/build/data
 python3 src/models/llm/personalized/prepare-data.py
 ```
 
@@ -61,13 +61,13 @@ Start with a small run to verify the pipeline:
 ```bash
 python -m mlx_lm lora \
   --model "$HOME/.cache/mlx-models/Qwen2.5-1.5B-Instruct-4bit" \
-  --data src/models/llm/personalized/data \
+  --data src/models/llm/personalized/build/data \
   --train \
   --iters 300 \
   --batch-size 1 \
   --num-layers 8 \
   --learning-rate 1e-5 \
-  --adapter-path src/models/llm/personalized/adapters/pip-qwen2.5
+  --adapter-path src/models/llm/personalized/build/adapters/pip-qwen2.5
 ```
 
 For a first run, watch the training and validation loss. Do not increase the number of iterations just to force training loss lower; that can make the robot repeat the training examples instead of generalizing its style.
@@ -93,8 +93,8 @@ Create a standalone fused MLX model for testing:
 ```bash
 python -m mlx_lm.fuse \
   --model "$HOME/.cache/mlx-models/Qwen2.5-1.5B-Instruct-4bit" \
-  --adapter-path src/models/llm/personalized/adapters/pip-qwen2.5 \
-  --save-path src/models/llm/personalized/fused/pip-qwen2.5 \
+  --adapter-path src/models/llm/personalized/build/adapters/pip-qwen2.5 \
+  --save-path src/models/llm/personalized/build/fused/pip-qwen2.5 \
   --dequantize
 ```
 
@@ -107,7 +107,7 @@ Test the personality before conversion:
 
 ```bash
 python -m mlx_lm.generate \
-  --model src/models/llm/personalized/fused/pip-qwen2.5 \
+  --model src/models/llm/personalized/build/fused/pip-qwen2.5 \
   --prompt "Who are you?" \
   --max-tokens 32
 ```
@@ -134,8 +134,8 @@ Convert the fused model to GGUF:
 
 ```bash
 python "$HOME/src/llama.cpp/convert_hf_to_gguf.py" \
-  src/models/llm/personalized/fused/pip-qwen2.5 \
-  --outfile src/models/llm/personalized/pip-qwen2.5-f16.gguf \
+  src/models/llm/personalized/build/fused/pip-qwen2.5 \
+  --outfile src/models/llm/personalized/build/pip-qwen2.5-f16.gguf \
   --outtype f16
 ```
 
@@ -149,8 +149,8 @@ Quantize the converted model for Raspberry Pi memory limits, using a quantizatio
 
 ```bash
 "$HOME/src/llama.cpp/build/bin/llama-quantize" \
-  src/models/llm/personalized/pip-qwen2.5-f16.gguf \
-  src/models/llm/personalized/pip-qwen2.5-q4_k_m.gguf \
+  src/models/llm/personalized/build/pip-qwen2.5-f16.gguf \
+  src/models/llm/personalized/build/pip-qwen2.5-q4_k_m.gguf \
   Q4_K_M
 ```
 
@@ -230,7 +230,7 @@ The exact compiler command depends on the installed Hailo Dataflow Compiler and 
 Adapters, fused checkpoints, and GGUF files can be large. Store them outside the repository or add these paths to `.gitignore`:
 
 ```text
-src/models/llm/personalized/adapters/
-src/models/llm/personalized/fused/
+src/models/llm/personalized/build/adapters/
+src/models/llm/personalized/build/fused/
 src/models/llm/personalized/*.gguf
 ```

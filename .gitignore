@@ -4,9 +4,14 @@
 **/*.db
 **/.env
 **/.venv
+**/.venv-mlx
 **/*.tar.gz
 **/*.tar.zst
 **/*.zip
 **/lib/**/dist
 **/lib/**/models
 **/web/**/dist
+
+src/models/llm/personalized/adapters/
+src/models/llm/personalized/fused/
+src/models/llm/personalized/*.gguf

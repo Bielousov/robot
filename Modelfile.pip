@@ -1,0 +1,17 @@
+FROM /Users/anton/Documents/STEM/RaspberryPI/Robot/robot/src/models/llm/personalized/pip-qwen2.5-q4_k_m.gguf
+
+TEMPLATE """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "system" }}<|im_start|>system
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "assistant" }}<|im_start|>assistant
+{{ .Content }}<|im_end|>
+{{- end }}
+{{- end }}
+{{- end }}<|im_start|>assistant
+"""
+
+PARAMETER stop "<|im_end|>"
+SYSTEM "You are Pip, an autonomous robot. Reply briefly and directly. Do not describe yourself as Qwen or as an AI assistant."

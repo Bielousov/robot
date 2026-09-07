@@ -1,4 +1,5 @@
 import os
+import hashlib
 import signal
 import time
 from pathlib import Path
@@ -23,9 +24,10 @@ class OllamaClient:
     its own logic.
     """
 
-    def __init__(self, host: str = OLLAMA_URL):
+    def __init__(self, host: str = OLLAMA_URL, lora_path: str = ""):
         self.model = None
         self.process = None
+        self.lora_path = Path(lora_path).expanduser() if lora_path else None
         self._client = ollama.Client(host=host)
         self._prepare_environment()
         self.start_server()
@@ -52,10 +54,33 @@ class OllamaClient:
             ) from exc
 
     def load_model(self, model: str):
-        self.model = model
-        """Pull this client's bound model into Ollama."""
-        print(f"[Ollama] Pulling model '{self.model}' into Ollama...")
-        self._client.pull(self.model)
+        """Pull the base model and bind an optional LoRA-derived model."""
+        print(f"[Ollama] Pulling model '{model}' into Ollama...")
+        self._client.pull(model)
+
+        if self.lora_path:
+            if not self.lora_path.is_file():
+                raise FileNotFoundError(
+                    f"Ollama LoRA adapter not found at: {self.lora_path}"
+                )
+
+            adapter_id = hashlib.sha256(
+                str(self.lora_path.resolve()).encode("utf-8")
+            ).hexdigest()[:10]
+            derived_model = f"robot-personality-{adapter_id}"
+            print(
+                f"[Ollama] Creating '{derived_model}' from '{model}' "
+                f"with adapter '{self.lora_path}'..."
+            )
+            self._client.create(
+                model=derived_model,
+                from_=model,
+                adapters=[str(self.lora_path.resolve())],
+            )
+            self.model = derived_model
+        else:
+            self.model = model
+
         print(f"[Ollama] Model '{self.model}' is ready.")
 
     def chat(self, **kwargs):

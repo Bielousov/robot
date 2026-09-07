@@ -25,13 +25,21 @@ class HailoClient:
     know which backend is in use.
     """
 
-    def __init__(self):
+    def __init__(self, lora_path: str = ""):
         self.model = None
+        self.lora_path = lora_path
         self._vdevice = get_vdevice()
         self._llm = None
 
     def load_model(self, model: str):
         """Load the given HEF file onto this client's Hailo device."""
+        if self.lora_path:
+            raise ValueError(
+                "HailoRT does not load a separate LoRA adapter at runtime. "
+                "Set HAILO_MODEL_HEF to a personality-tuned HEF and clear "
+                "LLM_LORA_PATH."
+            )
+
         self.model = model
         hef_path = self._resolve_hef_path(model)
 

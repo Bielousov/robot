@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Union
 
 from lib.Threads import Process
 from models.llm.classifier import build_conversation_classifier_prompt
-from models.llm.identity import build_identity_system_prompt
+from models.llm.identity import build_identity_system_prompt, get_lora_path
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -37,7 +37,7 @@ class Mind:
 
             config = get_model_config()
             self.model_name = config["model_hef"]
-            self.client = HailoClient()
+            self.client = HailoClient(lora_path=get_lora_path())
         else:
             from lib.ollama.client import OllamaClient
             from models.llm.config.ollama import (
@@ -48,11 +48,15 @@ class Mind:
 
             config = get_model_config()
             self.model_name = config["model_name"]
-            self.client = OllamaClient(host=config["host"])
+            self.client = OllamaClient(
+                host=config["host"],
+                lora_path=get_lora_path(),
+            )
 
         self._get_conversation_model_options = get_conversation_model_options
         self._get_classifier_model_options = get_classifier_model_options
 
+        self.lora_path = get_lora_path()
         self.system_prompt = build_identity_system_prompt()
 
         self.load_model(model=self.model_name)
@@ -114,11 +118,19 @@ class Mind:
         if not final_prompt:
             return []
 
+        self.lora_path = get_lora_path()
         self.system_prompt = build_identity_system_prompt()
 
-        messages: List[dict] = [
-            {"role": "system", "content": self.system_prompt},
-        ]
+        # Keep the legacy text identity available for non-LoRA runs, but never
+        # force a system prompt when a tuned adapter is selected.
+        if self.lora_path:
+            messages = []
+        else:
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+            ]
+
+        # `messages` is assigned above to support the LoRA/no-system-prompt flow.
 
         recent_history = self.history[-self.history_limit:] if self.history else []
         for entry in recent_history:

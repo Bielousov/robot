@@ -8,8 +8,33 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 
+def get_lora_path() -> str:
+    """Return the configured LoRA personality adapter, if any.
+
+    When a LoRA path is present, the base model's text personality prompt is
+    intentionally disabled so the tuned adapter remains the sole source of
+    identity and behavior.
+    """
+    for key in (
+        "LLM_LORA_PATH",
+        "PERSONALITY_LORA_PATH",
+        "MODEL_LORA_PATH",
+    ):
+        value = (os.getenv(key) or "").strip()
+        if value:
+            return value
+    return ""
+
+
 def build_identity_system_prompt() -> str:
-    """Build a per-request identity prompt for the base Ollama model."""
+    """Build a system prompt for the base model unless a LoRA personality exists.
+
+    A configured LoRA adapter is treated as the source of truth for robot
+    personality, so the legacy text prompt is disabled in that case.
+    """
+    if get_lora_path():
+        return ""
+
     name = os.getenv("NAME", "Pip")
     role = os.getenv("ROBOT_ROLE", "Robot")
     user_name = os.getenv("USER_NAME", "human")

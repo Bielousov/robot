@@ -26,12 +26,12 @@ The output should identify an `gpu` device.
 Use the same Qwen family and size as the robot's Ollama base model:
 
 ```bash
-huggingface-cli download \
+hf download \
   mlx-community/Qwen2.5-1.5B-Instruct-4bit \
   --local-dir "$HOME/.cache/mlx-models/Qwen2.5-1.5B-Instruct-4bit"
 ```
 
-If `huggingface-cli` is unavailable:
+If `hf` is unavailable:
 
 ```bash
 pip install huggingface_hub
@@ -48,7 +48,7 @@ python -m mlx_lm lora \
   --train \
   --iters 300 \
   --batch-size 1 \
-  --num-layers 8 \
+  --num-layers 4 \
   --learning-rate 1e-5 \
   --adapter-path src/models/llm/personalized/build/adapters/pip-qwen2.5
 ```

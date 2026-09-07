@@ -4,7 +4,7 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../../.." && pwd)
 
-PYTHON=${PYTHON:-$PROJECT_ROOT/.venv-mlx/bin/python}
+PYTHON=${PYTHON:-$PROJECT_ROOT/.venv/bin/python}
 BASE_MODEL=${BASE_MODEL:-$HOME/.cache/mlx-models/Qwen2.5-1.5B-Instruct-4bit}
 LLAMA_CPP_DIR=${LLAMA_CPP_DIR:-$HOME/src/llama.cpp}
 ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/pip-qwen2.5}

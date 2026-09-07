@@ -12,7 +12,7 @@ FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/pip-qwen2.5}
 F16_GGUF=${F16_GGUF:-$SCRIPT_DIR/build/pip-qwen2.5-f16.gguf}
 Q4_GGUF=${Q4_GGUF:-$SCRIPT_DIR/build/pip-qwen2.5-q4_k_m.gguf}
 OLLAMA_MODEL=${OLLAMA_MODEL:-pip-personality}
-DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/data}
+DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/build/data}
 TRAIN_ITERS=${TRAIN_ITERS:-300}
 BATCH_SIZE=${BATCH_SIZE:-1}
 NUM_LAYERS=${NUM_LAYERS:-8}
@@ -51,8 +51,44 @@ if [ "$SKIP_OLLAMA" != "1" ]; then
 fi
 
 printf '%s\n' "[train] Preparing dataset"
+
+# Create build/data
 mkdir -p "$DATA_DIR"
-"$PYTHON" "$SCRIPT_DIR/prepare-data.py"
+
+# Split personality.jsonl into train/validation sets.
+# Uses awk for deterministic pseudo-random ordering with seed 7.
+"$PYTHON" - "$SCRIPT_DIR/personality.jsonl" "$DATA_DIR" <<'PY'
+import json
+import random
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1])
+output = Path(sys.argv[2])
+
+rows = [
+    json.loads(line)
+    for line in source.read_text().splitlines()
+    if line.strip()
+]
+
+random.Random(7).shuffle(rows)
+
+validation_count = max(4, round(len(rows) * 0.15))
+
+output.mkdir(parents=True, exist_ok=True)
+
+(output / "valid.jsonl").write_text(
+    "".join(json.dumps(row) + "\n" for row in rows[:validation_count])
+)
+
+(output / "train.jsonl").write_text(
+    "".join(json.dumps(row) + "\n" for row in rows[validation_count:])
+)
+
+print(f"[train] train={len(rows) - validation_count}, valid={validation_count}")
+PY
+
 require_file "$DATA_DIR/train.jsonl"
 require_file "$DATA_DIR/valid.jsonl"
 
@@ -103,6 +139,7 @@ fi
 
 printf '%s\n' "[train] Creating Ollama model"
 OLLAMAFILE="$PROJECT_ROOT/Modelfile.pip"
+
 cat > "$OLLAMAFILE" <<EOF
 FROM $Q4_GGUF
 

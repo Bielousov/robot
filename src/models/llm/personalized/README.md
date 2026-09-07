@@ -21,24 +21,7 @@ python -c "import mlx.core as mx; print(mx.default_device())"
 
 The output should identify an `gpu` device.
 
-## 2. Prepare the dataset
-
-The source dataset is:
-
-```text
-src/models/llm/personalized/personality.jsonl
-```
-
-MLX expects separate JSONL files for training and validation. From the repository root:
-
-```bash
-mkdir -p src/models/llm/personalized/build/data
-python3 src/models/llm/personalized/prepare-data.py
-```
-
-The current 41 examples are enough to test the pipeline, but too small for a strong personality adapter. Add varied examples with the same concise style before training. Keep evaluation examples out of `train.jsonl`.
-
-## 3. Download the MLX base model
+## 2. Download the MLX base model
 
 Use the same Qwen family and size as the robot's Ollama base model:
 
@@ -54,7 +37,7 @@ If `huggingface-cli` is unavailable:
 pip install huggingface_hub
 ```
 
-## 4. Train the adapter
+## 3. Train the adapter
 
 Start with a small run to verify the pipeline:
 
@@ -86,7 +69,7 @@ The script uses `.venv-mlx/bin/python`, `$HOME/src/llama.cpp`, and creates
 as `PYTHON`, `BASE_MODEL`, `LLAMA_CPP_DIR`, `TRAIN_ITERS`, or
 `SKIP_OLLAMA=1`.
 
-## 5. Fuse the adapter
+## 4. Fuse the adapter
 
 Create a standalone fused MLX model for testing:
 
@@ -121,7 +104,7 @@ Are you certain? Answer briefly.
 Explain gravity in one sentence.
 ```
 
-## 6. Convert for Ollama
+## 5. Convert for Ollama
 
 MLX output is not automatically an Ollama adapter. Ollama expects a compatible GGUF model or GGUF adapter. Use a current `llama.cpp` checkout on the Mac:
 
@@ -156,7 +139,7 @@ Quantize the converted model for Raspberry Pi memory limits, using a quantizatio
 
 If the quantizer is not built, build `llama.cpp` first or use a release binary.
 
-## 7. Create and test the Ollama model
+## 6. Create and test the Ollama model
 
 Create `Modelfile.pip`:
 
@@ -211,7 +194,7 @@ LLM_LORA_PATH=/absolute/path/to/personality-adapter.gguf
 
 Do not use both a merged personality model and a separate adapter, or the personality may be applied twice.
 
-## 8. Hailo deployment note
+## 7. Hailo deployment note
 
 This workflow produces an Ollama model. It does not produce a Hailo `.hef` file. HailoRT loads the compiled HEF directly and does not apply an Ollama GGUF adapter at runtime.
 
@@ -225,7 +208,7 @@ LLM_LORA_PATH=
 
 The exact compiler command depends on the installed Hailo Dataflow Compiler and model-zoo release. Verify the resulting HEF on the Pi before replacing the original model.
 
-## 9. Keep artifacts out of Git
+## 8. Keep artifacts out of Git
 
 Adapters, fused checkpoints, and GGUF files can be large. Store them outside the repository or add these paths to `.gitignore`:
 

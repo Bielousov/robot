@@ -7,3 +7,10 @@ psutil
 python-dotenv
 scikit-learn
 webrtcvad
+
+
+# LoRA Training
+
+huggingface_hub
+mlx
+mlx-lm

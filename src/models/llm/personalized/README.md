@@ -37,6 +37,15 @@ If `hf` is unavailable:
 pip install huggingface_hub
 ```
 
+Install llama.cpp tools:
+
+```bash
+git clone https://github.com/ggerganov/llama.cpp.git "$HOME/src/llama.cpp"
+python -m pip install -r "$HOME/src/llama.cpp/requirements.txt"
+cd "$HOME/src/llama.cpp"
+cmake "$HOME/src/llama.cpp"
+```
+
 ## 3. Train the adapter
 
 Start with a small run to verify the pipeline:
@@ -106,12 +115,6 @@ Explain gravity in one sentence.
 
 ## 5. Convert for Ollama
 
-MLX output is not automatically an Ollama adapter. Ollama expects a compatible GGUF model or GGUF adapter. Use a current `llama.cpp` checkout on the Mac:
-
-```bash
-git clone https://github.com/ggerganov/llama.cpp.git "$HOME/src/llama.cpp"
-python -m pip install -r "$HOME/src/llama.cpp/requirements.txt"
-```
 
 Convert the fused model to GGUF:
 

@@ -7,28 +7,25 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 
-ACCURACY_TRESHOLD = 0.9
-
-# Start the overall timer
-total_start_time = time.perf_counter()
-
 # --- INITIALIZATION ---
-project_path = Path(__file__).parent.parent.resolve()
+project_path = Path(__file__).parents[3].resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
 from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
+ACCURACY_TRESHOLD = 0.9
+
 manager = ModelManager(Paths)
 
-def expand_dataset(raw_data, input_keys, steps=5):
+def expand_dataset(data, input_keys, steps=5):
     """Generates Cartesian product and deduplicates samples."""
     unique_samples = {} # Use a dict to keep {tuple_of_inputs: label}
     
     print(f"[System] Expanding dataset", end="", flush=True)
     
-    for entry in raw_data:
+    for entry in data:
         prop_variants = []
         for key in input_keys:
             val = entry['inputs'][key]
@@ -64,16 +61,24 @@ def expand_dataset(raw_data, input_keys, steps=5):
 
 
 try:
-    raw_data = manager._load_model("ModelTrainingData")
+    training_data_path = Paths.ModelTrainingData
+    if not Path(training_data_path).exists():   
+        raise FileNotFoundError(f"Training data file not found at: {training_data_path}")
+    with open(training_data_path, 'r', encoding='utf-8') as f:
+        raw_training_data = json.load(f)
+
 except Exception as e:
     print(f"[Error] Could not load training data: {e}")
     sys.exit(1)
 
 # --- DYNAMIC KEY DETECTION ---
-input_keys = list(raw_data[0]['inputs'].keys())
-X, y, expanded_data = expand_dataset(raw_data, input_keys, steps=5)
+input_keys = list(raw_training_data[0]['inputs'].keys())
+X, y, expanded_data = expand_dataset(raw_training_data, input_keys, steps=5)
 
 print(f"[System] Deduplication complete: {len(X)} unique samples remaining.")
+
+# Start the overall timer
+total_start_time = time.perf_counter()
 
 # --- SCALING ---
 scaler = StandardScaler()

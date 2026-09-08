@@ -7,3 +7,5 @@ psutil
 python-dotenv
 scikit-learn
 webrtcvad
+
+./system/wheels/hailort-5.3.0-cp313-cp313-linux_aarch64.whl

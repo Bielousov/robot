@@ -32,5 +32,7 @@ sudo hailortcli fw-control identify
 hailo-ollama
 # Server starts on port 8000
 
-Step 3. Add Pip module
-pip install ./src/lib/hailo/hailort-5.3.0-cp313-cp313-linux_aarch64.whl
+Step 5: Install the Python module
+The hailort wheel is listed in requirements.txt, so it installs along with
+everything else:
+pip install -r requirements.txt

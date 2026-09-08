@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from lib.Threads import Process
-from models.llm.classifier import build_conversation_classifier_prompt
-from models.llm.identity import build_identity_system_prompt, get_lora_path
+from models.ollama.classifier import build_conversation_classifier_prompt
+from models.ollama.identity import build_identity_system_prompt, get_lora_path
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -28,19 +28,10 @@ class Mind:
         self._is_ready = False
 
         if LLM_ENGINE == "hailo":
-            from lib.hailo.client import HailoClient
-            from models.llm.config.hailo import (
-                get_classifier_model_options,
-                get_conversation_model_options,
-                get_model_config,
-            )
-
-            config = get_model_config()
-            self.model_name = config["model_hef"]
-            self.client = HailoClient(lora_path=get_lora_path())
+            self._setup_hailo_client()
         else:
             from lib.ollama.client import OllamaClient
-            from models.llm.config.ollama import (
+            from models.ollama.config.ollama import (
                 get_classifier_model_options,
                 get_conversation_model_options,
                 get_model_config,
@@ -60,7 +51,7 @@ class Mind:
         self.lora_path = get_lora_path()
         self.system_prompt = build_identity_system_prompt()
 
-        self.load_model(model=self.model_name)
+        self._load_model(model=self.model_name)
 
         # Context history
         self.history_limit = conversation_history_length
@@ -82,8 +73,36 @@ class Mind:
 
         while not self._is_ready:
             time.sleep(0.5)
+    
+    def _setup_hailo_client(self):
+        from lib.hailo.client import HailoClient
+        from models.ollama.config.hailo import (
+            get_classifier_model_options,
+            get_conversation_model_options,
+            get_model_config,
+        )
 
-    def load_model(self, model):
+        config = get_model_config()
+        self.model_name = config["model_hef"]
+        self.client = HailoClient(lora_path=get_lora_path())
+    
+    def _setup_ollama_client(self):
+        from lib.ollama.client import OllamaClient
+        from models.ollama.config.ollama import (
+            get_classifier_model_options,
+            get_conversation_model_options,
+            get_model_config,
+        )
+
+        config = get_model_config()
+        self.model_name = config["model_name"]
+        self.client = OllamaClient(
+            host=config["host"],
+            lora_path=get_lora_path(),
+            personalized_model=config["personalized_model"],
+        )
+
+    def _load_model(self, model):
         """Pull the given base model via the client and mark the runtime ready."""
         try:
             self.client.load_model(model)

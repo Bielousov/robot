@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Merge LoRA adapter with base model using MLX."""
-import subprocess
+import os
 import sys
 from pathlib import Path
+
+from mlx_lm.utils import load, save
+from mlx.utils import tree_flatten, tree_unflatten
+
 
 def main():
     if len(sys.argv) != 4:
@@ -17,20 +21,43 @@ def main():
 
     print(f"[train] Merging LoRA adapter with {base_model_name} using MLX...")
 
-    # Use mlx_lm CLI to fuse adapter
-    # Note: not using --dequantize to avoid re-validating the entire model cache
-    cmd = [
-        sys.executable, "-m", "mlx_lm", "fuse",
-        "--model", base_model_name,
-        "--adapter-path", str(adapter_dir),
-        "--save-path", str(output_dir),
-    ]
-
     try:
-        result = subprocess.run(cmd, check=True)
+        # Load model with adapter
+        print("[train] Loading model and adapter...")
+        model, tokenizer, config = load(
+            base_model_name,
+            adapter_path=adapter_dir,
+            return_config=True,
+        )
+
+        # Fuse LoRA layers into the model
+        print("[train] Fusing adapter weights into model...")
+        fused_linears = [
+            (n, m.fuse())
+            for n, m in model.named_modules()
+            if hasattr(m, "fuse")
+        ]
+
+        if fused_linears:
+            model.update_modules(tree_unflatten(fused_linears))
+
+        # Save the merged model
+        print("[train] Saving merged model...")
+        save(
+            Path(output_dir),
+            base_model_name,
+            model,
+            tokenizer,
+            config,
+            donate_model=False,
+        )
+
         print(f"[train] Merged model saved to {output_dir}")
-    except subprocess.CalledProcessError as e:
-        print(f"[train] Error during MLX fuse: {e}")
+
+    except Exception as e:
+        print(f"[train] Error during MLX merge: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

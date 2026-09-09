@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+# Universal LoRA training script - auto-detects platform and training backend
+# - Mac M1+ with MLX: GPU training (fast)
+# - RPi5/Linux/Mac CPU: PyTorch CPU training (universal)
+
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
 PYTHON=${PYTHON:-$PROJECT_ROOT/.venv/bin/python}
@@ -36,35 +40,71 @@ require_command() {
     fi
 }
 
+# Detect platform and training backend
+detect_backend() {
+    SYSTEM=$(uname -s)
+
+    # Try to use GPU training on macOS if MLX is available
+    if [ "$SYSTEM" = "Darwin" ]; then
+        if "$PYTHON" -c "import mlx_lm" >/dev/null 2>&1; then
+            echo "darwin"
+            return 0
+        fi
+    fi
+
+    # Default to CPU training (works everywhere)
+    echo "aarch64"
+}
+
+BACKEND=$(detect_backend)
+
+printf '%s\n' "[train] =========================================="
+printf '%s\n' "[train] LoRA Personality Training"
+printf '%s\n' "[train] =========================================="
+printf '%s\n' "[train] Backend: $BACKEND"
+printf '%s\n' "[train] Base model: $BASE_MODEL"
+printf '%s\n' "[train]"
+
+case "$BACKEND" in
+    darwin)
+        printf '%s\n' "[train] Using MLX GPU training (Mac M1+)"
+        ;;
+    aarch64)
+        printf '%s\n' "[train] Using PyTorch CPU training (universal)"
+        ;;
+esac
+
+printf '%s\n' "[train]"
+
 require_file "$PYTHON"
 require_file "$SCRIPT_DIR/training/personality.jsonl"
 require_command "$PYTHON"
 
-if ! "$PYTHON" -c "import torch; import peft; import transformers; import datasets" >/dev/null 2>&1; then
-    echo "[train] ERROR: PyTorch/PEFT/Transformers/Datasets missing from $PYTHON" >&2
-    echo "[train] Install with: $PYTHON -m pip install torch peft transformers datasets" >&2
-    exit 1
+# Verify dependencies
+case "$BACKEND" in
+    darwin)
+        if ! "$PYTHON" -c "import mlx_lm" >/dev/null 2>&1; then
+            echo "[train] ERROR: MLX is not installed" >&2
+            echo "[train] Install with: $PYTHON -m pip install mlx mlx-lm" >&2
+            exit 1
+        fi
+        ;;
+    aarch64)
+        if ! "$PYTHON" -c "import torch; import peft; import transformers; import datasets" >/dev/null 2>&1; then
+            echo "[train] ERROR: PyTorch/PEFT/Transformers/Datasets missing" >&2
+            echo "[train] Install with: $PYTHON -m pip install torch peft transformers datasets" >&2
+            exit 1
+        fi
+        ;;
+esac
+
+if ! command -v ollama >/dev/null 2>&1; then
+    echo "[train] Warning: ollama not found - model creation will be skipped"
 fi
 
 printf '%s\n' "[train] Preparing dataset"
-
-# Download base model once (cached for subsequent runs)
-printf '%s\n' "[train] Ensuring base model is cached..."
-"$PYTHON" - "$BASE_MODEL" <<'DOWNLOAD_MODEL'
-import sys
-from huggingface_hub import snapshot_download
-
-model_name = sys.argv[1]
-print(f"[train] Checking cache for {model_name}...")
-cache_dir = snapshot_download(model_name, cache_dir=None, resume_download=True)
-print(f"[train] Model cached at: {cache_dir}")
-DOWNLOAD_MODEL
-
-# Create build/data
 mkdir -p "$DATA_DIR"
 
-# Split personality.jsonl into train/validation sets.
-# Uses deterministic pseudo-random ordering with seed 7.
 "$PYTHON" "$SCRIPT_DIR/training/prepare_data.py" \
     "$SCRIPT_DIR/training/personality.jsonl" \
     "$DATA_DIR"
@@ -72,10 +112,10 @@ mkdir -p "$DATA_DIR"
 require_file "$DATA_DIR/train.jsonl"
 require_file "$DATA_DIR/valid.jsonl"
 
-printf '%s\n' "[train] Training LoRA adapter with PyTorch (aarch64)"
+printf '%s\n' "[train] Training LoRA adapter"
 mkdir -p "$ADAPTER_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/aarch64/train_adapter.py" \
+"$PYTHON" "$SCRIPT_DIR/training/$BACKEND/train_adapter.py" \
     "$BASE_MODEL" \
     "$DATA_DIR" \
     "$ADAPTER_DIR" \
@@ -83,20 +123,24 @@ mkdir -p "$ADAPTER_DIR"
     "$BATCH_SIZE" \
     "$LEARNING_RATE"
 
-require_file "$ADAPTER_DIR/adapter_config.json"
+# MLX and PyTorch produce different files, so just check directory is not empty
+if [ ! -d "$ADAPTER_DIR" ] || [ -z "$(ls -A $ADAPTER_DIR 2>/dev/null)" ]; then
+    echo "[train] ERROR: Adapter directory is empty: $ADAPTER_DIR" >&2
+    exit 1
+fi
 
 printf '%s\n' "[train] Merging adapter with base model"
 rm -rf "$FUSED_DIR"
 mkdir -p "$FUSED_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/aarch64/merge_adapter.py" \
+"$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" \
     "$BASE_MODEL" \
     "$ADAPTER_DIR" \
     "$FUSED_DIR"
 
 require_file "$FUSED_DIR/config.json"
 
-printf '%s\n' "[train] Creating Ollama model (HF format, CPU-based)..."
+printf '%s\n' "[train] Creating Ollama model"
 MODELFILE="$SCRIPT_DIR/training/Modelfile.$MODEL_NAME"
 
 cat > "$MODELFILE" <<EOF
@@ -133,11 +177,11 @@ printf '%s\n' "[train] ============================================"
 printf '%s\n' "[train]"
 printf '%s\n' "[train] Model name:     $MODEL_NAME"
 printf '%s\n' "[train] Merged model:   $FUSED_DIR"
+printf '%s\n' "[train] Backend:        $BACKEND"
+printf '%s\n' "[train]"
+printf '%s\n' "[train] To upload to RPi5:"
+printf '%s\n' "[train]   rsync -av $FUSED_DIR pip@robot:/home/pip/robot/src/models/ollama/build/fused/$MODEL_NAME"
 printf '%s\n' "[train]"
 printf '%s\n' "[train] Usage:"
 printf '%s\n' "[train]   ollama run $MODEL_NAME \"Your prompt here\""
-printf '%s\n' "[train]"
-printf '%s\n' "[train] For Hailo HEF conversion:"
-printf '%s\n' "[train]   1. Use $FUSED_DIR (HF format)"
-printf '%s\n' "[train]   2. Convert with Hailo's compiler"
 printf '%s\n' "[train] ============================================"

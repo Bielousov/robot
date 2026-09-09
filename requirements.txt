@@ -7,12 +7,16 @@ python-dotenv
 scikit-learn==1.9.0
 webrtcvad
 
-# Model Training (PyTorch + LoRA fine-tuning for personality adapter)
+# Model Training - CPU (PyTorch + LoRA fine-tuning for personality adapter)
 torch
 peft
 transformers
 datasets
 huggingface_hub
 
-# Local wheel (not on PyPI) - Hailo's GenAI runtime, built for aarch64 only (RPi5/ARM)
+# Model Training - GPU (MLX on Mac M1+ only)
+mlx; sys_platform == "darwin"
+mlx-lm; sys_platform == "darwin"
+
+# Hailo's GenAI runtime, built for aarch64 only (RPi5/ARM)
 ./system/wheels/hailort-5.3.0-cp313-cp313-linux_aarch64.whl; platform_machine == "aarch64"

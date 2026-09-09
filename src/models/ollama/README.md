@@ -1,24 +1,62 @@
 # Ollama LoRA Personality Model
 
-Train a custom LoRA personality adapter for the Qwen2.5-1.5B model using PyTorch + PEFT, optimized for Hailo HEF conversion and CPU fallback via Ollama.
+Train a custom LoRA personality adapter for the Qwen2.5-1.5B model. Two training pipelines optimized for different hardware:
+
+| Approach | Hardware | Speed | Best For |
+|----------|----------|-------|----------|
+| **CPU** (`train.sh`) | RPi5, servers, any Linux/Mac | ~1 iter/min | Production inference on RPi5 |
+| **GPU** (`train-gpu.sh`) | Mac M1+ (MLX) | ~100x faster | Fast iteration on Mac development |
+
+Both outputs are identical **Hugging Face format models** ready for Hailo HEF conversion.
 
 ## Quick Start
 
-### Training
+### CPU Training (RPi5, any system)
 
 ```bash
 ./train.sh
 ```
 
-Outputs a merged Hugging Face model ready for Hailo conversion at `build/fused/pip-qwen2.5/`.
+Outputs merged model to `build/fused/pip/`. PyTorch on CPU, works everywhere.
 
-**Customizable parameters:**
+### GPU Training (Mac M1+ only)
+
+```bash
+./train-gpu.sh
+```
+
+Same output, **~100x faster** using Apple's MLX framework with GPU acceleration.
+
+**Customizable parameters (both flows):**
 ```bash
 BASE_MODEL=Qwen/Qwen2.5-1.5B-Instruct \
+OLLAMA_MODEL_NAME=pip-custom \
 TRAIN_ITERS=500 \
 BATCH_SIZE=2 \
 LEARNING_RATE=1e-4 \
 ./train.sh
+```
+
+### Upload to RPi5
+
+After training on your Mac, upload the merged model to the robot:
+
+```bash
+# Copy merged model to RPi5
+rsync -avz --progress build/fused/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/fused/pip/
+
+# Or with SSH key authentication
+rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/fused/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/fused/pip/
+```
+
+**Network tips:**
+- Use `-z` to compress during transfer (faster on slower networks)
+- Use `--progress` to see transfer speed
+- Use `--bwlimit=10000` to limit bandwidth (in KiB/s)
+
+Once uploaded, restart the robot service:
+```bash
+ssh pip@robot "sudo systemctl restart robot.service"
 ```
 
 ### Running with Ollama (CPU Fallback)
@@ -88,21 +126,38 @@ Edit `training/personality.jsonl` to customize the personality. Each line is a J
 - `BATCH_SIZE` — batch size per device (default: 1, increase if OOM allows)
 - `LEARNING_RATE` — optimizer learning rate (default: 1e-5)
 
+## Setup
+
+### CPU Training (PyTorch)
+```bash
+pip install torch peft transformers datasets huggingface_hub
+```
+
+### GPU Training (Mac M1+)
+```bash
+pip install mlx mlx-lm huggingface_hub
+```
+
 ## Troubleshooting
 
-**Out of memory?**
+**CPU training out of memory?**
 - Reduce `BATCH_SIZE` to 1 (default is already minimal)
 - Reduce `TRAIN_ITERS` for faster iteration
+- Use GPU training on Mac instead
 
-**Missing dependencies?**
+**GPU training not using accelerator?**
+- Verify MLX installation: `python -c "import mlx"`
+- Check Mac chip: must be Apple Silicon (M1+), not Intel
+- Verify `train-gpu.sh` is executable: `chmod +x train-gpu.sh`
+
+**rsync permission denied?**
 ```bash
-pip install torch peft transformers datasets
+# Fix remote directory permissions
+ssh pip@robot "mkdir -p /home/pip/robot/src/models/ollama/build/fused && chmod 755 /home/pip/robot/src/models/ollama/build/fused"
 ```
 
 **Want to use on Hailo?**
-1. Install Hailo SDK and compiler tools
-2. Convert merged model to `.hef`:
-   ```bash
-   hailo_model_zoo convert --model qwen2.5-1.5b --output-path build/fused/pip-qwen2.5/
-   ```
-3. Load with `src/lib/hailo/client.py`
+1. Upload merged model (HF format) to Hailo-equipped Pi
+2. Install Hailo SDK and compiler tools
+3. Convert with Hailo's compiler
+4. Load with `src/lib/hailo/client.py`

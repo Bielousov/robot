@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Merge LoRA adapter with base model using MLX."""
+import json
 import os
 import sys
 from pathlib import Path
 
-from mlx_lm.utils import load, save
+import mlx.core as mx
+from mlx_lm.utils import load, load_config
 from mlx.utils import tree_flatten, tree_unflatten
 
 
@@ -41,16 +43,22 @@ def main():
         if fused_linears:
             model.update_modules(tree_unflatten(fused_linears))
 
-        # Save the merged model
+        # Save the merged model manually (avoid MLX's save() validation)
         print("[train] Saving merged model...")
-        save(
-            Path(output_dir),
-            base_model_name,
-            model,
-            tokenizer,
-            config,
-            donate_model=False,
-        )
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Save model weights
+        model.save_weights(str(output_path / "model.safetensors"))
+
+        # Save config
+        if config is not None:
+            with open(output_path / "config.json", "w") as f:
+                json.dump(config, f, indent=2)
+
+        # Save tokenizer
+        if tokenizer is not None:
+            tokenizer.save_pretrained(str(output_path))
 
         print(f"[train] Merged model saved to {output_dir}")
 

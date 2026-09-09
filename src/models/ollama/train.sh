@@ -3,11 +3,20 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
-
 PYTHON=${PYTHON:-$PROJECT_ROOT/.venv/bin/python}
-BASE_MODEL=${BASE_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}
-ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/pip-qwen2.5}
-FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/pip-qwen2.5}
+
+# Load .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a
+    . "$PROJECT_ROOT/.env"
+    set +a
+fi
+
+BASE_MODEL=${BASE_MODEL:-${OLLAMA_BASE_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}}
+MODEL_NAME=${OLLAMA_MODEL_NAME:-pip}
+
+ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/$MODEL_NAME}
+FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/$MODEL_NAME}
 DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/training/data}
 TRAIN_ITERS=${TRAIN_ITERS:-300}
 BATCH_SIZE=${BATCH_SIZE:-1}
@@ -87,15 +96,48 @@ mkdir -p "$FUSED_DIR"
 
 require_file "$FUSED_DIR/config.json"
 
+printf '%s\n' "[train] Creating Ollama model (HF format, CPU-based)..."
+MODELFILE="$SCRIPT_DIR/training/Modelfile.$MODEL_NAME"
+
+cat > "$MODELFILE" <<EOF
+FROM $FUSED_DIR
+
+TEMPLATE """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "system" }}<|im_start|>system
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "assistant" }}<|im_start|>assistant
+{{ .Content }}<|im_end|>
+{{- end }}
+{{- end }}
+{{- end }}<|im_start|>assistant
+"""
+
+PARAMETER stop "<|im_end|>"
+SYSTEM "You are Pip, an autonomous robot. Reply briefly and directly. Do not describe yourself as an AI assistant."
+EOF
+
+if command -v ollama >/dev/null 2>&1; then
+    ollama create "$MODEL_NAME" -f "$MODELFILE"
+    printf '%s\n' "[train] Created Ollama model: $MODEL_NAME"
+else
+    printf '%s\n' "[train] Ollama not found - skipping model creation"
+    printf '%s\n' "[train] To create manually: ollama create $MODEL_NAME -f $MODELFILE"
+fi
+
 printf '%s\n' "[train] ============================================"
 printf '%s\n' "[train] Training complete!"
 printf '%s\n' "[train] ============================================"
 printf '%s\n' "[train]"
-printf '%s\n' "[train] Adapter:        $ADAPTER_DIR"
+printf '%s\n' "[train] Model name:     $MODEL_NAME"
 printf '%s\n' "[train] Merged model:   $FUSED_DIR"
 printf '%s\n' "[train]"
-printf '%s\n' "[train] The merged model is ready for Hailo HEF conversion."
-printf '%s\n' "[train] Next steps:"
-printf '%s\n' "[train]   1. Convert to Hailo HEF using Hailo's compiler"
-printf '%s\n' "[train]   2. Or use the HF model directly with Ollama on CPU"
+printf '%s\n' "[train] Usage:"
+printf '%s\n' "[train]   ollama run $MODEL_NAME \"Your prompt here\""
+printf '%s\n' "[train]"
+printf '%s\n' "[train] For Hailo HEF conversion:"
+printf '%s\n' "[train]   1. Use $FUSED_DIR (HF format)"
+printf '%s\n' "[train]   2. Convert with Hailo's compiler"
 printf '%s\n' "[train] ============================================"

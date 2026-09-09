@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
 """Train a LoRA adapter on personality data using MLX (Apple GPU)."""
-import json
 import subprocess
 import sys
 from pathlib import Path
-
-
-def load_jsonl(path):
-    """Load JSONL file."""
-    data = []
-    with open(path) as f:
-        for line in f:
-            if line.strip():
-                data.append(json.loads(line))
-    return data
 
 
 def main():
@@ -34,32 +23,48 @@ def main():
     print(f"[train] Using MLX to train LoRA adapter...")
     print(f"[train] Base model: {model_name}")
 
-    # Load and validate data
+    # Verify data files exist
     print("[train] Loading training data...")
-    train_data = load_jsonl(f"{data_dir}/train.jsonl")
-    valid_data = load_jsonl(f"{data_dir}/valid.jsonl")
+    train_file = Path(data_dir) / "build" / "train.jsonl"
+    valid_file = Path(data_dir) / "build" / "valid.jsonl"
 
-    train_texts = [d.get("text", "") for d in train_data if d.get("text", "").strip()]
-    valid_texts = [d.get("text", "") for d in valid_data if d.get("text", "").strip()]
+    if not train_file.exists():
+        print(f"[train] ERROR: Training data not found at {train_file}")
+        sys.exit(1)
 
-    print(f"[train] Datasets: train={len(train_texts)}, valid={len(valid_texts)}")
+    if not valid_file.exists():
+        print(f"[train] ERROR: Validation data not found at {valid_file}")
+        sys.exit(1)
+
+    # Count samples
+    train_count = sum(1 for _ in train_file.open())
+    valid_count = sum(1 for _ in valid_file.open())
+    print(f"[train] Datasets: train={train_count}, valid={valid_count}")
 
     # Use mlx_lm CLI for training (more stable than direct API)
     print(f"[train] Training LoRA adapter with MLX for {train_iters} iterations...")
 
     cmd = [
-        sys.executable, "-m", "mlx_lm.tuner.lora",
+        sys.executable, "-m", "mlx_lm", "lora",
         "--model", model_name,
         "--data", data_dir,
+        "--train",
         "--iters", str(train_iters),
         "--batch-size", str(batch_size),
         "--learning-rate", str(learning_rate),
-        "--adapter-file", str(adapter_dir),
+        "--adapter-path", str(adapter_dir),
     ]
-
     try:
         result = subprocess.run(cmd, check=True)
         print(f"[train] Adapter saved to {adapter_dir}")
+
+        # Check what files were actually created
+        adapter_path = Path(adapter_dir)
+        if adapter_path.exists():
+            files = list(adapter_path.rglob("*"))
+            print(f"[train] Files in adapter_dir: {[f.name for f in files if f.is_file()]}")
+        else:
+            print(f"[train] Adapter directory does not exist: {adapter_dir}")
     except subprocess.CalledProcessError as e:
         print(f"[train] Error during MLX training: {e}")
         print(f"[train] Try: mlx_lm.models.download('{model_name}')")

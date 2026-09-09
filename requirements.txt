@@ -5,7 +5,7 @@ ollama
 pandas
 psutil
 python-dotenv
-scikit-learn
+scikit-learn==1.9.0
 webrtcvad
 
 

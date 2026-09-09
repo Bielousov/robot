@@ -1,3 +1,4 @@
+import json
 import sys
 import time
 import numpy as np
@@ -8,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 
 # --- INITIALIZATION ---
-project_path = Path(__file__).parents[3].resolve()
+project_path = Path(__file__).parents[2].resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 

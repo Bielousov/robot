@@ -138,7 +138,7 @@ if [ "$SKIP_OLLAMA" = "1" ]; then
 fi
 
 printf '%s\n' "[train] Creating Ollama model"
-OLLAMAFILE="$PROJECT_ROOT/Modelfile.pip"
+OLLAMAFILE="$PROJECT_ROOT/src/models/lora/Modelfile.pip"
 
 cat > "$OLLAMAFILE" <<EOF
 FROM $Q4_GGUF

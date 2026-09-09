@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from models.llm.identity import build_identity_system_prompt
+from models.ollama.identity import build_identity_system_prompt
 
 
 class IdentityPromptTests(unittest.TestCase):

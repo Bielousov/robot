@@ -27,16 +27,10 @@ class ModelManager:
         if not os.path.exists(path):
             raise FileNotFoundError(f"File missing at: {path}")
 
-        if path.endswith('.json'):
-            return self._load_json(path)
         elif path.endswith('.pkg'):
             return joblib.load(path)
         else:
             raise TypeError(f"Unsupported file format for: {path}")
-
-    def _load_json(self, path):
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
 
     def load(self, model_key="Model", scaler_key="ModelScaler"):
         """Loads and stores the model/scaler to self."""

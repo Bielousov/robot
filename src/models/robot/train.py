@@ -16,7 +16,7 @@ if str(project_path) not in sys.path:
 from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
-ACCURACY_TRESHOLD = 0.9
+ACCURACY_TRESHOLD = 0.95
 
 manager = ModelManager(Paths)
 

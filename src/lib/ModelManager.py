@@ -27,7 +27,16 @@ class ModelManager:
             raise FileNotFoundError(f"File missing at: {path}")
 
         elif path.endswith('.pkg'):
-            return joblib.load(path)
+            try:
+                return joblib.load(path)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Failed to load '{path}': {exc}. This usually means the "
+                    "installed numpy/scikit-learn versions don't match the ones "
+                    "used to train it. Run 'pip install -r requirements.txt' to "
+                    "sync versions, then retrain with "
+                    "'python src/models/robot/train.py'."
+                ) from exc
         else:
             raise TypeError(f"Unsupported file format for: {path}")
 

@@ -7,7 +7,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src.lib'))
 from src.main import Robot
 
 def start_app():
-    robot = Robot()
+    try:
+        robot = Robot()
+    except RuntimeError as exc:
+        print(f"\n[ERROR] {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"\n[ERROR] Failed to initialize Robot: {type(exc).__name__}: {exc}", file=sys.stderr)
+        sys.exit(1)
+
     running = True
     
     print("\n--- Robot Control Active ---")

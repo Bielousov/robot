@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Merge LoRA adapter with base model."""
+import os
 import sys
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -18,12 +19,18 @@ def main():
     output_dir = sys.argv[3]
 
     print(f"[train] Loading base model {base_model_name}...")
-    tokenizer = AutoTokenizer.from_pretrained(base_model_name, trust_remote_code=True)
+    hf_token = os.environ.get("HF_TOKEN", None)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_name,
+        trust_remote_code=True,
+        token=hf_token,
+    )
     model = AutoModelForCausalLM.from_pretrained(
         base_model_name,
         trust_remote_code=True,
         torch_dtype="auto",
         device_map="cpu",
+        token=hf_token,
     )
 
     print(f"[train] Loading adapter from {adapter_dir}...")

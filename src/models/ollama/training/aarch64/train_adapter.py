@@ -46,12 +46,18 @@ def main():
     learning_rate = float(sys.argv[6])
 
     print(f"[train] Loading model {model_name}...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    hf_token = os.environ.get("HF_TOKEN", None)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        token=hf_token,
+    )
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         trust_remote_code=True,
         torch_dtype="auto",
         device_map="cpu",
+        token=hf_token,
     )
 
     print("[train] Setting up LoRA config...")

@@ -18,6 +18,7 @@ fi
 
 BASE_MODEL=${BASE_MODEL:-${OLLAMA_BASE_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}}
 MODEL_NAME=${OLLAMA_MODEL_NAME:-pip}
+HF_TOKEN=${HF_TOKEN:-}
 
 ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/$MODEL_NAME}
 FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/$MODEL_NAME}
@@ -115,7 +116,7 @@ require_file "$DATA_DIR/valid.jsonl"
 printf '%s\n' "[train] Training LoRA adapter"
 mkdir -p "$ADAPTER_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/$BACKEND/train_adapter.py" \
+HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/train_adapter.py" \
     "$BASE_MODEL" \
     "$DATA_DIR" \
     "$ADAPTER_DIR" \
@@ -133,7 +134,7 @@ printf '%s\n' "[train] Merging adapter with base model"
 rm -rf "$FUSED_DIR"
 mkdir -p "$FUSED_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" \
+HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" \
     "$BASE_MODEL" \
     "$ADAPTER_DIR" \
     "$FUSED_DIR"

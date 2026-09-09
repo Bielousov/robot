@@ -72,10 +72,10 @@ mkdir -p "$DATA_DIR"
 require_file "$DATA_DIR/train.jsonl"
 require_file "$DATA_DIR/valid.jsonl"
 
-printf '%s\n' "[train] Training LoRA adapter with PyTorch"
+printf '%s\n' "[train] Training LoRA adapter with PyTorch (aarch64)"
 mkdir -p "$ADAPTER_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/train_adapter.py" \
+"$PYTHON" "$SCRIPT_DIR/training/aarch64/train_adapter.py" \
     "$BASE_MODEL" \
     "$DATA_DIR" \
     "$ADAPTER_DIR" \
@@ -89,7 +89,7 @@ printf '%s\n' "[train] Merging adapter with base model"
 rm -rf "$FUSED_DIR"
 mkdir -p "$FUSED_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/merge_adapter.py" \
+"$PYTHON" "$SCRIPT_DIR/training/aarch64/merge_adapter.py" \
     "$BASE_MODEL" \
     "$ADAPTER_DIR" \
     "$FUSED_DIR"

@@ -71,7 +71,7 @@ require_file "$DATA_DIR/valid.jsonl"
 printf '%s\n' "[train] Training LoRA adapter (MLX GPU)"
 mkdir -p "$ADAPTER_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/train_adapter_gpu.py" \
+"$PYTHON" "$SCRIPT_DIR/training/darwin/train_adapter.py" \
     "$BASE_MODEL" \
     "$DATA_DIR" \
     "$ADAPTER_DIR" \
@@ -85,7 +85,7 @@ printf '%s\n' "[train] Merging adapter with base model"
 rm -rf "$FUSED_DIR"
 mkdir -p "$FUSED_DIR"
 
-"$PYTHON" "$SCRIPT_DIR/training/merge_adapter_gpu.py" \
+"$PYTHON" "$SCRIPT_DIR/training/darwin/merge_adapter.py" \
     "$BASE_MODEL" \
     "$ADAPTER_DIR" \
     "$FUSED_DIR"

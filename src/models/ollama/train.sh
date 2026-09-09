@@ -2,7 +2,7 @@
 set -eu
 
 # Universal LoRA training script - auto-detects platform and training backend
-# - Mac M1+ with MLX: GPU training (fast)
+# - Apple Silicon Mac with MLX: GPU training (fast)
 # - RPi5/Linux/Mac CPU: PyTorch CPU training (universal)
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -68,10 +68,14 @@ printf '%s\n' "[train]"
 
 case "$BACKEND" in
     darwin)
-        printf '%s\n' "[train] Using MLX GPU training (Mac M1+)"
+        CHIP=$(sysctl -n machdep.cpu.brand_string 2>/dev/null | sed 's/.*Apple //' | awk '{print $1, $2}' || echo "Apple Silicon")
+        printf '%s\n' "[train] Mode: GPU (MLX)"
+        printf '%s\n' "[train] Hardware: $CHIP"
         ;;
     aarch64)
-        printf '%s\n' "[train] Using PyTorch CPU training (universal)"
+        CPUS=$(nproc 2>/dev/null || echo "?")
+        printf '%s\n' "[train] Mode: CPU (PyTorch)"
+        printf '%s\n' "[train] Architecture: ARM64 ($CPUS cores)"
         ;;
 esac
 

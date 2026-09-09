@@ -4,7 +4,7 @@ Train a custom LoRA personality adapter for the Qwen2.5-1.5B model. One script, 
 
 | Backend           | Hardware                        | Speed        | Auto-Selected When             |
 | ----------------- | ------------------------------- | ------------ | ------------------------------ |
-| **GPU** (MLX)     | Mac M1+                         | ~100x faster | macOS detected + MLX installed |
+| **GPU** (MLX)     | Mac (Apple Silicon)             | ~100x faster | macOS detected + MLX installed |
 | **CPU** (PyTorch) | Any (RPi5, servers, Linux, Mac) | ~1 iter/min  | Default / no MLX               |
 
 Single script handles both. Outputs are identical **Hugging Face format models** ready for Hailo HEF conversion.
@@ -17,7 +17,7 @@ Single script handles both. Outputs are identical **Hugging Face format models**
 
 That's it. The script auto-detects your platform:
 
-- **Mac M1+ with MLX**: Uses GPU training (fast)
+- **Apple Soilicon Mac with MLX**: Uses GPU training (fast)
 - **Everywhere else**: Uses PyTorch CPU training (universal)
 
 Outputs merged model to `build/fused/pip/`.
@@ -91,9 +91,9 @@ for chunk in response:
 
 ### Main Entry Point
 
-| Script               | Purpose                                                                       |
-| -------------------- | ----------------------------------------------------------------------------- |
-| [train.sh](train.sh) | Auto-detects platform and runs appropriate backend (GPU on Mac M1+, CPU else) |
+| Script               | Purpose                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| [train.sh](train.sh) | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else) |
 
 ### CPU Training Backend (PyTorch - aarch64)
 
@@ -102,7 +102,7 @@ for chunk in response:
 | [training/aarch64/train_adapter.py](training/aarch64/train_adapter.py) | PyTorch LoRA adapter training |
 | [training/aarch64/merge_adapter.py](training/aarch64/merge_adapter.py) | Merge adapter with base model |
 
-### GPU Training Backend (MLX - darwin/Mac M1+)
+### GPU Training Backend (MLX - darwin/MacOS)
 
 | Script                                                               | Purpose                   |
 | -------------------------------------------------------------------- | ------------------------- |
@@ -152,7 +152,7 @@ Edit `training/personality.jsonl` to customize the personality. Each line is a J
 pip install torch peft transformers datasets huggingface_hub
 ```
 
-### GPU Training (Mac M1+)
+### GPU Training (Mac GPU)
 
 ```bash
 pip install mlx mlx-lm huggingface_hub
@@ -169,7 +169,7 @@ pip install mlx mlx-lm huggingface_hub
 **GPU training not using accelerator?**
 
 - Verify MLX installation: `python -c "import mlx"`
-- Check Mac chip: must be Apple Silicon (M1+), not Intel
+- Check Mac chip: must be Apple Silicon
 - Verify `train-gpu.sh` is executable: `chmod +x train-gpu.sh`
 
 **rsync permission denied?**

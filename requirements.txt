@@ -14,7 +14,7 @@ transformers
 datasets
 huggingface_hub
 
-# Model Training - GPU (MLX on Mac M1+ only)
+# Model Training - GPU (MLX on Apple Silicon Macs only)
 mlx; sys_platform == "darwin"
 mlx-lm; sys_platform == "darwin"
 

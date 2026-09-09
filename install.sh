@@ -46,22 +46,25 @@ else
 fi
 
 # --- Run Web Installer ---
-if [ -f "$WEB_INSTALLER" ]; then
-    echo "[Main] Launching Web UI Installer..."
-    chmod +x "$WEB_INSTALLER"
-    bash "$WEB_INSTALLER"
-else
-    echo "[Error] Could not find Web installer at: $WEB_INSTALLER"
-fi
+# if [ -f "$WEB_INSTALLER" ]; then
+#     echo "[Main] Launching Web UI Installer..."
+#     chmod +x "$WEB_INSTALLER"
+#     bash "$WEB_INSTALLER"
+# else
+#     echo "[Error] Could not find Web installer at: $WEB_INSTALLER"
+# fi
 
 # --- Install systemd services ---
-SERVICES_INSTALLER="$SCRIPT_DIR/services/install.sh"
-if [ -f "$SERVICES_INSTALLER" ]; then
-    echo "[Main] Installing systemd services..."
-    chmod +x "$SERVICES_INSTALLER"
-    sh "$SERVICES_INSTALLER"
+ROBOT_SERVICE="$SCRIPT_DIR/system/services/robot.service"
+if [ -f "$ROBOT_SERVICE" ]; then
+    echo "[Main] Installing robot.service..."
+    sudo cp "$ROBOT_SERVICE" /etc/systemd/system/robot.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable robot.service
+    sudo systemctl restart robot.service
 else
-    echo "[Error] Could not find services installer at: $SERVICES_INSTALLER"
+    echo "[Error] Could not find robot.service at: $ROBOT_SERVICE"
+    exit 1
 fi
 
 echo "[Main] Installation sequence finished."

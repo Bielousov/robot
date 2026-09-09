@@ -1,6 +1,6 @@
 dotenv
 joblib
-numpy
+numpy==2.3.4
 ollama
 pandas
 psutil

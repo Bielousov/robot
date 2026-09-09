@@ -2,10 +2,10 @@
 
 Train a custom LoRA personality adapter for the Qwen2.5-1.5B model. One script, auto-detected backend:
 
-| Backend | Hardware | Speed | Auto-Selected When |
-|---------|----------|-------|-------------------|
-| **GPU** (MLX) | Mac M1+ | ~100x faster | macOS detected + MLX installed |
-| **CPU** (PyTorch) | Any (RPi5, servers, Linux, Mac) | ~1 iter/min | Default / no MLX |
+| Backend           | Hardware                        | Speed        | Auto-Selected When             |
+| ----------------- | ------------------------------- | ------------ | ------------------------------ |
+| **GPU** (MLX)     | Mac M1+                         | ~100x faster | macOS detected + MLX installed |
+| **CPU** (PyTorch) | Any (RPi5, servers, Linux, Mac) | ~1 iter/min  | Default / no MLX               |
 
 Single script handles both. Outputs are identical **Hugging Face format models** ready for Hailo HEF conversion.
 
@@ -16,6 +16,7 @@ Single script handles both. Outputs are identical **Hugging Face format models**
 ```
 
 That's it. The script auto-detects your platform:
+
 - **Mac M1+ with MLX**: Uses GPU training (fast)
 - **Everywhere else**: Uses PyTorch CPU training (universal)
 
@@ -62,10 +63,10 @@ Once trained, use the merged model with Ollama:
 
 ```bash
 # Import the merged model into Ollama
-ollama create pip-personality -f training/Modelfile.pip
+ollama create pip-qwen2.5-1.5b -f build/Modelfile.pip-qwen2.5-1.5b
 
 # Chat with it
-ollama run pip-personality "Hello, who are you?"
+ollama run pip-qwen2.5-1.5b "Hello, who are you?"
 
 # In Python (same as production)
 from lib.ollama.client import OllamaClient
@@ -90,8 +91,8 @@ for chunk in response:
 
 ### Main Entry Point
 
-| Script               | Purpose                                                                        |
-| -------------------- | ------------------------------------------------------------------------------ |
+| Script               | Purpose                                                                       |
+| -------------------- | ----------------------------------------------------------------------------- |
 | [train.sh](train.sh) | Auto-detects platform and runs appropriate backend (GPU on Mac M1+, CPU else) |
 
 ### CPU Training Backend (PyTorch - aarch64)
@@ -103,15 +104,15 @@ for chunk in response:
 
 ### GPU Training Backend (MLX - darwin/Mac M1+)
 
-| Script                                                               | Purpose               |
-| -------------------------------------------------------------------- | --------------------- |
+| Script                                                               | Purpose                   |
+| -------------------------------------------------------------------- | ------------------------- |
 | [training/darwin/train_adapter.py](training/darwin/train_adapter.py) | MLX LoRA adapter training |
-| [training/darwin/merge_adapter.py](training/darwin/merge_adapter.py) | MLX adapter merge     |
+| [training/darwin/merge_adapter.py](training/darwin/merge_adapter.py) | MLX adapter merge         |
 
 ### Shared
 
-| Script                                               | Purpose                       |
-| ---------------------------------------------------- | ----------------------------- |
+| Script                                               | Purpose                      |
+| ---------------------------------------------------- | ---------------------------- |
 | [training/prepare_data.py](training/prepare_data.py) | Split JSONL into train/valid |
 
 ## Output Structure
@@ -137,7 +138,7 @@ Edit `training/personality.jsonl` to customize the personality. Each line is a J
 {"text": "I prefer brief, direct answers over long explanations."}
 ```
 
-**Training parameters** (in `train.sh`):
+**Training parameters** (in `train-cpu.sh` and `train-gpu.sh`):
 
 - `TRAIN_ITERS` — number of training steps (default: 300)
 - `BATCH_SIZE` — batch size per device (default: 1, increase if OOM allows)
@@ -145,20 +146,17 @@ Edit `training/personality.jsonl` to customize the personality. Each line is a J
 
 ## Setup
 
-### Required (all systems)
+### CPU Training (PyTorch)
 
 ```bash
 pip install torch peft transformers datasets huggingface_hub
 ```
 
-### Optional: GPU Training (Mac M1+)
+### GPU Training (Mac M1+)
 
 ```bash
-# Install to enable ~100x faster training on Mac M1+
-pip install mlx mlx-lm
+pip install mlx mlx-lm huggingface_hub
 ```
-
-If MLX is not installed, `train.sh` automatically falls back to CPU training.
 
 ## Troubleshooting
 

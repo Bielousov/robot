@@ -19,31 +19,16 @@ def main():
 
     # Use mlx_lm CLI to fuse adapter
     cmd = [
-        sys.executable, "-m", "mlx_lm.tuner.fuse",
+        sys.executable, "-m", "mlx_lm", "fuse",
         "--model", base_model_name,
-        "--adapter-file", str(adapter_dir),
+        "--adapter-path", str(adapter_dir),
         "--save-path", str(output_dir),
-        "--dequantize",  # Convert to full precision for broader compatibility
+        "--dequantize",
     ]
 
     try:
         result = subprocess.run(cmd, check=True)
         print(f"[train] Merged model saved to {output_dir}")
-
-        # Create config.json for compatibility
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        config_path = Path(output_dir) / "config.json"
-        if not config_path.exists():
-            import json
-            config = {
-                "architectures": ["QwenForCausalLM"],
-                "model_type": "qwen",
-                "merged_from_lora": True,
-            }
-            with open(config_path, "w") as f:
-                json.dump(config, f, indent=2)
-            print(f"[train] Created config.json at {output_dir}")
-
     except subprocess.CalledProcessError as e:
         print(f"[train] Error during MLX fuse: {e}")
         sys.exit(1)

@@ -21,13 +21,13 @@ flowchart TB
     WH --> PIPER
 ```
 
-| # | Model | Framework / runtime | Role |
-|---|-------|----------------------|------|
-| 1 | **Robot Model** | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak) |
-| 2 | **Ollama / HailoRT LLM** | `Qwen2.5:1.5B-Instruct`, served by Ollama (CPU) or `hailo_platform.genai.LLM` on a Hailo-10H `.hef` | Turns a prompt + conversation context into a reply |
-| 2.a | **LoRA personality wrapper** | GGUF adapter (Ollama) or a fine-tuned/fused checkpoint | Optional; when configured, it *is* Pip's personality and the base text system-prompt is disabled |
-| 3 | **"Whistler"** | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H | Turns microphone audio into text |
-| — | **Piper** | ONNX TTS, driven as a subprocess | Turns text into speech audio |
+| #   | Model                        | Framework / runtime                                                                                 | Role                                                                                                        |
+| --- | ---------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1   | **Robot Model**              | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled        | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak) |
+| 2   | **Ollama / HailoRT LLM**     | `Qwen2.5:1.5B-Instruct`, served by Ollama (CPU) or `hailo_platform.genai.LLM` on a Hailo-10H `.hef` | Turns a prompt + conversation context into a reply                                                          |
+| 2.a | **LoRA personality wrapper** | GGUF adapter (Ollama) or a fine-tuned/fused checkpoint                                              | Optional; when configured, it _is_ Pip's personality and the base text system-prompt is disabled            |
+| 3   | **"Whistler"**               | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H                               | Turns microphone audio into text                                                                            |
+| —   | **Piper**                    | ONNX TTS, driven as a subprocess                                                                    | Turns text into speech audio                                                                                |
 
 Model 1 is the only one that runs on a fixed clock. Models 2 and 3 are
 event-driven: the LLM runs when there's a prompt to answer, Whisper runs
@@ -83,9 +83,9 @@ top-to-bottom:
   (0.9 by default). Below that, the tick is a no-op - the Robot Model can be
   "unsure" and nothing happens.
 - **`IntentHandler.handle()` never blocks the brain thread.** It runs
-  *inline* on the brain thread (it's just a method call, not its own
+  _inline_ on the brain thread (it's just a method call, not its own
   thread), but both `Mind.think()` and `Voice.say()` immediately hand off to
-  *their own* background worker (`lib.Threads.Process`) and return. So a
+  _their own_ background worker (`lib.Threads.Process`) and return. So a
   multi-second LLM generation doesn't stall the 4-30 Hz tick loop - the
   brain keeps sampling `State` and can, for example, notice new eavesdropped
   speech while the previous answer is still being generated.
@@ -104,19 +104,19 @@ numbers, no text:
 `State`. `predict_proba` turns that into a probability per action, and
 `argmax` picks the action:
 
-| action | name | what `IntentHandler` does |
-|--------|------|-----------------------------|
-| 0 | idle | nothing |
-| 1 | sleep | speaks a goodbye, `is_awake = False` |
-| 2 | wake up | `is_awake = True`, queues a `"hello"` prompt if none pending |
-| 3 | prompt | drains `state.prompts`, calls `mind.think()` with eavesdrop context |
-| 4 | utterance | queues a `"utter"` prompt |
-| 5 | speak | pops one queued response, calls `voice.say()` |
+| action | name      | what `IntentHandler` does                                           |
+| ------ | --------- | ------------------------------------------------------------------- |
+| 0      | idle      | nothing                                                             |
+| 1      | sleep     | speaks a goodbye, `is_awake = False`                                |
+| 2      | wake up   | `is_awake = True`, queues a `"hello"` prompt if none pending        |
+| 3      | prompt    | drains `state.prompts`, calls `mind.think()` with eavesdrop context |
+| 4      | utterance | queues a `"utter"` prompt                                           |
+| 5      | speak     | pops one queued response, calls `voice.say()`                       |
 
 So "prompts" and "responses" are just lists sitting on `State`, filled by
 `Ears` (wake word / heard speech -> `state.prompts`) and by `Mind`'s
 streaming callback (-> `state.responses`), and drained by the Robot Model's
-own decisions about *when* to act on them. The Robot Model doesn't know
+own decisions about _when_ to act on them. The Robot Model doesn't know
 anything about LLMs or audio - it only ever sees the eight numbers above,
 which is why `is_thinking`/`is_speaking`/`has_pending_*` all feed back into
 `get_context()`: they're how the outcome of one intent shows up as input to
@@ -124,10 +124,10 @@ the next tick.
 
 ## 4. Where each model is configured
 
-| Model | Config | Code |
-|-------|--------|------|
-| Robot Model | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD` | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
-| LLM | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL` / `HAILO_MODEL_HEF`, `PERSONALIZED_MODEL` | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/` |
-| LoRA personality wrapper | `LLM_LORA_PATH` | `src/models/lora/` (training guide, `Modelfile.pip`) |
-| Whisper ("Whistler") | `HAILO_WHISPER_MODEL_HEF` | `src/lib/Ears.py` |
-| Piper | `PIPER_MODEL_NAME`, `PIPER_SAMPLE_RATE` | `src/lib/Voice.py` |
+| Model                    | Config                                                                                    | Code                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Robot Model              | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD`            | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
+| LLM                      | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL` / `HAILO_MODEL_HEF`, `PERSONALIZED_MODEL` | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/`                                                    |
+| LoRA personality wrapper | `LLM_LORA_PATH`                                                                           | `src/models/ollama/` (training guide, generated `Modelfile` in `build/`)                                              |
+| Whisper ("Whistler")     | `HAILO_WHISPER_MODEL_HEF`                                                                 | `src/lib/Ears.py`                                                                                                     |
+| Piper                    | `PIPER_MODEL_NAME`, `PIPER_SAMPLE_RATE`                                                   | `src/lib/Voice.py`                                                                                                    |

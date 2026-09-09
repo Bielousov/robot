@@ -142,27 +142,10 @@ HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" 
 require_file "$FUSED_DIR/config.json"
 
 printf '%s\n' "[train] Creating Ollama model"
-MODELFILE="$SCRIPT_DIR/training/Modelfile.$MODEL_NAME"
+mkdir -p "$SCRIPT_DIR/build"
+MODELFILE="$SCRIPT_DIR/build/Modelfile.$MODEL_NAME"
 
-cat > "$MODELFILE" <<EOF
-FROM $FUSED_DIR
-
-TEMPLATE """{{- if .Messages }}
-{{- range .Messages }}
-{{- if eq .Role "system" }}<|im_start|>system
-{{ .Content }}<|im_end|>
-{{- else if eq .Role "user" }}<|im_start|>user
-{{ .Content }}<|im_end|>
-{{- else if eq .Role "assistant" }}<|im_start|>assistant
-{{ .Content }}<|im_end|>
-{{- end }}
-{{- end }}
-{{- end }}<|im_start|>assistant
-"""
-
-PARAMETER stop "<|im_end|>"
-SYSTEM "You are Pip, an autonomous robot. Reply briefly and directly. Do not describe yourself as an AI assistant."
-EOF
+sed "s|{{FUSED_MODEL_DIR}}|$FUSED_DIR|g" "$SCRIPT_DIR/training/Modelfile.template" > "$MODELFILE"
 
 if command -v ollama >/dev/null 2>&1; then
     ollama create "$MODEL_NAME" -f "$MODELFILE"

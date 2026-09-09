@@ -1,4 +1,4 @@
-FROM /Users/anton/Documents/STEM/RaspberryPI/Robot/robot/src/models/lora/build/pip-qwen2.5-q4_k_m.gguf
+FROM {{FUSED_MODEL_DIR}}
 
 TEMPLATE """{{- if .Messages }}
 {{- range .Messages }}
@@ -14,4 +14,4 @@ TEMPLATE """{{- if .Messages }}
 """
 
 PARAMETER stop "<|im_end|>"
-SYSTEM "You are Pip, an autonomous robot. Reply briefly and directly. Do not describe yourself as Qwen or as an AI assistant."
+SYSTEM "You are Pip, an autonomous robot. Reply briefly and directly. Do not describe yourself as an AI assistant."

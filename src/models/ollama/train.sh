@@ -21,7 +21,7 @@ MODEL_NAME=${OLLAMA_MODEL_NAME:-pip}
 
 ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/$MODEL_NAME}
 FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/$MODEL_NAME}
-DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/training/data}
+DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/training/build}
 TRAIN_ITERS=${TRAIN_ITERS:-300}
 BATCH_SIZE=${BATCH_SIZE:-1}
 LEARNING_RATE=${LEARNING_RATE:-1e-5}
@@ -109,8 +109,8 @@ mkdir -p "$DATA_DIR"
     "$SCRIPT_DIR/training/personality.jsonl" \
     "$DATA_DIR"
 
-require_file "$DATA_DIR/build/train.jsonl"
-require_file "$DATA_DIR/build/valid.jsonl"
+require_file "$DATA_DIR/train.jsonl"
+require_file "$DATA_DIR/valid.jsonl"
 
 printf '%s\n' "[train] Training LoRA adapter"
 mkdir -p "$ADAPTER_DIR"

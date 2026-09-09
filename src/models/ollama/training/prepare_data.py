@@ -25,11 +25,11 @@ def main():
 
     output.mkdir(parents=True, exist_ok=True)
 
-    (output / "build" / "valid.jsonl").write_text(
+    (output / "valid.jsonl").write_text(
         "".join(json.dumps(row) + "\n" for row in rows[:validation_count])
     )
 
-    (output / "build" / "train.jsonl").write_text(
+    (output / "train.jsonl").write_text(
         "".join(json.dumps(row) + "\n" for row in rows[validation_count:])
     )
 

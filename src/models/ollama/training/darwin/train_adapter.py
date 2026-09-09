@@ -25,8 +25,8 @@ def main():
 
     # Verify data files exist
     print("[train] Loading training data...")
-    train_file = Path(data_dir) / "build" / "train.jsonl"
-    valid_file = Path(data_dir) / "build" / "valid.jsonl"
+    train_file = Path(data_dir) / "train.jsonl"
+    valid_file = Path(data_dir) / "valid.jsonl"
 
     if not train_file.exists():
         print(f"[train] ERROR: Training data not found at {train_file}")

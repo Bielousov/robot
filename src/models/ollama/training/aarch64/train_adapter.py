@@ -67,8 +67,8 @@ def main():
     model = get_peft_model(model, lora_config)
 
     print("[train] Loading training data...")
-    train_data = load_jsonl(f"{data_dir}/build/train.jsonl")
-    valid_data = load_jsonl(f"{data_dir}/build/valid.jsonl")
+    train_data = load_jsonl(f"{data_dir}/train.jsonl")
+    valid_data = load_jsonl(f"{data_dir}/valid.jsonl")
 
     def tokenize_fn(examples):
         output = tokenizer(

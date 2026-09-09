@@ -39,6 +39,18 @@ fi
 
 printf '%s\n' "[train] Preparing dataset"
 
+# Download base model once (cached for subsequent runs)
+printf '%s\n' "[train] Ensuring base model is cached..."
+"$PYTHON" - "$BASE_MODEL" <<'DOWNLOAD_MODEL'
+import sys
+from huggingface_hub import snapshot_download
+
+model_name = sys.argv[1]
+print(f"[train] Checking cache for {model_name}...")
+cache_dir = snapshot_download(model_name, cache_dir=None, resume_download=True)
+print(f"[train] Model cached at: {cache_dir}")
+DOWNLOAD_MODEL
+
 # Create build/data
 mkdir -p "$DATA_DIR"
 

@@ -18,12 +18,12 @@ def main():
     print(f"[train] Merging LoRA adapter with {base_model_name} using MLX...")
 
     # Use mlx_lm CLI to fuse adapter
+    # Note: not using --dequantize to avoid re-validating the entire model cache
     cmd = [
         sys.executable, "-m", "mlx_lm", "fuse",
         "--model", base_model_name,
         "--adapter-path", str(adapter_dir),
         "--save-path", str(output_dir),
-        "--dequantize",
     ]
 
     try:

@@ -67,9 +67,6 @@ install_model() {
 
     echo "[Hailo] Model installed:"
     ls -lh "$model_file"
-
-    echo "[Hailo] SHA256:"
-    sha256sum "$model_file"
 }
 
 install_model "$MODEL_HEF"

@@ -126,7 +126,7 @@ the next tick.
 
 | Model | Config | Code |
 |-------|--------|------|
-| Robot Model | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD` | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), `src/models/robot/train.py` |
+| Robot Model | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD` | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
 | LLM | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL` / `HAILO_MODEL_HEF`, `PERSONALIZED_MODEL` | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/` |
 | LoRA personality wrapper | `LLM_LORA_PATH` | `src/models/lora/` (training guide, `Modelfile.pip`) |
 | Whisper ("Whistler") | `HAILO_WHISPER_MODEL_HEF` | `src/lib/Ears.py` |

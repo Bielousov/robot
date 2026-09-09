@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """Train a LoRA adapter on personality data using PyTorch + PEFT."""
 import json
+import os
 import sys
 from pathlib import Path
+
+# Suppress PyTorch CPU-only warnings
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
+import torch
 
 from transformers import (
     AutoTokenizer,
@@ -92,6 +98,9 @@ def main():
         eval_steps=50,
         save_strategy="steps",
         save_steps=50,
+        dataloader_pin_memory=False,  # CPU-only, no GPU acceleration
+        use_cpu=True,  # Explicit CPU-only training
+        fp16=False,  # Disable mixed precision on ARM (no bfloat16 support)
     )
 
     trainer = Trainer(

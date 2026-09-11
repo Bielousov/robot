@@ -53,15 +53,12 @@ READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
-# VAD (Voice Activity Detection) - Two-stage approach:
-# 1. Primary gate: Lenient pre-filter (prevents short noise blips from being processed)
-# 2. Secondary: Post-inference deduplication + repetition penalty prevent hallucinations
-#
-# Lower threshold = more permissive, lets through more audio for processing
-# Hailo will filter hallucinations via repetition penalty + deduplication
-# Default -30 dBFS is lenient; lower to -25 for even more sensitivity
-NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-30.0"))
-NOISE_GATE_ENERGY = 0.2  # Normalized energy (0.0-1.0) from Hailo recommendation
+# VAD (Voice Activity Detection) with hysteresis - prevents gate flickering
+# Uses different thresholds for opening vs closing to avoid fragmenting continuous speech
+# Once gate opens, stays open until signal drops well below noise floor
+NOISE_GATE_OPEN_DBFS = float(os.getenv("WHISPER_NOISE_GATE_OPEN_DBFS", "-35.0"))
+NOISE_GATE_CLOSE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_CLOSE_DBFS", "-50.0"))
+NOISE_GATE_DBFS = NOISE_GATE_OPEN_DBFS  # For backwards compatibility with display
 
 # Minimum speech duration before sending to model
 # Prevents short noise blips from triggering false transcriptions
@@ -159,7 +156,12 @@ class UtteranceSegmenter:
         """Feed one chunk of audio. Returns (pcm_bytes, utterance_ms) when
         an utterance just finished, otherwise None."""
         level = rms_dbfs(data)
-        has_speech = level >= NOISE_GATE_DBFS
+
+        # Hysteresis: different thresholds for opening vs closing to prevent flickering
+        if self._gate_open:
+            has_speech = level >= NOISE_GATE_CLOSE_DBFS  # Stay open until drops well below
+        else:
+            has_speech = level >= NOISE_GATE_OPEN_DBFS   # Open when signal rises above threshold
 
         if has_speech != self._gate_open:
             self._gate_open = has_speech

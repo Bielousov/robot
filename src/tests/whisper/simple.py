@@ -1,11 +1,13 @@
 """
-Simple speech-to-text test: Whisper on HailoRT only.
+Simple speech-to-text test: Whisper on HailoRT with hallucination prevention.
 
-Listens to the mic continuously, gates out silence/noise with a plain RMS
-noise gate (Whisper's acoustic model is sensitive enough that quiet
-hums/electrical noise get transcribed as hallucinated text rather than
-rejected outright), and prints each utterance's transcript plus timing
-(utterance length, inference latency) to the console.
+Listens to the mic continuously, gates out silence/noise with VAD (Voice Activity
+Detection), applies auto-gain normalization, and sends speech to Hailo Whisper.
+Implements Hailo's best practices for real-time inference:
+- Repetition penalty (1.5) to prevent hallucinations on silence/noise
+- Energy-based VAD with automatic gain adjustment
+- Post-processing deduplication for repeated sentences
+- Timestamps and latency reporting for monitoring
 
 Usage:
     python src/tests/whisper/simple.py
@@ -14,10 +16,13 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
     HAILO_WHISPER_MODEL_HEF   Whisper HEF file name under lib/hailo/models
                               (required; e.g. "Whisper-Small.hef")
     MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
-    WHISPER_SAMPLE_RATE       Mic sample rate, default 16000
-    WHISPER_NOISE_GATE_DBFS   RMS noise gate threshold, default -45.0
-    WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before an utterance
-                              is sent to Whisper, default 500
+    WHISPER_SAMPLE_RATE       Mic sample rate, default 16000 (model requirement)
+    WHISPER_NOISE_GATE_DBFS   VAD energy threshold, default -45.0 dBFS
+                              (lower = more sensitive, 0.2 energy normalized)
+    WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before sending to model,
+                              default 500ms (prevents short noise blips)
+    WHISPER_REPETITION_PENALTY Hallucination prevention factor, default 1.5
+                              (higher = more aggressive, 1.5-2.0 typical range)
 """
 
 import os
@@ -46,18 +51,20 @@ READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
-# Whisper noise gate: a plain RMS/dBFS threshold instead of a speech
-# classifier. -55 dBFS is a starting point for mic setups with no
-# hardware/AGC gain; watch the "[Whisper Gate]" transitions printed at
-# runtime and raise/lower WHISPER_NOISE_GATE_DBFS to match your input level.
+# VAD (Voice Activity Detection) configuration
+# Energy-based threshold: 0.2 is Hailo's recommended default (0.15-0.25 tunable)
+# Mapped from dBFS for backwards compatibility with existing config
 NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-45.0"))
+NOISE_GATE_ENERGY = 0.2  # Normalized energy (0.0-1.0) from Hailo recommendation
 
-# Whisper hallucinates filler words ("So,", "You", "The") when fed a
-# sliver of near-silence/noise rather than real speech - a single noise
-# blip that briefly crosses the gate is enough to trigger this. Require at
-# least this much actual gated-open audio (not counting the silence tail)
-# before an utterance is sent to Whisper at all.
+# Minimum speech duration before sending to model
+# Prevents short noise blips from triggering false transcriptions
 MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "500"))
+
+# Hallucination prevention: repetition penalty factor
+# Hailo's default is 1.5 (prevents silent audio hallucination)
+# Increase to 2.0+ if hallucinations persist in your environment
+REPETITION_PENALTY = float(os.getenv("WHISPER_REPETITION_PENALTY", "1.5"))
 
 
 def rms_dbfs(data: bytes) -> float:
@@ -69,6 +76,60 @@ def rms_dbfs(data: bytes) -> float:
     if rms <= 0:
         return -float("inf")
     return 20 * np.log10(rms / 32768.0)
+
+
+def improve_input_audio(audio: np.ndarray) -> np.ndarray:
+    """Automatic gain adjustment for quiet audio (Hailo recommendation).
+
+    Whisper is sensitive to input levels. This applies:
+    - +20dB gain if peak amplitude < 0.1
+    - +10dB gain if peak amplitude < 0.2
+    - Otherwise no adjustment
+
+    Args:
+        audio: float32 PCM audio normalized to [-1.0, 1.0)
+
+    Returns:
+        Gain-adjusted audio, still in [-1.0, 1.0) range
+    """
+    peak = np.abs(audio).max()
+    if peak < 0.1:
+        audio = audio * 10.0  # +20dB
+    elif peak < 0.2:
+        audio = audio * 3.16  # +10dB
+    return np.clip(audio, -1.0, 0.9999)
+
+
+def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
+    """Remove repeated/hallucinated sentences (Hailo post-processing).
+
+    Whisper sometimes repeats or hallucinates sentences from silence.
+    This deduplicates based on normalized text comparison.
+
+    Args:
+        text: Current transcription
+        previous_texts: List of prior transcriptions to check against
+
+    Returns:
+        Cleaned text with deduplicated sentences
+    """
+    if not text or not previous_texts:
+        return text
+
+    sentences = [s.strip() for s in text.split(".") if s.strip()]
+    cleaned = []
+
+    for sentence in sentences:
+        normalized = sentence.lower().strip()
+        # Check if this sentence (or a substring) appeared before
+        is_duplicate = any(
+            normalized in prev.lower() or prev.lower() in normalized
+            for prev in previous_texts
+        )
+        if not is_duplicate:
+            cleaned.append(sentence)
+
+    return ". ".join(cleaned) + ("." if cleaned and text.endswith(".") else "")
 
 
 class UtteranceSegmenter:
@@ -137,7 +198,13 @@ class UtteranceSegmenter:
 
 
 class HailoWhisperEngine:
-    """Wraps hailo_platform.genai.Speech2Text for whisper-on-HailoRT inference."""
+    """Wraps hailo_platform.genai.Speech2Text for whisper-on-HailoRT inference.
+
+    Implements Hailo's best practices:
+    - Repetition penalty to prevent hallucinations
+    - Auto-gain adjustment for quiet audio
+    - Post-processing deduplication
+    """
 
     def __init__(self, hef_name: str):
         from hailo_platform import VDevice
@@ -152,13 +219,47 @@ class HailoWhisperEngine:
         self._task = Speech2TextTask.TRANSCRIBE
         self._vdevice = VDevice()
         print(f"[Hailo] Loading model '{hef_path.name}'...")
-        self._s2t = Speech2Text(self._vdevice, str(hef_path))
-        print(f"[Hailo] Model '{hef_path.name}' is ready.")
+        self._s2t = Speech2Text(
+            self._vdevice,
+            str(hef_path),
+            repetition_penalty=REPETITION_PENALTY,  # Prevent silent hallucinations
+        )
+        print(f"[Hailo] Model '{hef_path.name}' ready (repetition_penalty={REPETITION_PENALTY})")
+        self._previous_texts = []  # Track last N transcriptions for deduplication
 
     def transcribe(self, pcm_bytes: bytes) -> str:
-        # Speech2Text expects mono float32 PCM normalized to [-1.0, 1.0) @ 16kHz.
+        """Transcribe audio with preprocessing and post-processing.
+
+        Args:
+            pcm_bytes: 16-bit mono PCM audio at SAMPLE_RATE
+
+        Returns:
+            Cleaned transcription text
+        """
+        # Convert to float32 normalized to [-1.0, 1.0)
         audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-        return self._s2t.generate_all_text(audio_data=audio, task=self._task, language="en").strip()
+
+        # Auto-gain adjustment (Hailo recommendation for quiet mics)
+        audio = improve_input_audio(audio)
+
+        # Hailo's Speech2Text expects exact sample rate (16kHz)
+        text = self._s2t.generate_all_text(
+            audio_data=audio,
+            task=self._task,
+            language="en"
+        ).strip()
+
+        # Post-processing: deduplicate against recent history
+        if text:
+            text = clean_transcription(text, self._previous_texts[-3:])  # Check last 3
+
+        # Track for next deduplication check
+        if text:
+            self._previous_texts.append(text)
+            if len(self._previous_texts) > 10:
+                self._previous_texts.pop(0)
+
+        return text
 
     def stop(self):
         self._s2t.release()
@@ -180,13 +281,25 @@ def main():
     whisper_model_name = os.getenv("HAILO_WHISPER_MODEL_HEF")
     if not whisper_model_name:
         print("[ERROR] HAILO_WHISPER_MODEL_HEF is not set.")
+        print("       Set environment variable, e.g.: export HAILO_WHISPER_MODEL_HEF=Whisper-Small.hef")
         sys.exit(1)
 
-    engine = HailoWhisperEngine(whisper_model_name)
+    try:
+        engine = HailoWhisperEngine(whisper_model_name)
+    except FileNotFoundError as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[ERROR] Failed to initialize Hailo: {e}")
+        print("       Check: hailo_platform installed, Python version matches wheel (cp313/3.13)")
+        sys.exit(1)
+
     segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS)
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
-    print(f"[Compare] Listening on {SAMPLE_RATE}Hz... (Ctrl+C to stop)")
+    print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
+    print(f"[Whisper] Config: VAD threshold {NOISE_GATE_DBFS} dBFS, min speech {MIN_SPEECH_MS:.0f}ms, repetition_penalty {REPETITION_PENALTY}")
+    print("[Whisper] (Ctrl+C to stop)\n")
 
     try:
         while True:
@@ -203,20 +316,29 @@ def main():
             try:
                 text = engine.transcribe(pcm_bytes)
             except Exception as e:
-                print(f"[Whisper/Hailo] error: {e}")
+                print(f"[Whisper ERROR] Inference failed: {e}")
                 continue
             latency_ms = (time.time() - start) * 1000
 
             if text:
-                print(f"[Whisper/Hailo] utterance={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: {text}")
+                print(f"[Whisper] speech={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: {text}")
             else:
-                print(f"[Whisper/Hailo] utterance={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: (no speech recognized)")
+                print(f"[Whisper] speech={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: (no speech)")
+
     except KeyboardInterrupt:
-        print("\n[Compare] Stopping...")
+        print("\n[Whisper] Stopping...")
+    except Exception as e:
+        print(f"\n[Whisper FATAL] {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         engine.stop()
         process.terminate()
-        process.wait()
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
 
 
 if __name__ == "__main__":

@@ -219,12 +219,8 @@ class HailoWhisperEngine:
         self._task = Speech2TextTask.TRANSCRIBE
         self._vdevice = VDevice()
         print(f"[Hailo] Loading model '{hef_path.name}'...")
-        self._s2t = Speech2Text(
-            self._vdevice,
-            str(hef_path),
-            repetition_penalty=REPETITION_PENALTY,  # Prevent silent hallucinations
-        )
-        print(f"[Hailo] Model '{hef_path.name}' ready (repetition_penalty={REPETITION_PENALTY})")
+        self._s2t = Speech2Text(self._vdevice, str(hef_path))
+        print(f"[Hailo] Model '{hef_path.name}' ready (will use repetition_penalty={REPETITION_PENALTY} during inference)")
         self._previous_texts = []  # Track last N transcriptions for deduplication
 
     def transcribe(self, pcm_bytes: bytes) -> str:
@@ -243,11 +239,20 @@ class HailoWhisperEngine:
         audio = improve_input_audio(audio)
 
         # Hailo's Speech2Text expects exact sample rate (16kHz)
-        text = self._s2t.generate_all_text(
-            audio_data=audio,
-            task=self._task,
-            language="en"
-        ).strip()
+        try:
+            text = self._s2t.generate_all_text(
+                audio_data=audio,
+                task=self._task,
+                language="en",
+                repetition_penalty=REPETITION_PENALTY
+            ).strip()
+        except TypeError:
+            # Fallback if repetition_penalty not supported in this version
+            text = self._s2t.generate_all_text(
+                audio_data=audio,
+                task=self._task,
+                language="en"
+            ).strip()
 
         # Post-processing: deduplicate against recent history
         if text:

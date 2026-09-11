@@ -163,6 +163,7 @@ class UtteranceSegmenter:
 
         if has_speech != self._gate_open:
             self._gate_open = has_speech
+            print(f"[Gate] {'open' if has_speech else 'closed'} ({level:.1f} dBFS)")
 
         if has_speech:
             if not self._speech_active:
@@ -195,7 +196,8 @@ class UtteranceSegmenter:
         self._frames = []
 
         if speech_bytes < self._min_speech_bytes:
-            print(f"[Whisper Gate] dropped short utterance ({speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms speech)")
+            speech_duration_ms = speech_bytes / (self._sample_rate * 2) * 1000
+            print(f"[Segmenter] Dropped short utterance ({speech_duration_ms:.0f}ms, min {self._min_speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms)")
             return None
 
         return pcm_bytes, utterance_ms
@@ -321,18 +323,21 @@ def main():
                 continue
 
             pcm_bytes, utterance_ms = utterance
+            print(f"[Segmenter] Utterance detected ({utterance_ms:.0f}ms), transcribing...")
             start = time.time()
             try:
                 text = engine.transcribe(pcm_bytes)
             except Exception as e:
                 print(f"[Whisper ERROR] Inference failed: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
             latency_ms = (time.time() - start) * 1000
 
             if text:
                 print(f"[Whisper] speech={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: {text}")
             else:
-                print(f"[Whisper] speech={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: (no speech)")
+                print(f"[Whisper] speech={utterance_ms:.0f}ms latency={latency_ms:.0f}ms: (no speech detected)")
 
     except KeyboardInterrupt:
         print("\n[Whisper] Stopping...")

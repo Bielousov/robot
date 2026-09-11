@@ -17,12 +17,14 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                               (required; e.g. "Whisper-Small.hef")
     MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
     WHISPER_SAMPLE_RATE       Mic sample rate, default 16000 (model requirement)
-    WHISPER_NOISE_GATE_DBFS   VAD energy threshold, default -45.0 dBFS
-                              (lower = more sensitive, 0.2 energy normalized)
+    WHISPER_NOISE_GATE_DBFS   Pre-filter threshold, default -30.0 dBFS
+                              (lenient to let speech through; VAD filters hallucinations)
+                              Lower = more sensitive, e.g. -25 for very quiet speech
     WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before sending to model,
-                              default 500ms (prevents short noise blips)
+                              default 500ms (prevents short isolated noise blips)
     WHISPER_REPETITION_PENALTY Hallucination prevention factor, default 1.5
                               (higher = more aggressive, 1.5-2.0 typical range)
+                              Applied during inference to prevent silent audio repeats
 """
 
 import os
@@ -51,10 +53,14 @@ READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
-# VAD (Voice Activity Detection) configuration
-# Energy-based threshold: 0.2 is Hailo's recommended default (0.15-0.25 tunable)
-# Mapped from dBFS for backwards compatibility with existing config
-NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-45.0"))
+# VAD (Voice Activity Detection) - Two-stage approach:
+# 1. Primary gate: Lenient pre-filter (prevents short noise blips from being processed)
+# 2. Secondary: Post-inference deduplication + repetition penalty prevent hallucinations
+#
+# Lower threshold = more permissive, lets through more audio for processing
+# Hailo will filter hallucinations via repetition penalty + deduplication
+# Default -30 dBFS is lenient; lower to -25 for even more sensitivity
+NOISE_GATE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_DBFS", "-30.0"))
 NOISE_GATE_ENERGY = 0.2  # Normalized energy (0.0-1.0) from Hailo recommendation
 
 # Minimum speech duration before sending to model
@@ -157,8 +163,6 @@ class UtteranceSegmenter:
 
         if has_speech != self._gate_open:
             self._gate_open = has_speech
-            state = "open" if has_speech else "closed"
-            print(f"[Whisper Gate] {state} ({level:.1f} dBFS, threshold {NOISE_GATE_DBFS:.1f})")
 
         if has_speech:
             if not self._speech_active:

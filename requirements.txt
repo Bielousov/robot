@@ -18,5 +18,7 @@ huggingface_hub
 mlx; sys_platform == "darwin"
 mlx-lm; sys_platform == "darwin"
 
-# Hailo's GenAI runtime, built for aarch64 only (RPi5/ARM)
+# Hailo's GenAI runtime (provides hailo_platform module)
+# Built for aarch64 only (RPi5/ARM), requires matching Python version (cp313 = Python 3.13)
+# If hailo_platform import fails, check: python --version must match wheel (cp313/3.13, cp312/3.12, cp311/3.11)
 ./system/wheels/hailort-5.3.0-cp313-cp313-linux_aarch64.whl; platform_machine == "aarch64"

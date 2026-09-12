@@ -21,7 +21,7 @@ see lib/whisper/client.py for the full rationale behind each default):
     WHISPER_PAUSE_TO_EMIT_MS        Pause duration that triggers early emission, default 400ms
     WHISPER_MIN_SPEECH_MS           Minimum speech duration before transcribing, default 500ms
     WHISPER_REPETITION_PENALTY      Hallucination prevention factor, default 1.5
-    WHISPER_SPEECH_BAND_RATIO_THRESHOLD  Spectral pre-filter threshold, default 0.20
+    WHISPER_SPEECH_BAND_RATIO_THRESHOLD  Spectral pre-filter threshold, default 0.08
     WHISPER_CREST_FACTOR_MAX        Crest-factor pre-filter max, default 7.0
 """
 

@@ -76,12 +76,17 @@ SPEECH_BAND_HIGH_HZ = 4000
 
 # Threshold calibrated from real usage logs, not theory - even after
 # restricting the ratio to VAD-flagged speech frames only, genuine
-# continuous speech measured 0.10-0.29 (mic self-noise, room reverb, and
-# breath noise outside the band all count against it), while keyboard
-# typing measured ~0.06. 0.45 rejected real speech outright. 0.20 sits
-# above the observed noise floor with margin below the worst observed
-# real-speech case; re-tune from your own printed ratios if needed.
-SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.20"))
+# continuous speech has measured as low as 0.10 (mic self-noise, room
+# reverb, and breath noise outside the band all count against it), with
+# most samples landing 0.10-0.29, while keyboard typing measured ~0.06.
+# 0.45 and then 0.20 both still rejected real speech at the low end of its
+# observed range. 0.08 sits just above the observed noise floor - this is
+# a narrow margin (real speech and noise are not cleanly separable on this
+# metric alone), so the crest-factor check below is now the primary
+# defense against impulsive noise (knocks/clicks); band ratio mainly
+# catches sustained broadband noise. Re-tune from your own printed ratios
+# if real speech still gets skipped, or if noise starts passing through.
+SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.08"))
 
 # Crest factor (peak / RMS) pre-filter: catches impulsive transients (knocks,
 # door taps, single claps) that pass the spectral filter above because their

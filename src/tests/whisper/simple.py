@@ -141,6 +141,43 @@ def improve_input_audio(audio: np.ndarray) -> np.ndarray:
     return np.clip(audio, -1.0, 0.9999)
 
 
+def extract_vad_speech(pcm_bytes: bytes, sample_rate: int, vad: webrtcvad.Vad) -> np.ndarray:
+    """Concatenate only the VAD-flagged speech portions of a PCM buffer.
+
+    A pause-based/early-transcribe buffer spans several seconds and includes
+    the silence/pause gaps between phrases (breathing, room tone, mic noise)
+    alongside the actual speech. Computing the spectral ratio over the whole
+    buffer lets that padding dilute the score - a real multi-second utterance
+    can end up scoring as "not speech-like" purely because a large fraction
+    of its bytes are near-silent gaps, not because the speech itself is
+    atypical. Restricting the ratio to only the VAD-active frames removes
+    that dilution.
+
+    Args:
+        pcm_bytes: 16-bit mono PCM audio at sample_rate
+        sample_rate: audio sample rate in Hz
+        vad: WebRTC VAD instance to classify each frame
+
+    Returns:
+        float32 audio normalized to [-1.0, 1.0) containing only speech-flagged
+        frames concatenated together (empty array if none found)
+    """
+    frame_bytes = VAD_FRAME_BYTES
+    speech_chunks = []
+    offset = 0
+    while offset + frame_bytes <= len(pcm_bytes):
+        frame = pcm_bytes[offset : offset + frame_bytes]
+        if vad.is_speech(frame, sample_rate):
+            speech_chunks.append(frame)
+        offset += frame_bytes
+
+    if not speech_chunks:
+        return np.array([], dtype=np.float32)
+
+    speech_bytes = b"".join(speech_chunks)
+    return np.frombuffer(speech_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+
+
 def speech_band_ratio(audio: np.ndarray, sample_rate: int, low_hz: float = SPEECH_BAND_LOW_HZ, high_hz: float = SPEECH_BAND_HIGH_HZ) -> float:
     """Fraction of audio energy inside the human speech formant band.
 
@@ -341,7 +378,12 @@ class HailoWhisperEngine:
         # (keyboard clicks/footsteps have broadband energy, not concentrated
         # in the speech formant band). Cheaper than an inference call and not
         # fooled by duration the way VAD-based gating is.
-        ratio = speech_band_ratio(audio, SAMPLE_RATE)
+        #
+        # Measured only over VAD-flagged speech frames, not the whole buffer -
+        # a multi-second pause-based utterance includes silence/pause padding
+        # that would otherwise dilute the ratio for genuine speech.
+        speech_only = extract_vad_speech(pcm_bytes, SAMPLE_RATE, VAD)
+        ratio = speech_band_ratio(speech_only, SAMPLE_RATE) if speech_only.size > 0 else 0.0
         if ratio < SPEECH_BAND_RATIO_THRESHOLD:
             print(f"[Whisper] Skipped - not speech-like (band ratio={ratio:.2f}, threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f})")
             return ""

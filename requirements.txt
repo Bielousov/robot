@@ -5,6 +5,7 @@ ollama
 psutil
 python-dotenv
 scikit-learn==1.9.0
+silero-vad
 webrtcvad
 
 # Model Training - CPU (PyTorch + LoRA fine-tuning for personality adapter)

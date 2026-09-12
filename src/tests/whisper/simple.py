@@ -1,9 +1,9 @@
 """
 Simple speech-to-text test: Whisper on HailoRT with hallucination prevention.
 
-Listens to the mic continuously, segments speech with WebRTC VAD, and sends
+Listens to the mic continuously, segments speech with Silero VAD, and sends
 utterances to Hailo Whisper. All the actual filtering/segmentation logic
-lives in lib/whisper/client.py (UtteranceSegmenter, WhisperClient) - this
+lives in lib/hailo/whisper.py (UtteranceSegmenter, WhisperClient) - this
 script is just a console harness that wires mic I/O to it and prints
 diagnostics (dropped/skipped audio, latency).
 
@@ -11,12 +11,13 @@ Usage:
     python src/tests/whisper/simple.py
 
 Env vars (all optional, see src/config.py for the same names used elsewhere;
-see lib/whisper/client.py for the full rationale behind each default):
+see lib/hailo/whisper.py for the full rationale behind each default):
     HAILO_WHISPER_MODEL_HEF         Whisper HEF file name under lib/hailo/models
                                     (required; e.g. "Whisper-Small.hef")
     MIC_DEVICE                      arecord -D device string, e.g. "plughw:0,0"
     WHISPER_SAMPLE_RATE             Mic sample rate, default 16000 (model requirement)
-    WHISPER_VAD_AGGRESSIVENESS      WebRTC VAD aggressiveness (0-3, default 2)
+    WHISPER_VAD_THRESHOLD           Silero VAD speech probability threshold
+                                    (0.0-1.0, default 0.5); lower = more sensitive
     WHISPER_EARLY_TRANSCRIBE_MS     Minimum speech before considering pause breaks, default 2000ms
     WHISPER_PAUSE_TO_EMIT_MS        Pause duration that triggers early emission, default 400ms
     WHISPER_MIN_SPEECH_MS           Minimum speech duration before transcribing, default 500ms
@@ -44,7 +45,7 @@ from lib.hailo.whisper import (
     PAUSE_TO_EMIT_MS,
     REPETITION_PENALTY,
     SPEECH_BAND_RATIO_THRESHOLD,
-    VAD_AGGRESSIVENESS,
+    VAD_THRESHOLD,
     UtteranceSegmenter,
     WhisperClient,
 )
@@ -111,7 +112,7 @@ def main():
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
-    print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms, pause emit {PAUSE_TO_EMIT_MS:.0f}ms")
+    print(f"[Whisper] Config: VAD threshold={VAD_THRESHOLD}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms, pause emit {PAUSE_TO_EMIT_MS:.0f}ms")
     print(f"[Whisper] Repetition penalty={REPETITION_PENALTY}, min speech {MIN_SPEECH_MS:.0f}ms")
     print(f"[Whisper] Speech-band ratio threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f} (filters clicks/footsteps)")
     print(f"[Whisper] Crest factor max={CREST_FACTOR_MAX:.1f} (filters knocks/taps/claps)")

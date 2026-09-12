@@ -4,7 +4,7 @@ Wraps hailo_platform.genai.Speech2Text with the pieces needed for reliable
 real-time transcription on a continuously-listening mic:
 
 - UtteranceSegmenter: turns a raw PCM stream into finished utterances using
-  WebRTC VAD, with early/pause-based emission so long utterances don't wait
+  Silero VAD, with early/pause-based emission so long utterances don't wait
   for full silence before producing a result.
 - WhisperClient: wraps Speech2Text itself, adding a repetition penalty
   (prevents hallucinated filler words on near-silence), a spectral pre-filter
@@ -12,6 +12,14 @@ real-time transcription on a continuously-listening mic:
   not the whole buffer) to skip inference on keyboard clicks/footsteps/knocks
   without paying for a Whisper call, auto-gain for quiet mics, and
   post-processing deduplication for repeated/hallucinated sentences.
+
+Why Silero VAD and not WebRTC VAD: WebRTC VAD is an energy/spectral-shape
+heuristic tuned for telephony noise; it has no notion of what speech actually
+sounds like, so it's easily fooled by anything with speech-like broadband
+energy (music, TV, wind) and needed the extra spectral-ratio/crest-factor
+pre-filters below to compensate. Silero VAD is a small neural net trained
+specifically to discriminate speech from everything else (including music),
+so it's a meaningfully stronger first-stage filter - see SileroVAD below.
 
 All thresholds below were tuned empirically against real usage logs, not
 just theory - see the comment on each constant for what specifically drove
@@ -22,24 +30,92 @@ import time
 from pathlib import Path
 
 import numpy as np
-import webrtcvad
 
 LIB_PATH = Path(__file__).parent.parent.resolve()
 HAILO_MODELS_PATH = LIB_PATH / "hailo" / "models"
 
-# WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
-# Aggressiveness: 0=most lenient (catches everything), 3=most aggressive (filters noise)
-# Default 2 filters keyboard clicks while still catching speech
-# Use 3 if getting false positives from typing/clicking, 1 for quiet speech
-VAD_AGGRESSIVENESS = int(os.getenv("WHISPER_VAD_AGGRESSIVENESS", "2"))
+# Silero VAD - neural voice activity detection (see module docstring for why
+# this replaced WebRTC VAD). Outputs a continuous speech probability per
+# chunk rather than webrtcvad's discrete 0-3 "aggressiveness" levels; a
+# single probability threshold controls sensitivity instead.
+VAD_THRESHOLD = float(os.getenv("WHISPER_VAD_THRESHOLD", "0.5"))
 
-# Frame size for VAD: must be 10ms, 20ms, or 30ms at 16kHz
-# 20ms = 320 samples, good balance between latency and accuracy
-VAD_FRAME_MS = 20
+# Silero's model requires an EXACT chunk size per sample rate - not a
+# configurable ms duration like WebRTC VAD accepted (10/20/30ms). 512
+# samples at 16kHz (32ms), 256 samples at 8kHz; any other size raises
+# inside the model itself.
+_SILERO_CHUNK_SAMPLES = {16000: 512, 8000: 256}
 
 
 def _vad_frame_bytes(sample_rate: int) -> int:
-    return int((sample_rate / 1000) * VAD_FRAME_MS * 2)
+    if sample_rate not in _SILERO_CHUNK_SAMPLES:
+        raise ValueError(
+            f"Silero VAD only supports 8000/16000 Hz, got {sample_rate}"
+        )
+    return _SILERO_CHUNK_SAMPLES[sample_rate] * 2  # 16-bit PCM
+
+
+class SileroVAD:
+    """Adapts Silero VAD to the is_speech(frame_bytes, sample_rate) -> bool
+    contract the rest of this module (and its predecessor, webrtcvad.Vad)
+    uses, so UtteranceSegmenter/extract_vad_speech don't need to know which
+    backend is behind them.
+
+    Silero's model is stateful/recurrent across calls (unlike webrtcvad,
+    which is a stateless per-frame heuristic) - call reset_states() if you
+    want to discard accumulated context (e.g. between unrelated recordings).
+    A continuously-run mic stream can just keep calling is_speech() without
+    resetting; the model is designed for exactly that.
+
+    torch and silero_vad are imported lazily inside __init__, not at module
+    level, so the pure-Python helpers in this module (speech_band_ratio,
+    crest_factor, etc.) stay importable/testable without torch installed.
+    """
+
+    def __init__(self, threshold: float = VAD_THRESHOLD):
+        import torch
+        from silero_vad import load_silero_vad
+
+        self._torch = torch
+        self._model = load_silero_vad()
+        self._threshold = threshold
+
+    def is_speech(self, frame_bytes: bytes, sample_rate: int) -> bool:
+        expected_samples = _SILERO_CHUNK_SAMPLES.get(sample_rate)
+        if expected_samples is None:
+            raise ValueError(
+                f"Silero VAD only supports 8000/16000 Hz, got {sample_rate}"
+            )
+
+        samples = np.frombuffer(frame_bytes, dtype=np.int16)
+        if samples.size == 0:
+            return False
+        if samples.size != expected_samples:
+            # Guard against a short trailing frame (e.g. the last few bytes
+            # of a finished utterance) - pad to the exact size Silero requires.
+            padded = np.zeros(expected_samples, dtype=np.int16)
+            padded[: samples.size] = samples
+            samples = padded
+
+        audio = samples.astype(np.float32) / 32768.0
+        tensor = self._torch.from_numpy(audio)
+        with self._torch.no_grad():
+            prob = self._model(tensor, sample_rate).item()
+        return prob >= self._threshold
+
+    def reset_states(self):
+        self._model.reset_states()
+
+
+def _default_vad() -> SileroVAD:
+    """Lazily-created, module-cached SileroVAD for callers that don't
+    supply their own instance. Two independent instances are used across
+    this module (see UtteranceSegmenter/WhisperClient defaults) rather than
+    one shared singleton, so the live streaming segmenter's ongoing model
+    state is never disturbed by the separate one-shot buffer analysis done
+    in WhisperClient.transcribe().
+    """
+    return SileroVAD()
 
 
 # Early transcription with pause-based breaking:
@@ -120,7 +196,7 @@ def improve_input_audio(audio: np.ndarray) -> np.ndarray:
     return np.clip(audio, -1.0, 0.9999)
 
 
-def extract_vad_speech(pcm_bytes: bytes, sample_rate: int, vad: webrtcvad.Vad) -> np.ndarray:
+def extract_vad_speech(pcm_bytes: bytes, sample_rate: int, vad: SileroVAD) -> np.ndarray:
     """Concatenate only the VAD-flagged speech portions of a PCM buffer.
 
     A pause-based/early-transcribe buffer spans several seconds and includes
@@ -135,7 +211,8 @@ def extract_vad_speech(pcm_bytes: bytes, sample_rate: int, vad: webrtcvad.Vad) -
     Args:
         pcm_bytes: 16-bit mono PCM audio at sample_rate
         sample_rate: audio sample rate in Hz
-        vad: WebRTC VAD instance to classify each frame
+        vad: VAD instance to classify each frame (any object exposing
+            is_speech(frame_bytes, sample_rate) -> bool, e.g. SileroVAD)
 
     Returns:
         float32 audio normalized to [-1.0, 1.0) containing only speech-flagged
@@ -244,16 +321,16 @@ def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
 
 
 class UtteranceSegmenter:
-    """Turns a stream of raw PCM chunks into finished utterances using WebRTC VAD."""
+    """Turns a stream of raw PCM chunks into finished utterances using Silero VAD."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = MIN_SPEECH_MS, vad: webrtcvad.Vad = None, early_transcribe_ms: float = EARLY_TRANSCRIBE_MS, pause_to_emit_ms: float = PAUSE_TO_EMIT_MS, on_vad_change=None, on_drop=None, on_pause_emit=None):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = MIN_SPEECH_MS, vad: SileroVAD = None, early_transcribe_ms: float = EARLY_TRANSCRIBE_MS, pause_to_emit_ms: float = PAUSE_TO_EMIT_MS, on_vad_change=None, on_drop=None, on_pause_emit=None):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
         self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
         self._early_transcribe_bytes = int(sample_rate * 2 * early_transcribe_ms / 1000) if early_transcribe_ms > 0 else 0
         self._pause_to_emit_bytes = int(sample_rate * 2 * pause_to_emit_ms / 1000)
-        self._vad = vad or webrtcvad.Vad(VAD_AGGRESSIVENESS)
+        self._vad = vad or _default_vad()
         self._vad_frame_bytes = _vad_frame_bytes(sample_rate)
 
         # Optional diagnostics callbacks (e.g. for a CLI test harness to print
@@ -270,18 +347,27 @@ class UtteranceSegmenter:
         self._vad_active = False
         self._ready_for_early_emit = False  # True after we have enough speech
 
+        # Silero requires an exact chunk size (32ms @16kHz) that generally
+        # won't evenly divide whatever size the caller reads from the mic
+        # (e.g. an 80ms read leaves a 16ms remainder). Buffer leftover bytes
+        # across process() calls instead of silently dropping them, so every
+        # byte of audio eventually gets a VAD decision.
+        self._vad_buffer = b""
+
     def process(self, data: bytes):
         """Feed one chunk of audio. Returns (pcm_bytes, utterance_ms) when
         an utterance just finished, otherwise None."""
-        # Split into VAD frames and detect voice activity
+        # Split into complete VAD frames (carrying over any leftover from
+        # the previous call) and detect voice activity.
+        self._vad_buffer += data
         vad_detected = False
         offset = 0
-        while offset + self._vad_frame_bytes <= len(data):
-            frame = data[offset : offset + self._vad_frame_bytes]
+        while offset + self._vad_frame_bytes <= len(self._vad_buffer):
+            frame = self._vad_buffer[offset : offset + self._vad_frame_bytes]
             if self._vad.is_speech(frame, self._sample_rate):
                 vad_detected = True
-                break
             offset += self._vad_frame_bytes
+        self._vad_buffer = self._vad_buffer[offset:]
 
         if vad_detected != self._vad_active:
             self._vad_active = vad_detected
@@ -360,7 +446,7 @@ class WhisperClient:
     is open fails with HAILO_OUT_OF_PHYSICAL_DEVICES.
     """
 
-    def __init__(self, hef_name: str, sample_rate: int, vad: webrtcvad.Vad = None):
+    def __init__(self, hef_name: str, sample_rate: int, vad: SileroVAD = None):
         # Imported lazily (not at module level) so the segmentation/filter
         # helpers above stay importable/testable on machines without the
         # Hailo SDK installed - only constructing a WhisperClient itself
@@ -376,7 +462,12 @@ class WhisperClient:
             raise FileNotFoundError(f"Hailo Whisper model not found at {hef_path}")
 
         self._sample_rate = sample_rate
-        self._vad = vad or webrtcvad.Vad(VAD_AGGRESSIVENESS)
+        # A separate VAD instance from any UtteranceSegmenter's - Silero's
+        # model carries recurrent state across calls, and this one is used
+        # in a one-shot burst (extract_vad_speech, below) right after the
+        # segmenter finishes an utterance. Sharing an instance would let
+        # that burst perturb the segmenter's ongoing streaming state.
+        self._vad = vad or _default_vad()
         self._task = Speech2TextTask.TRANSCRIBE
         self._vdevice = get_vdevice()
         self._s2t = Speech2Text(self._vdevice, str(hef_path))

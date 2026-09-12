@@ -28,10 +28,12 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                                     (higher = more aggressive, 1.5-2.0 typical range)
     WHISPER_SPEECH_BAND_RATIO_THRESHOLD  Fraction of energy required in the
                                     80-4000Hz band (voice F0 + harmonics +
-                                    sibilants), default 0.45. Filters keyboard
-                                    clicks/footsteps (broadband transients) that
-                                    VAD duration alone can't distinguish from
-                                    real speech. Lower = more lenient, raise if
+                                    sibilants), default 0.20 (empirically
+                                    calibrated - real speech measured 0.10-0.29,
+                                    typing ~0.06). Filters keyboard clicks/
+                                    footsteps (broadband transients) that VAD
+                                    duration alone can't distinguish from real
+                                    speech. Lower = more lenient, raise if
                                     clicks still get through. Measured only over
                                     VAD-flagged speech frames (not the whole
                                     buffer) so pause/silence padding in a
@@ -117,7 +119,15 @@ REPETITION_PENALTY = float(os.getenv("WHISPER_REPETITION_PENALTY", "1.5"))
 # ("s", "sh", "f") which carry meaningful energy above 3400Hz.
 SPEECH_BAND_LOW_HZ = 80
 SPEECH_BAND_HIGH_HZ = 4000
-SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.45"))
+
+# Threshold calibrated from real usage logs, not theory - even after
+# restricting the ratio to VAD-flagged speech frames only, genuine
+# continuous speech measured 0.10-0.29 (mic self-noise, room reverb, and
+# breath noise outside the band all count against it), while keyboard
+# typing measured ~0.06. 0.45 rejected real speech outright. 0.20 sits
+# above the observed noise floor with margin below the worst observed
+# real-speech case; re-tune from your own printed ratios if needed.
+SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.20"))
 
 # Crest factor (peak / RMS) pre-filter: catches impulsive transients (knocks,
 # door taps, single claps) that pass the spectral filter above because their
@@ -431,7 +441,7 @@ class HailoWhisperEngine:
         cf = crest_factor(speech_only) if speech_only.size > 0 else 0.0
 
         if ratio < SPEECH_BAND_RATIO_THRESHOLD:
-            print(f"[Whisper] Skipped - not speech-like (band ratio={ratio:.2f}, threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f})")
+            print(f"[Whisper] Skipped - not speech-like (band ratio={ratio:.2f}, threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f}, crest factor={cf:.1f})")
             return ""
 
         # Impulsive transient (knock/tap/clap) - passes the spectral filter

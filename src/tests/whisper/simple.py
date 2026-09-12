@@ -53,9 +53,10 @@ SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
 # WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
-# Much more robust than threshold-based gating, independent of microphone levels
-# Aggressiveness: 0=most lenient, 3=most aggressive at filtering non-speech
-VAD_AGGRESSIVENESS = int(os.getenv("WHISPER_VAD_AGGRESSIVENESS", "1"))
+# Aggressiveness: 0=most lenient (catches everything), 3=most aggressive (filters noise)
+# Default 2 filters keyboard clicks while still catching speech
+# Use 3 if getting false positives from typing/clicking, 1 for quiet speech
+VAD_AGGRESSIVENESS = int(os.getenv("WHISPER_VAD_AGGRESSIVENESS", "2"))
 VAD = webrtcvad.Vad(VAD_AGGRESSIVENESS)
 
 # Frame size for VAD: must be 10ms, 20ms, or 30ms at 16kHz

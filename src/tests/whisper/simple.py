@@ -13,16 +13,19 @@ Usage:
     python src/tests/whisper/simple.py
 
 Env vars (all optional, see src/config.py for the same names used elsewhere):
-    HAILO_WHISPER_MODEL_HEF      Whisper HEF file name under lib/hailo/models
-                                 (required; e.g. "Whisper-Small.hef")
-    MIC_DEVICE                   arecord -D device string, e.g. "plughw:0,0"
-    WHISPER_SAMPLE_RATE          Mic sample rate, default 16000 (model requirement)
-    WHISPER_VAD_AGGRESSIVENESS   WebRTC VAD aggressiveness (0-3, default 1)
-                                 0=lenient, 3=aggressive at filtering non-speech
-    WHISPER_MIN_SPEECH_MS        Minimum speech duration before sending to model,
-                                 default 500ms (prevents isolated noise)
-    WHISPER_REPETITION_PENALTY   Hallucination prevention factor, default 1.5
-                                 (higher = more aggressive, 1.5-2.0 typical range)
+    HAILO_WHISPER_MODEL_HEF         Whisper HEF file name under lib/hailo/models
+                                    (required; e.g. "Whisper-Small.hef")
+    MIC_DEVICE                      arecord -D device string, e.g. "plughw:0,0"
+    WHISPER_SAMPLE_RATE             Mic sample rate, default 16000 (model requirement)
+    WHISPER_VAD_AGGRESSIVENESS      WebRTC VAD aggressiveness (0-3, default 2)
+                                    0=lenient, 3=aggressive at filtering non-speech
+    WHISPER_EARLY_TRANSCRIBE_MS     Start transcribing after N ms of speech, default 2000ms
+                                    Reduces latency by transcribing while still listening
+                                    Set to 0 to wait for silence detection instead
+    WHISPER_MIN_SPEECH_MS           Minimum speech duration before sending to model,
+                                    default 500ms (prevents isolated noise)
+    WHISPER_REPETITION_PENALTY      Hallucination prevention factor, default 1.5
+                                    (higher = more aggressive, 1.5-2.0 typical range)
 """
 
 import os
@@ -51,6 +54,10 @@ READ_CHUNK_MS = 80
 READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
+
+# Early transcription: start transcribing after N seconds of detected speech
+# Reduces latency - don't wait for silence, transcribe early
+EARLY_TRANSCRIBE_MS = float(os.getenv("WHISPER_EARLY_TRANSCRIBE_MS", "2000"))  # 2 seconds
 
 # WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
 # Aggressiveness: 0=most lenient (catches everything), 3=most aggressive (filters noise)
@@ -142,11 +149,12 @@ def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
 class UtteranceSegmenter:
     """Turns a stream of raw PCM chunks into finished utterances using WebRTC VAD."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0, vad: webrtcvad.Vad = None):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0, vad: webrtcvad.Vad = None, early_transcribe_ms: float = 0):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
         self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
+        self._early_transcribe_bytes = int(sample_rate * 2 * early_transcribe_ms / 1000) if early_transcribe_ms > 0 else 0
         self._vad = vad or VAD
         self._vad_frame_bytes = VAD_FRAME_BYTES
 
@@ -182,6 +190,14 @@ class UtteranceSegmenter:
             self._silence_bytes = 0
             self._speech_bytes += len(data)
             self._frames.append(data)
+
+            # Early transcription: if enough speech accumulated, transcribe now
+            # Don't wait for silence - reduces latency
+            if self._early_transcribe_bytes > 0 and self._speech_bytes >= self._early_transcribe_bytes:
+                elapsed_ms = (time.time() - self._start_time) * 1000
+                print(f"[Segmenter] Early transcription triggered ({self._speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms speech)")
+                return self._finalize_utterance()
+
             return None
 
         if not self._speech_active:
@@ -195,6 +211,10 @@ class UtteranceSegmenter:
         if not (silence_timeout or elapsed_ms >= self._max_utterance_ms):
             return None
 
+        return self._finalize_utterance()
+
+    def _finalize_utterance(self):
+        """Finalize the current utterance and return it, or None if too short."""
         pcm_bytes = b"".join(self._frames)
         utterance_ms = (time.time() - self._start_time) * 1000
         speech_bytes = self._speech_bytes
@@ -315,11 +335,17 @@ def main():
         print("       Check: hailo_platform installed, Python version matches wheel (cp313/3.13)")
         sys.exit(1)
 
-    segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS, vad=VAD)
+    segmenter = UtteranceSegmenter(
+        SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS,
+        min_speech_ms=MIN_SPEECH_MS,
+        vad=VAD,
+        early_transcribe_ms=EARLY_TRANSCRIBE_MS
+    )
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
-    print(f"[Whisper] Config: WebRTC VAD (aggressiveness={VAD_AGGRESSIVENESS}), min speech {MIN_SPEECH_MS:.0f}ms, repetition_penalty {REPETITION_PENALTY}")
+    print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms")
+    print(f"[Whisper] Repetition penalty={REPETITION_PENALTY}, min speech {MIN_SPEECH_MS:.0f}ms")
     print("[Whisper] (Ctrl+C to stop)\n")
 
     try:

@@ -13,18 +13,16 @@ Usage:
     python src/tests/whisper/simple.py
 
 Env vars (all optional, see src/config.py for the same names used elsewhere):
-    HAILO_WHISPER_MODEL_HEF   Whisper HEF file name under lib/hailo/models
-                              (required; e.g. "Whisper-Small.hef")
-    MIC_DEVICE                arecord -D device string, e.g. "plughw:0,0"
-    WHISPER_SAMPLE_RATE       Mic sample rate, default 16000 (model requirement)
-    WHISPER_NOISE_GATE_DBFS   Pre-filter threshold, default -30.0 dBFS
-                              (lenient to let speech through; VAD filters hallucinations)
-                              Lower = more sensitive, e.g. -25 for very quiet speech
-    WHISPER_MIN_SPEECH_MS     Minimum gated-open speech before sending to model,
-                              default 500ms (prevents short isolated noise blips)
-    WHISPER_REPETITION_PENALTY Hallucination prevention factor, default 1.5
-                              (higher = more aggressive, 1.5-2.0 typical range)
-                              Applied during inference to prevent silent audio repeats
+    HAILO_WHISPER_MODEL_HEF      Whisper HEF file name under lib/hailo/models
+                                 (required; e.g. "Whisper-Small.hef")
+    MIC_DEVICE                   arecord -D device string, e.g. "plughw:0,0"
+    WHISPER_SAMPLE_RATE          Mic sample rate, default 16000 (model requirement)
+    WHISPER_VAD_AGGRESSIVENESS   WebRTC VAD aggressiveness (0-3, default 1)
+                                 0=lenient, 3=aggressive at filtering non-speech
+    WHISPER_MIN_SPEECH_MS        Minimum speech duration before sending to model,
+                                 default 500ms (prevents isolated noise)
+    WHISPER_REPETITION_PENALTY   Hallucination prevention factor, default 1.5
+                                 (higher = more aggressive, 1.5-2.0 typical range)
 """
 
 import os
@@ -34,6 +32,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import webrtcvad
 
 # Anchor to project root (src) so `config` and `lib` resolve like other tests.
 PROJECT_PATH = Path(__file__).parent.parent.parent.resolve()
@@ -53,15 +52,19 @@ READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
-# VAD (Voice Activity Detection) with hysteresis - prevents gate flickering
-# Uses different thresholds for opening vs closing to avoid fragmenting continuous speech
-# Once gate opens, stays open until signal drops well below noise floor
-NOISE_GATE_OPEN_DBFS = float(os.getenv("WHISPER_NOISE_GATE_OPEN_DBFS", "-35.0"))
-NOISE_GATE_CLOSE_DBFS = float(os.getenv("WHISPER_NOISE_GATE_CLOSE_DBFS", "-50.0"))
-NOISE_GATE_DBFS = NOISE_GATE_OPEN_DBFS  # For backwards compatibility with display
+# WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
+# Much more robust than threshold-based gating, independent of microphone levels
+# Aggressiveness: 0=most lenient, 3=most aggressive at filtering non-speech
+VAD_AGGRESSIVENESS = int(os.getenv("WHISPER_VAD_AGGRESSIVENESS", "1"))
+VAD = webrtcvad.Vad(VAD_AGGRESSIVENESS)
+
+# Frame size for VAD: must be 10ms, 20ms, or 30ms at 16kHz
+# 20ms = 320 samples, good balance between latency and accuracy
+VAD_FRAME_MS = 20
+VAD_FRAME_BYTES = int((SAMPLE_RATE / 1000) * VAD_FRAME_MS * 2)
 
 # Minimum speech duration before sending to model
-# Prevents short noise blips from triggering false transcriptions
+# Prevents isolated noise from triggering transcription
 MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "500"))
 
 # Hallucination prevention: repetition penalty factor
@@ -136,38 +139,41 @@ def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
 
 
 class UtteranceSegmenter:
-    """Turns a stream of raw PCM chunks into finished utterances, gated by
-    a simple RMS noise gate."""
+    """Turns a stream of raw PCM chunks into finished utterances using WebRTC VAD."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0, vad: webrtcvad.Vad = None):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
         self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
+        self._vad = vad or VAD
+        self._vad_frame_bytes = VAD_FRAME_BYTES
 
         self._speech_active = False
         self._silence_bytes = 0
         self._speech_bytes = 0
         self._frames = []
         self._start_time = 0.0
-        self._gate_open = False
+        self._vad_active = False
 
     def process(self, data: bytes):
-        """Feed one chunk of audio. Returns (pcm_bytes, utterance_ms) when
+        """Feed one chunk of audio (80ms). Returns (pcm_bytes, utterance_ms) when
         an utterance just finished, otherwise None."""
-        level = rms_dbfs(data)
+        # Split into VAD frames (20ms each) and detect voice activity
+        vad_detected = False
+        offset = 0
+        while offset + self._vad_frame_bytes <= len(data):
+            frame = data[offset : offset + self._vad_frame_bytes]
+            if self._vad.is_speech(frame, self._sample_rate):
+                vad_detected = True
+                break
+            offset += self._vad_frame_bytes
 
-        # Hysteresis: different thresholds for opening vs closing to prevent flickering
-        if self._gate_open:
-            has_speech = level >= NOISE_GATE_CLOSE_DBFS  # Stay open until drops well below
-        else:
-            has_speech = level >= NOISE_GATE_OPEN_DBFS   # Open when signal rises above threshold
+        if vad_detected != self._vad_active:
+            self._vad_active = vad_detected
+            print(f"[VAD] {'speech' if vad_detected else 'silence'} detected")
 
-        if has_speech != self._gate_open:
-            self._gate_open = has_speech
-            print(f"[Gate] {'open' if has_speech else 'closed'} ({level:.1f} dBFS)")
-
-        if has_speech:
+        if vad_detected:
             if not self._speech_active:
                 self._start_time = time.time()
                 self._speech_bytes = 0
@@ -199,7 +205,8 @@ class UtteranceSegmenter:
 
         if speech_bytes < self._min_speech_bytes:
             speech_duration_ms = speech_bytes / (self._sample_rate * 2) * 1000
-            print(f"[Segmenter] Dropped short utterance ({speech_duration_ms:.0f}ms, min {self._min_speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms)")
+            min_duration_ms = self._min_speech_bytes / (self._sample_rate * 2) * 1000
+            print(f"[Segmenter] Dropped short utterance ({speech_duration_ms:.0f}ms, min {min_duration_ms:.0f}ms)")
             return None
 
         return pcm_bytes, utterance_ms
@@ -307,11 +314,11 @@ def main():
         print("       Check: hailo_platform installed, Python version matches wheel (cp313/3.13)")
         sys.exit(1)
 
-    segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS)
+    segmenter = UtteranceSegmenter(SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS, min_speech_ms=MIN_SPEECH_MS, vad=VAD)
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
-    print(f"[Whisper] Config: VAD threshold {NOISE_GATE_DBFS} dBFS, min speech {MIN_SPEECH_MS:.0f}ms, repetition_penalty {REPETITION_PENALTY}")
+    print(f"[Whisper] Config: WebRTC VAD (aggressiveness={VAD_AGGRESSIVENESS}), min speech {MIN_SPEECH_MS:.0f}ms, repetition_penalty {REPETITION_PENALTY}")
     print("[Whisper] (Ctrl+C to stop)\n")
 
     try:

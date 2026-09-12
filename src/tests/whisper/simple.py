@@ -27,11 +27,12 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
     WHISPER_REPETITION_PENALTY      Hallucination prevention factor, default 1.5
                                     (higher = more aggressive, 1.5-2.0 typical range)
     WHISPER_SPEECH_BAND_RATIO_THRESHOLD  Fraction of energy required in the
-                                    300-3400Hz speech formant band, default 0.45.
-                                    Filters keyboard clicks/footsteps (broadband
-                                    transients) that VAD duration alone can't
-                                    distinguish from real speech. Lower = more
-                                    lenient, raise if speech gets skipped.
+                                    80-4000Hz band (voice F0 + harmonics +
+                                    sibilants), default 0.45. Filters keyboard
+                                    clicks/footsteps (broadband transients) that
+                                    VAD duration alone can't distinguish from
+                                    real speech. Lower = more lenient, raise if
+                                    clicks still get through.
 """
 
 import os
@@ -93,12 +94,17 @@ REPETITION_PENALTY = float(os.getenv("WHISPER_REPETITION_PENALTY", "1.5"))
 # Spectral pre-filter: distinguishes speech from keyboard clicks/footsteps.
 # Duration alone doesn't work - repeated clicks toggle VAD on/off and can
 # accumulate the same total duration as real speech. Instead, check where
-# the audio's energy actually is: human speech concentrates energy in the
-# vocal formant band (~300-3400Hz), while clicks/footsteps are broadband
-# transients with a lot of energy outside that band (impact noise, higher
-# frequencies). Ratio below the threshold skips the Whisper call entirely.
-SPEECH_BAND_LOW_HZ = 300
-SPEECH_BAND_HIGH_HZ = 3400
+# the audio's energy actually is: clicks/footsteps are broadband transients
+# (impact noise) without the fundamental+harmonic structure of a voice.
+#
+# Lower bound is 80Hz, not the "telephone band" 300Hz - male fundamental
+# frequency (F0) commonly sits at 85-180Hz, female at 165-255Hz, so a 300Hz
+# floor excludes F0 and its lowest harmonics for most speakers, undercounting
+# real speech energy and tanking the ratio (measured ~0.15 on real speech
+# before this fix). Upper bound extended to 4000Hz to include sibilants
+# ("s", "sh", "f") which carry meaningful energy above 3400Hz.
+SPEECH_BAND_LOW_HZ = 80
+SPEECH_BAND_HIGH_HZ = 4000
 SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.45"))
 
 

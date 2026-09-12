@@ -32,7 +32,19 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                                     clicks/footsteps (broadband transients) that
                                     VAD duration alone can't distinguish from
                                     real speech. Lower = more lenient, raise if
-                                    clicks still get through.
+                                    clicks still get through. Measured only over
+                                    VAD-flagged speech frames (not the whole
+                                    buffer) so pause/silence padding in a
+                                    multi-second utterance doesn't dilute it.
+    WHISPER_CREST_FACTOR_MAX        Max peak-to-RMS ratio allowed, default 7.0.
+                                    Catches impulsive transients (knocks, taps,
+                                    claps) that pass the spectral filter above
+                                    because their resonance overlaps the speech
+                                    band - their spike-then-decay shape gives a
+                                    much higher crest factor than sustained
+                                    phonation. Lower = stricter, raise if normal
+                                    speech (e.g. plosives "p"/"t"/"k") gets
+                                    rejected.
 """
 
 import os
@@ -106,6 +118,15 @@ REPETITION_PENALTY = float(os.getenv("WHISPER_REPETITION_PENALTY", "1.5"))
 SPEECH_BAND_LOW_HZ = 80
 SPEECH_BAND_HIGH_HZ = 4000
 SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.45"))
+
+# Crest factor (peak / RMS) pre-filter: catches impulsive transients (knocks,
+# door taps, single claps) that pass the spectral filter above because their
+# resonant frequency happens to fall inside the speech band. A knock is a
+# sharp spike followed by fast decay - most of the buffer is near-silent
+# ringdown - so its peak-to-RMS ratio is much higher than continuous
+# phonation, where energy is spread more evenly across syllables.
+# Typical continuous speech sits ~3-6; needs calibration against your mic/room.
+CREST_FACTOR_MAX = float(os.getenv("WHISPER_CREST_FACTOR_MAX", "7.0"))
 
 
 def rms_dbfs(data: bytes) -> float:
@@ -207,6 +228,29 @@ def speech_band_ratio(audio: np.ndarray, sample_rate: int, low_hz: float = SPEEC
     band_energy = np.sum(spectrum[band_mask] ** 2)
 
     return float(band_energy / total_energy)
+
+
+def crest_factor(audio: np.ndarray) -> float:
+    """Peak-to-RMS amplitude ratio.
+
+    Sharp transients (knocks, taps, claps) have a brief spike followed by
+    near-silent decay, giving a high ratio. Continuous speech phonation
+    spreads energy more evenly across syllables, giving a lower ratio even
+    when its frequency content overlaps the speech band.
+
+    Args:
+        audio: float32 PCM audio normalized to [-1.0, 1.0)
+
+    Returns:
+        Ratio >= 1.0; 0.0 for empty/silent audio
+    """
+    if audio.size == 0:
+        return 0.0
+    rms = np.sqrt(np.mean(np.square(audio)))
+    if rms <= 0:
+        return 0.0
+    peak = np.abs(audio).max()
+    return float(peak / rms)
 
 
 def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
@@ -384,8 +428,17 @@ class HailoWhisperEngine:
         # that would otherwise dilute the ratio for genuine speech.
         speech_only = extract_vad_speech(pcm_bytes, SAMPLE_RATE, VAD)
         ratio = speech_band_ratio(speech_only, SAMPLE_RATE) if speech_only.size > 0 else 0.0
+        cf = crest_factor(speech_only) if speech_only.size > 0 else 0.0
+
         if ratio < SPEECH_BAND_RATIO_THRESHOLD:
             print(f"[Whisper] Skipped - not speech-like (band ratio={ratio:.2f}, threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f})")
+            return ""
+
+        # Impulsive transient (knock/tap/clap) - passes the spectral filter
+        # because its resonant energy overlaps the speech band, but its
+        # peak-to-RMS shape gives it away as a spike-and-decay, not phonation.
+        if cf > CREST_FACTOR_MAX:
+            print(f"[Whisper] Skipped - impulsive transient (crest factor={cf:.1f}, max={CREST_FACTOR_MAX:.1f})")
             return ""
 
         # Auto-gain adjustment (Hailo recommendation for quiet mics)
@@ -465,6 +518,7 @@ def main():
     print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms, pause emit {PAUSE_TO_EMIT_MS:.0f}ms")
     print(f"[Whisper] Repetition penalty={REPETITION_PENALTY}, min speech {MIN_SPEECH_MS:.0f}ms")
     print(f"[Whisper] Speech-band ratio threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f} (filters clicks/footsteps)")
+    print(f"[Whisper] Crest factor max={CREST_FACTOR_MAX:.1f} (filters knocks/taps/claps)")
     print("[Whisper] (Ctrl+C to stop)\n")
 
     try:

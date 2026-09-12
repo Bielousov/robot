@@ -61,7 +61,7 @@ MAX_UTTERANCE_MS = 15_000
 # 3. Continue listening for more speech to append
 # This gets fast response while respecting natural speech pauses
 EARLY_TRANSCRIBE_MS = float(os.getenv("WHISPER_EARLY_TRANSCRIBE_MS", "2000"))  # Minimum speech before considering pause breaks
-PAUSE_TO_EMIT_MS = float(os.getenv("WHISPER_PAUSE_TO_EMIT_MS", "300"))  # Brief pause (300ms) triggers emission
+PAUSE_TO_EMIT_MS = float(os.getenv("WHISPER_PAUSE_TO_EMIT_MS", "500"))  # Brief pause (300ms) triggers emission
 
 # WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
 # Aggressiveness: 0=most lenient (catches everything), 3=most aggressive (filters noise)

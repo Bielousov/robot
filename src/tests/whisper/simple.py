@@ -26,6 +26,12 @@ Env vars (all optional, see src/config.py for the same names used elsewhere):
                                     default 500ms (prevents isolated noise)
     WHISPER_REPETITION_PENALTY      Hallucination prevention factor, default 1.5
                                     (higher = more aggressive, 1.5-2.0 typical range)
+    WHISPER_SPEECH_BAND_RATIO_THRESHOLD  Fraction of energy required in the
+                                    300-3400Hz speech formant band, default 0.45.
+                                    Filters keyboard clicks/footsteps (broadband
+                                    transients) that VAD duration alone can't
+                                    distinguish from real speech. Lower = more
+                                    lenient, raise if speech gets skipped.
 """
 
 import os
@@ -84,6 +90,17 @@ MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "500"))
 # Increase to 2.0+ if hallucinations persist in your environment
 REPETITION_PENALTY = float(os.getenv("WHISPER_REPETITION_PENALTY", "1.5"))
 
+# Spectral pre-filter: distinguishes speech from keyboard clicks/footsteps.
+# Duration alone doesn't work - repeated clicks toggle VAD on/off and can
+# accumulate the same total duration as real speech. Instead, check where
+# the audio's energy actually is: human speech concentrates energy in the
+# vocal formant band (~300-3400Hz), while clicks/footsteps are broadband
+# transients with a lot of energy outside that band (impact noise, higher
+# frequencies). Ratio below the threshold skips the Whisper call entirely.
+SPEECH_BAND_LOW_HZ = 300
+SPEECH_BAND_HIGH_HZ = 3400
+SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHOLD", "0.45"))
+
 
 def rms_dbfs(data: bytes) -> float:
     """RMS level of 16-bit PCM audio, in dBFS (0 dBFS = full scale)."""
@@ -116,6 +133,37 @@ def improve_input_audio(audio: np.ndarray) -> np.ndarray:
     elif peak < 0.2:
         audio = audio * 3.16  # +10dB
     return np.clip(audio, -1.0, 0.9999)
+
+
+def speech_band_ratio(audio: np.ndarray, sample_rate: int, low_hz: float = SPEECH_BAND_LOW_HZ, high_hz: float = SPEECH_BAND_HIGH_HZ) -> float:
+    """Fraction of audio energy inside the human speech formant band.
+
+    Keyboard clicks and footsteps are broadband transients (impact noise
+    spread across all frequencies, often with a strong high-frequency
+    component). Voiced speech concentrates most of its energy in the
+    ~300-3400Hz formant band. A low ratio here means "probably not speech"
+    regardless of how VAD/duration classified it.
+
+    Args:
+        audio: float32 PCM audio normalized to [-1.0, 1.0)
+        sample_rate: audio sample rate in Hz
+
+    Returns:
+        Ratio in [0.0, 1.0]; 0.0 for empty/silent audio
+    """
+    if audio.size == 0:
+        return 0.0
+
+    spectrum = np.abs(np.fft.rfft(audio))
+    total_energy = np.sum(spectrum ** 2)
+    if total_energy <= 0:
+        return 0.0
+
+    freqs = np.fft.rfftfreq(audio.size, d=1.0 / sample_rate)
+    band_mask = (freqs >= low_hz) & (freqs <= high_hz)
+    band_energy = np.sum(spectrum[band_mask] ** 2)
+
+    return float(band_energy / total_energy)
 
 
 def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
@@ -283,6 +331,15 @@ class HailoWhisperEngine:
         # Convert to float32 normalized to [-1.0, 1.0)
         audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
 
+        # Spectral pre-filter: skip Whisper entirely for non-speech audio
+        # (keyboard clicks/footsteps have broadband energy, not concentrated
+        # in the speech formant band). Cheaper than an inference call and not
+        # fooled by duration the way VAD-based gating is.
+        ratio = speech_band_ratio(audio, SAMPLE_RATE)
+        if ratio < SPEECH_BAND_RATIO_THRESHOLD:
+            print(f"[Whisper] Skipped - not speech-like (band ratio={ratio:.2f}, threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f})")
+            return ""
+
         # Auto-gain adjustment (Hailo recommendation for quiet mics)
         audio = improve_input_audio(audio)
 
@@ -359,6 +416,7 @@ def main():
     print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
     print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms, pause emit {PAUSE_TO_EMIT_MS:.0f}ms")
     print(f"[Whisper] Repetition penalty={REPETITION_PENALTY}, min speech {MIN_SPEECH_MS:.0f}ms")
+    print(f"[Whisper] Speech-band ratio threshold={SPEECH_BAND_RATIO_THRESHOLD:.2f} (filters clicks/footsteps)")
     print("[Whisper] (Ctrl+C to stop)\n")
 
     try:

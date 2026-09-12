@@ -55,9 +55,13 @@ READ_CHUNK_BYTES = int((SAMPLE_RATE / 1000) * READ_CHUNK_MS * 2)
 SILENCE_TIMEOUT_MS = 500
 MAX_UTTERANCE_MS = 15_000
 
-# Early transcription: start transcribing after N seconds of detected speech
-# Reduces latency - don't wait for silence, transcribe early
-EARLY_TRANSCRIBE_MS = float(os.getenv("WHISPER_EARLY_TRANSCRIBE_MS", "2000"))  # 2 seconds
+# Early transcription with pause-based breaking:
+# 1. Collect speech until we have EARLY_TRANSCRIBE_MS (e.g., 2 seconds)
+# 2. Then emit on first significant pause (PAUSE_TO_EMIT_MS)
+# 3. Continue listening for more speech to append
+# This gets fast response while respecting natural speech pauses
+EARLY_TRANSCRIBE_MS = float(os.getenv("WHISPER_EARLY_TRANSCRIBE_MS", "2000"))  # Minimum speech before considering pause breaks
+PAUSE_TO_EMIT_MS = float(os.getenv("WHISPER_PAUSE_TO_EMIT_MS", "300"))  # Brief pause (300ms) triggers emission
 
 # WebRTC VAD (Voice Activity Detection) - frame-by-frame voice detection
 # Aggressiveness: 0=most lenient (catches everything), 3=most aggressive (filters noise)
@@ -149,12 +153,13 @@ def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
 class UtteranceSegmenter:
     """Turns a stream of raw PCM chunks into finished utterances using WebRTC VAD."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0, vad: webrtcvad.Vad = None, early_transcribe_ms: float = 0):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = 0, vad: webrtcvad.Vad = None, early_transcribe_ms: float = 0, pause_to_emit_ms: float = 300):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
         self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
         self._early_transcribe_bytes = int(sample_rate * 2 * early_transcribe_ms / 1000) if early_transcribe_ms > 0 else 0
+        self._pause_to_emit_bytes = int(sample_rate * 2 * pause_to_emit_ms / 1000)
         self._vad = vad or VAD
         self._vad_frame_bytes = VAD_FRAME_BYTES
 
@@ -164,6 +169,7 @@ class UtteranceSegmenter:
         self._frames = []
         self._start_time = 0.0
         self._vad_active = False
+        self._ready_for_early_emit = False  # True after we have enough speech
 
     def process(self, data: bytes):
         """Feed one chunk of audio (80ms). Returns (pcm_bytes, utterance_ms) when
@@ -191,20 +197,26 @@ class UtteranceSegmenter:
             self._speech_bytes += len(data)
             self._frames.append(data)
 
-            # Early transcription: if enough speech accumulated, transcribe now
-            # Don't wait for silence - reduces latency
+            # Mark ready for early emission once we have enough speech
             if self._early_transcribe_bytes > 0 and self._speech_bytes >= self._early_transcribe_bytes:
-                elapsed_ms = (time.time() - self._start_time) * 1000
-                print(f"[Segmenter] Early transcription triggered ({self._speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms speech)")
-                return self._finalize_utterance()
+                self._ready_for_early_emit = True
 
             return None
 
         if not self._speech_active:
             return None
 
+        # Pause detected - check if we should emit for early transcription
         self._silence_bytes += len(data)
         self._frames.append(data)
+
+        # If we have enough speech and a brief pause, emit for transcription
+        # (don't wait for full silence timeout)
+        if self._ready_for_early_emit and self._silence_bytes >= self._pause_to_emit_bytes:
+            print(f"[Segmenter] Pause-based emit ({self._speech_bytes / (self._sample_rate * 2) * 1000:.0f}ms speech, {self._silence_bytes / (self._sample_rate * 2) * 1000:.0f}ms pause)")
+            result = self._finalize_utterance()
+            self._ready_for_early_emit = False
+            return result
 
         elapsed_ms = (time.time() - self._start_time) * 1000
         silence_timeout = self._silence_bytes >= self._silence_timeout_bytes
@@ -339,12 +351,13 @@ def main():
         SAMPLE_RATE, SILENCE_TIMEOUT_MS, MAX_UTTERANCE_MS,
         min_speech_ms=MIN_SPEECH_MS,
         vad=VAD,
-        early_transcribe_ms=EARLY_TRANSCRIBE_MS
+        early_transcribe_ms=EARLY_TRANSCRIBE_MS,
+        pause_to_emit_ms=PAUSE_TO_EMIT_MS
     )
     process = start_mic(SAMPLE_RATE, MIC_DEVICE)
 
     print(f"[Whisper] Listening on {SAMPLE_RATE}Hz...")
-    print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms")
+    print(f"[Whisper] Config: VAD aggressiveness={VAD_AGGRESSIVENESS}, early transcribe after {EARLY_TRANSCRIBE_MS:.0f}ms, pause emit {PAUSE_TO_EMIT_MS:.0f}ms")
     print(f"[Whisper] Repetition penalty={REPETITION_PENALTY}, min speech {MIN_SPEECH_MS:.0f}ms")
     print("[Whisper] (Ctrl+C to stop)\n")
 

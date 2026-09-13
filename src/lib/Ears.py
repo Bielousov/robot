@@ -76,6 +76,14 @@ class Ears:
         if self.__on_listen:
             self.__on_listen(is_speech)
 
+    def _on_filtered(self, reason: str, **metrics):
+        """Debug-only: WhisperClient.transcribe() calls this when it skips
+        audio before reaching Whisper (spectral-ratio or crest-factor
+        pre-filter). Only wired up when debug=True since it's diagnostic
+        noise otherwise."""
+        details = ", ".join(f"{k}={v:.2f}" for k, v in metrics.items())
+        print(f"[Ears] Filtered - {reason} ({details})")
+
     def _cleanup(self, text: str) -> str:
         text = text.lower().strip()
         wake_aliases = self.wake_aliases
@@ -136,7 +144,7 @@ class Ears:
         # filtering, auto-gain and dedup all happen inside transcribe().
         start_time = time.time()
         try:
-            text = self._engine.transcribe(pcm_bytes)
+            text = self._engine.transcribe(pcm_bytes, on_filtered=self._on_filtered if self._debug else None)
         except Exception as e:
             print(f"[Ears] Whisper transcribe error: {e}")
             return

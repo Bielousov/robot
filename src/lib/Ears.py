@@ -4,11 +4,9 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-import numpy as np
-import webrtcvad
-
 # Use the existing Process architecture
 from .Threads import Threads
+from .hailo.whisper import UtteranceSegmenter, WhisperClient
 
 LIB_PATH = Path(__file__).parent.resolve()
 HAILO_PATH = LIB_PATH / "hailo"
@@ -22,7 +20,7 @@ class Ears:
             model_name: str,
             sample_rate: int = 16000,
             wake_aliases = '',
-            on_listen: Optional[Callable[[str], bool]] = None,
+            on_listen: Optional[Callable[[bool], None]] = None,
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
             debug: bool = False,
@@ -30,21 +28,13 @@ class Ears:
 
         self._debug = debug
 
-        # Paths
-        model_full_path = MODELS_PATH / model_name
-        if not model_full_path.exists():
-            raise FileNotFoundError(f"Hailo Whisper model not found at {model_full_path}")
-
-        # Hailo Whisper Setup
-        from hailo_platform.genai import Speech2Text, Speech2TextTask
-
-        from .hailo.device import get_vdevice
-
-        self._task = Speech2TextTask.TRANSCRIBE
-        self._vdevice = get_vdevice()
-        print(f"[Ears] Loading Whisper model '{model_full_path.name}'...")
-        self._s2t = Speech2Text(self._vdevice, str(model_full_path))
-        print(f"[Ears] Whisper model '{model_full_path.name}' is ready.")
+        # Hailo Whisper setup. WhisperClient shares the process-wide VDevice
+        # (lib/hailo/device.py) itself and also adds repetition-penalty,
+        # spectral-ratio and crest-factor hallucination/noise filtering this
+        # class didn't previously have - see lib/hailo/whisper.py.
+        print(f"[Ears] Loading Whisper model '{model_name}'...")
+        self._engine = WhisperClient(model_name, sample_rate=sample_rate)
+        print(f"[Ears] Whisper model '{model_name}' is ready.")
 
         # Audio Config
         self.sample_rate = sample_rate
@@ -55,29 +45,23 @@ class Ears:
         # per-call overhead on the Pi.
         self.sample_length_ms = 160
         self.buffer_size = int((self.sample_rate / 1000) * self.sample_length_ms * 2)
-        self.silence_timeout_ms = 300
-        self.silence_bytes = 0
 
-        # VAD is the only gate used here. Whisper can hallucinate on near-
-        # silent noise, so the listener intentionally does not apply a separate
-        # RMS/Whisper noise gate; the VAD decision alone controls speech.
-        #
-        # Use the most sensitive mode and require a tiny burst of VAD-positive
-        # frames before declaring speech. This keeps the gate out of the old
-        # dBFS/noise-threshold design while making quiet speech much less likely
-        # to be dropped by a single-frame miss.
-        self.vad = webrtcvad.Vad(0)
-        self.vad_frame_size = int((self.sample_rate / 1000) * 20 * 2)
-        self.vad_frames_to_start = 2
-        self.max_utterance_ms = 15_000
+        # Segmentation via Silero VAD (see lib/hailo/whisper.py). No
+        # early/pause-based emission here - wake-word utterances are short
+        # and should be transcribed whole, not split mid-phrase the way the
+        # console test harness splits long conversational speech.
+        self._segmenter = UtteranceSegmenter(
+            sample_rate,
+            silence_timeout_ms=300,
+            max_utterance_ms=15_000,
+            min_speech_ms=100,
+            early_transcribe_ms=0,
+            on_vad_change=self._on_vad_change,
+        )
 
         # Threading Management
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
-        self.__speech_active = False
-        self.__utterance_frames = []
-        self.__utterance_start = 0.0
-        self.__vad_hits_in_row = 0
 
         # Callback handlers
         self.__on_listen = on_listen
@@ -86,6 +70,11 @@ class Ears:
 
         # Cleanup on exit
         atexit.register(self.stop_listening)
+
+    def _on_vad_change(self, is_speech: bool):
+        """Forwards Silero VAD speech/silence transitions to on_listen."""
+        if self.__on_listen:
+            self.__on_listen(is_speech)
 
     def _cleanup(self, text: str) -> str:
         text = text.lower().strip()
@@ -109,28 +98,6 @@ class Ears:
 
     def _validate(self, text: str) -> bool:
         return self.wake_word in text
-
-    def _has_voice_activity(self, data: bytes) -> bool:
-        """Return True once a small burst of VAD-positive frames appears."""
-        try:
-            vad_hits = 0
-            for offset in range(0, len(data), self.vad_frame_size):
-                frame = data[offset:offset + self.vad_frame_size]
-                if len(frame) == self.vad_frame_size and self.vad.is_speech(frame, self.sample_rate):
-                    vad_hits += 1
-                    if vad_hits >= self.vad_frames_to_start:
-                        self.__vad_hits_in_row = vad_hits
-                        return True
-                else:
-                    vad_hits = 0
-
-            self.__vad_hits_in_row = 0
-            return False
-        except Exception as exc:
-            self.__vad_hits_in_row = 0
-            if self._debug:
-                print(f"[VAD] Error: {exc}; no RMS fallback enabled")
-            return False
 
     def _capture_audio(self):
         """The core loop called by the Threads manager."""
@@ -159,50 +126,17 @@ class Ears:
         if not data:
             return
 
-        # VAD-only gate: low-energy hum/noise is not rejected by an RMS check,
-        # it is simply ignored unless the VAD identifies a brief burst of speech.
-        has_speech = self._has_voice_activity(data)
-
-        if has_speech:
-            if not self.__speech_active:
-                self.__utterance_start = time.time()
-            self.__speech_active = True
-            self.silence_bytes = 0
-            self.__utterance_frames.append(data)
-            if self.__on_listen:
-                self.__on_listen(True)
+        utterance = self._segmenter.process(data)
+        if not utterance:
             return
 
-        # If we are already inside a valid utterance, keep the speech state alive
-        # even though there may be a few non-speech frames in the tail.
-        if self.__speech_active and self.__vad_hits_in_row > 0:
-            self.__vad_hits_in_row = 0
+        pcm_bytes, utterance_ms = utterance
 
-        if not self.__speech_active:
-            return
-
-        # Keep feeding a short silence tail so the utterance can be finalized.
-        self.silence_bytes += len(data)
-        self.__utterance_frames.append(data)
-
-        elapsed_ms = (time.time() - self.__utterance_start) * 1000
-        silence_timeout = self.silence_bytes >= (
-            self.sample_rate * 2 * self.silence_timeout_ms / 1000
-        )
-        if not (silence_timeout or elapsed_ms >= self.max_utterance_ms):
-            return
-
-        pcm_bytes = b"".join(self.__utterance_frames)
-
-        self.__speech_active = False
-        self.silence_bytes = 0
-        self.__utterance_frames = []
-
-        # Process with Whisper
+        # Process with Whisper - repetition penalty, spectral/crest-factor
+        # filtering, auto-gain and dedup all happen inside transcribe().
         start_time = time.time()
         try:
-            audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-            text = self._s2t.generate_all_text(audio_data=audio, task=self._task, language="en").strip()
+            text = self._engine.transcribe(pcm_bytes)
         except Exception as e:
             print(f"[Ears] Whisper transcribe error: {e}")
             return
@@ -246,13 +180,13 @@ class Ears:
     def stop_listening(self):
         """Stops threads and kills arecord.
 
-        Deliberately not releasing self._s2t/self._vdevice here: the
-        vdevice is the shared HailoRT device (lib/hailo/device.py) also
-        used by Mind's HailoClient, so this must not tear it down - and
-        explicitly releasing HailoRT resources during process shutdown is
-        known to throw (see Mind.stop()'s comment for the same reasoning).
-        Leaving cleanup to the interpreter during shutdown is silent and
-        clean.
+        Deliberately not calling self._engine.stop() here: that would
+        release the Speech2Text handle, and explicitly releasing HailoRT
+        resources during process shutdown is known to throw (see
+        Mind.stop()'s comment for the same reasoning). This method runs in
+        that same process-exit path (main.py's shutdown sequence, and as an
+        atexit safety net), so leaving cleanup to the interpreter during
+        shutdown is silent and clean.
         """
         self.__threads.stop()
         if self.__process_handle:

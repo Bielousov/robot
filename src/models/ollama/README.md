@@ -20,7 +20,9 @@ That's it. The script auto-detects your platform:
 - **Apple Soilicon Mac with MLX**: Uses GPU training (fast)
 - **Everywhere else**: Uses PyTorch CPU training (universal)
 
-Outputs merged model to `build/pip/fused/`.
+Outputs the final portable Ollama model store to `build/pip/` (training
+intermediates - data split, adapter, fused model, Modelfile - live separately
+under `training/build/`, wiped at the start of every run).
 
 **Customizable parameters:**
 
@@ -35,18 +37,38 @@ LEARNING_RATE=1e-4 \
 
 ### Upload to RPi5
 
-After training on your Mac, upload the whole model folder (fused model + Modelfile) to the robot in one go, then run [install.sh](install.sh) on the robot to create the Ollama model:
+`train.sh` runs `ollama create` locally against an isolated, disposable Ollama
+server (a fresh `OLLAMA_MODELS` directory on a non-default port, so it never
+touches your regular Ollama setup) and prints the resulting portable model
+store's path: `build/pip/`. That directory *is* the model as Ollama itself
+stores it - content-addressed blobs plus a manifest, no absolute paths - so
+there's no conversion step needed on the robot, just uploading it and
+registering it in place:
 
 ```bash
-# 1. Upload
+# 1. Upload the model store
 rsync -avz --progress build/pip/ pip@pip.local:/home/pip/robot/src/models/ollama/build/pip/
 
 # Or with SSH key authentication
 rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/pip/ pip@pip.local:/home/pip/robot/src/models/ollama/build/pip/
 
-# 2. Install (checks the Modelfile/fused model exist before creating)
-ssh pip@pip.local '/home/pip/robot/src/models/ollama/install.sh pip'
+# 2. Register it - verifies the blobs/manifest, then merges them into the
+#    robot's Ollama models directory (no `ollama create`, no Ollama binary
+#    needed on the robot for this step)
+ssh pip@pip.local "/home/pip/robot/src/models/ollama/install.sh pip"
+
+# 3. Restart the robot service - its own `ollama serve` (started with
+#    OLLAMA_MODELS pointed at that same directory) will find the model
+ssh pip@pip.local "sudo systemctl restart robot.service"
 ```
+
+**If Ollama isn't installed on the training machine**, `train.sh` skips this
+and falls back to printing instructions for uploading the raw fused model and
+converting it directly on the target machine instead (regenerating the
+Modelfile there, then running `ollama create` - see the script's own printed
+instructions for that path). [install.sh](install.sh) only *registers* an
+already-converted store (see below) - it doesn't run `ollama create`, so it
+isn't part of this fallback.
 
 **Network tips:**
 
@@ -54,19 +76,13 @@ ssh pip@pip.local '/home/pip/robot/src/models/ollama/install.sh pip'
 - Use `--progress` to see transfer speed
 - Use `--bwlimit=10000` to limit bandwidth (in KiB/s)
 
-Once uploaded, restart the robot service:
-
-```bash
-ssh pip@pip.local "sudo systemctl restart robot.service"
-```
-
 ### Running with Ollama (CPU Fallback)
 
 Once trained, use the merged model with Ollama:
 
 ```bash
 # Import the merged model into Ollama
-ollama create pip-qwen2.5-1.5b -f build/pip-qwen2.5-1.5b/Modelfile
+ollama create pip-qwen2.5-1.5b -f training/build/Modelfile
 
 # Chat with it
 ollama run pip-qwen2.5-1.5b "Hello, who are you?"
@@ -97,7 +113,7 @@ for chunk in response:
 | Script                   | Purpose                                                                                                                        |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | [train.sh](train.sh)     | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else)                                       |
-| [install.sh](install.sh) | Run on the target machine after uploading a build folder - verifies the Modelfile/fused model exist, then runs `ollama create` |
+| [install.sh](install.sh) | Run on the target machine after uploading `build/$MODEL_NAME/` - registers the pre-converted model blobs into the robot's Ollama models directory (no `ollama create`, no Ollama binary needed) |
 
 ### CPU Training Backend (PyTorch - aarch64)
 
@@ -122,17 +138,25 @@ for chunk in response:
 ## Output Structure
 
 ```
+training/build/                   # Training intermediates - wiped at the start of every train.sh run
+├── data/                         # Train/validation split (from training/personality.jsonl)
+│   ├── train.jsonl
+│   └── valid.jsonl
+├── adapters/                     # LoRA adapter weights
+│   ├── adapter_config.json
+│   └── adapter_model.safetensors
+├── fused/                        # Merged model (Hugging Face format, ready for Hailo too)
+│   ├── config.json
+│   ├── model.safetensors
+│   ├── tokenizer.json
+│   └── tokenizer_config.json
+├── Modelfile                     # Ollama Modelfile (FROM ./fused, absolute path)
+└── ollama-serve.log
+
 build/
-└── pip-qwen2.5/                # One directory per trained model
-    ├── adapters/                # LoRA adapter weights (intermediate)
-    │   ├── adapter_config.json
-    │   └── adapter_model.safetensors
-    ├── fused/                   # Merged model (final output for Hailo)
-    │   ├── config.json
-    │   ├── model.safetensors
-    │   ├── tokenizer.json
-    │   └── tokenizer_config.json
-    └── Modelfile                # Ollama Modelfile (FROM ./fused, absolute path)
+└── pip-qwen2.5/                # Final deliverable - this is what gets uploaded, not wiped between runs
+    ├── blobs/                   # Content-addressed (sha256-<hash>), no machine-specific paths
+    └── manifests/registry.ollama.ai/library/pip-qwen2.5/latest
 ```
 
 ## Configuration
@@ -177,13 +201,6 @@ pip install mlx mlx-lm huggingface_hub
 - Verify MLX installation: `python -c "import mlx"`
 - Check Mac chip: must be Apple Silicon
 - Verify `train-gpu.sh` is executable: `chmod +x train-gpu.sh`
-
-**rsync permission denied?**
-
-```bash
-# Fix remote directory permissions
-ssh pip@pip.local "mkdir -p /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused && chmod 755 /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused"
-```
 
 **Want to use on Hailo?**
 

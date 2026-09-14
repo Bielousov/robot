@@ -99,9 +99,19 @@ class OllamaClient:
         )
 
     def load_model(self, model: str):
-        """Pull the base model and bind an optional LoRA-derived model."""
-        print(f"[Ollama] Pulling model '{model}' into Ollama...")
-        self._client.pull(model)
+        """Bind to the given model, pulling it only if not already present.
+
+        A trained/personalized model (created locally via `ollama create`,
+        e.g. by src/models/ollama/train.sh's install.sh) exists only on this
+        machine and isn't published anywhere - pulling it would fail with a
+        registry "model not found" error. A plain base model tag (e.g.
+        "qwen2.5:1.5b") is fetched from the registry the first time.
+        """
+        if self._model_exists_locally(model):
+            print(f"[Ollama] Using local model '{model}'.")
+        else:
+            print(f"[Ollama] Pulling model '{model}' into Ollama...")
+            self._client.pull(model)
 
         if self.lora_path:
             if not self.lora_path.is_file():
@@ -128,6 +138,15 @@ class OllamaClient:
             self.model = model
 
         print(f"[Ollama] Model '{self.model}' is ready.")
+
+    def _model_exists_locally(self, model: str) -> bool:
+        """True if `model` is already registered with this Ollama instance
+        (previously pulled, or created via `ollama create`)."""
+        try:
+            self._client.show(model)
+            return True
+        except Exception:
+            return False
 
     def chat(self, **kwargs):
         """Passthrough to the underlying ollama.Client.chat(), bound to this

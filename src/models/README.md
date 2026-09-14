@@ -19,12 +19,12 @@ flowchart TB
     WH --> PIPER
 ```
 
-| #   | Model                        | Framework / runtime                                                                                 | Role                                                                                                        |
-| --- | ---------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1   | **Robot Model**              | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled        | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak) |
-| 2   | **Ollama / HailoRT LLM**     | Ollama: trained model (`src/models/ollama/train.sh`) served on CPU; Hailo: personality-tuned `.hef` via `hailo_platform.genai.LLM` on a Hailo-10H | Turns a prompt + conversation context into a reply, personality baked in (Ollama's Modelfile SYSTEM directive, or the HEF itself) |
-| 3   | **"Whistler"**               | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H                               | Turns microphone audio into text                                                                            |
-| —   | **Piper**                    | ONNX TTS, driven as a subprocess                                                                    | Turns text into speech audio                                                                                |
+| #   | Model                    | Framework / runtime                                                                                                                               | Role                                                                                                                              |
+| --- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Robot Model**          | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled                                                      | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak)                       |
+| 2   | **Ollama / HailoRT LLM** | Ollama: trained model (`src/models/ollama/train.sh`) served on CPU; Hailo: personality-tuned `.hef` via `hailo_platform.genai.LLM` on a Hailo-10H | Turns a prompt + conversation context into a reply, personality baked in (Ollama's Modelfile SYSTEM directive, or the HEF itself) |
+| 3   | **"Whistler"**           | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H                                                                             | Turns microphone audio into text                                                                                                  |
+| —   | **Piper**                | ONNX TTS, driven as a subprocess                                                                                                                  | Turns text into speech audio                                                                                                      |
 
 Model 1 is the only one that runs on a fixed clock. Models 2 and 3 are
 event-driven: the LLM runs when there's a prompt to answer, Whisper runs
@@ -121,9 +121,9 @@ the next tick.
 
 ## 4. Where each model is configured
 
-| Model                    | Config                                                                                    | Code                                                                                                                  |
-| ------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Robot Model              | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD`            | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
-| LLM                      | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL_NAME` / `HAILO_MODEL_HEF`                  | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/`                                                    |
-| Whisper ("Whistler")     | `HAILO_WHISPER_MODEL_HEF`                                                                 | `src/lib/Ears.py`                                                                                                     |
-| Piper                    | `PIPER_MODEL_NAME`, `PIPER_SAMPLE_RATE`                                                   | `src/lib/Voice.py`                                                                                                    |
+| Model                | Config                                                                         | Code                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Robot Model          | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD` | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
+| LLM                  | `OLLAMA_MODEL_NAME`                                                            | `src/lib/Mind.py`, `src/lib/ollama/client.py`, `src/models/ollama/`                                                   |
+| Whisper ("Whistler") | `WHISPER_MODEL_HEF`                                                            | `src/lib/Ears.py`                                                                                                     |
+| Piper                | `PIPER_MODEL_NAME`, `PIPER_SAMPLE_RATE`                                        | `src/lib/Voice.py`                                                                                                    |

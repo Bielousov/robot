@@ -46,7 +46,7 @@ def main():
     learning_rate = float(sys.argv[6])
 
     print(f"[train] Loading model {model_name}...")
-    hf_token = os.environ.get("HF_TOKEN", None)
+    hf_token = os.environ.get("TRAINING_HF_TOKEN", None)
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         trust_remote_code=True,

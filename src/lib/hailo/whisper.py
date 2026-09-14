@@ -442,8 +442,8 @@ class WhisperClient:
 
     Shares the process-wide Hailo VDevice (lib/hailo/device.py) rather than
     opening its own - the Hailo-10H only exposes one physical device, so a
-    second VDevice() call while another (e.g. Mind's HailoClient, or Ears)
-    is open fails with HAILO_OUT_OF_PHYSICAL_DEVICES.
+    second VDevice() call while another is open fails with
+    HAILO_OUT_OF_PHYSICAL_DEVICES.
     """
 
     def __init__(self, hef_name: str, sample_rate: int, vad: SileroVAD = None):
@@ -546,8 +546,7 @@ class WhisperClient:
         """Release the Speech2Text handle.
 
         Deliberately not releasing self._vdevice here: it is the shared
-        process-wide HailoRT device (lib/hailo/device.py), also used by
-        Mind's HailoClient and/or Ears - see Ears.stop_listening()'s comment
-        for the same reasoning.
+        process-wide HailoRT device (lib/hailo/device.py) - see
+        Ears.stop_listening()'s comment for the same reasoning.
         """
         self._s2t.release()

@@ -8,14 +8,10 @@ from typing import Callable, List, Optional, Union
 
 from lib.Threads import Process
 from models.ollama.classifier import build_conversation_classifier_prompt
-from models.ollama.identity import build_identity_system_prompt
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
 PROJECT_ROOT = LIB_PATH.parent
-
-# Which backend to talk to for LLM inference: 'ollama' or 'hailo'.
-LLM_ENGINE = os.getenv("LLM_ENGINE", "ollama").strip().lower()
 
 class Mind:
     def __init__(
@@ -27,31 +23,28 @@ class Mind:
         self._debug = debug
         self._is_ready = False
 
-        if LLM_ENGINE == "hailo":
-            self._setup_hailo_client()
-            self.system_prompt = build_identity_system_prompt()
-        else:
-            from lib.ollama.client import OllamaClient
-            from models.ollama.config.ollama import (
-                get_classifier_model_options,
-                get_model_config,
-            )
+        from lib.ollama.client import OllamaClient
+        from models.ollama.config.ollama import (
+            get_classifier_model_options,
+            get_model_config,
+        )
 
-            # Ollama only ever runs the trained/personality model
-            # (src/models/ollama/train.sh, registered under OLLAMA_MODEL_NAME)
-            # - there is no base-model fallback. Its Modelfile already
-            # carries the right generation parameters and a baked-in SYSTEM
-            # prompt, so nothing here overrides them: no conversation options
-            # are sent (self._get_conversation_model_options returns {}), and
-            # no separate text system prompt is built or sent (an explicit
-            # system message, even an empty one, would override the
-            # Modelfile's own SYSTEM directive instead of adding to it).
-            config = get_model_config()
-            self.model_name = config["model_name"]
-            self.client = OllamaClient(host=config["host"])
-            self._get_classifier_model_options = get_classifier_model_options
-            self._get_conversation_model_options = lambda: {}
-            self.system_prompt = ""
+        # Mind only ever runs Ollama on the RPi CPU, against the
+        # trained/personality model (src/models/ollama/train.sh, registered
+        # under OLLAMA_MODEL_NAME) - there is no base-model fallback and no
+        # other backend. Its Modelfile already carries the right generation
+        # parameters and a baked-in SYSTEM prompt, so nothing here overrides
+        # them: no conversation options are sent
+        # (self._get_conversation_model_options returns {}), and no separate
+        # text system prompt is built or sent (an explicit system message,
+        # even an empty one, would override the Modelfile's own SYSTEM
+        # directive instead of adding to it).
+        config = get_model_config()
+        self.model_name = config["model_name"]
+        self.client = OllamaClient(host=config["host"])
+        self._get_classifier_model_options = get_classifier_model_options
+        self._get_conversation_model_options = lambda: {}
+        self.system_prompt = ""
 
         self._load_model(model=self.model_name)
 
@@ -65,9 +58,7 @@ class Mind:
 
         # Tracks in-flight requests (think()/classify_conversation(), including
         # ones fired from ad-hoc background threads elsewhere) so stop() can
-        # wait for them to finish before tearing down the client/device -
-        # releasing it out from under an active generation corrupts the
-        # underlying connection (seen as HailoRT communication-closed errors).
+        # wait for them to finish before tearing down the client/device.
         self._active_requests = 0
         self._active_requests_lock = threading.Lock()
         self._idle_event = threading.Event()
@@ -76,20 +67,6 @@ class Mind:
         while not self._is_ready:
             time.sleep(0.5)
     
-    def _setup_hailo_client(self):
-        from lib.hailo.client import HailoClient
-        from models.ollama.config.hailo import (
-            get_classifier_model_options,
-            get_conversation_model_options,
-            get_model_config,
-        )
-
-        config = get_model_config()
-        self.model_name = config["model_hef"]
-        self.client = HailoClient()
-        self._get_classifier_model_options = get_classifier_model_options
-        self._get_conversation_model_options = get_conversation_model_options
-
     def _load_model(self, model):
         """Load the given model via the client and mark the runtime ready."""
         try:
@@ -126,12 +103,9 @@ class Mind:
         if not final_prompt:
             return []
 
-        # self.system_prompt was decided once in __init__ (per engine/model -
-        # empty for ollama's trained model, built from identity for Hailo
-        # unless a LoRA path is configured). Recomputing it here would
-        # silently reintroduce a system message even when the trained model's
-        # own Modelfile SYSTEM directive is meant to be the only one in
-        # effect - an explicit system message, even an empty one, overrides
+        # self.system_prompt is always empty (set once in __init__): Ollama's
+        # trained model carries its own SYSTEM directive in its Modelfile, and
+        # an explicit system message here, even an empty one, would override
         # it rather than adding to it.
         messages = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
 
@@ -564,13 +538,6 @@ class Mind:
         # finish before this object goes away.
         if not self._idle_event.wait(timeout=5.0):
             print("[Mind] Warning: stopping with a request still in flight.")
-
-        # Deliberately not calling self.client.stop() here: explicitly
-        # releasing HailoRT's VDevice/LLM during process shutdown throws
-        # CHECK_SUCCESS/HAILO_COMMUNICATION_CLOSED errors, whereas leaving
-        # cleanup to the client's own __del__ during interpreter shutdown is
-        # silent and clean. Mind is only ever torn down once, at process
-        # exit, so skipping the explicit release here is safe.
 
     def __enter__(self): return self
     def __exit__(self, *args): self.stop()

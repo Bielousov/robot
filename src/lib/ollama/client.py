@@ -128,6 +128,12 @@ class OllamaClient:
         kwargs.setdefault("stream", True)
         kwargs.setdefault("think", False)
         kwargs.setdefault("keep_alive", -1)
+
+        num_thread = os.environ.get("OLLAMA_THREADS")
+        if num_thread:
+            options = kwargs.setdefault("options", {})
+            options.setdefault("num_thread", int(num_thread))
+
         return self._client.chat(**kwargs)
 
     def stop(self):

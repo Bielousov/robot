@@ -11,25 +11,25 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.ollama.config.hailo import get_model_config, get_conversation_model_options
-from models.ollama.identity import build_identity_system_prompt
-
 # -------- paths / config --------
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-config = get_model_config()
-
+MODEL_HEF = "Qwen2.5-1.5B-Instruct.hef"
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-MODEL_PATH = MODELS_DIR / f"{config['model_hef']}"
+MODEL_PATH = MODELS_DIR / MODEL_HEF
 
-SYSTEM_PROMPT = build_identity_system_prompt()
-OPTIONS = get_conversation_model_options()
+OPTIONS = {
+    "max_generated_tokens": 64,
+    "do_sample": True,
+    "temperature": 0.7,
+    "top_k": 40,
+    "top_p": 0.9,
+}
 
 def generate(llm, text):
     prompt = [
-        {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": text},
     ]
 
@@ -83,7 +83,7 @@ def main():
         print(f"[Hailo] ERROR: HEF not found: {MODEL_PATH}")
         sys.exit(2)
 
-    print(f"[Hailo] Model: {config['model_hef']}")
+    print(f"[Hailo] Model: {MODEL_HEF}")
     print(f"[Hailo] HEF:   {MODEL_PATH}")
     print("[Hailo] Loading model...")
 

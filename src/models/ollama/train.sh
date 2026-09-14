@@ -18,7 +18,7 @@ fi
 
 BASE_MODEL=${BASE_MODEL:-${OLLAMA_BASE_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}}
 MODEL_NAME=${OLLAMA_MODEL_NAME:-pip}
-HF_TOKEN=${HF_TOKEN:-}
+TRAINING_HF_TOKEN=${TRAINING_HF_TOKEN:-}
 
 # Quantization level for `ollama create`, e.g. q4_K_M, q8_0, or empty to keep
 # full precision. Shrinks both the on-disk store and the upload significantly
@@ -182,7 +182,7 @@ require_file "$DATA_DIR/valid.jsonl"
 printf '%s\n' "[train] Training LoRA adapter"
 mkdir -p "$ADAPTER_DIR"
 
-HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/train_adapter.py" \
+TRAINING_HF_TOKEN="$TRAINING_HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/train_adapter.py" \
     "$BASE_MODEL" \
     "$DATA_DIR" \
     "$ADAPTER_DIR" \
@@ -199,7 +199,7 @@ fi
 printf '%s\n' "[train] Merging adapter with base model"
 mkdir -p "$FUSED_DIR"
 
-HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" \
+TRAINING_HF_TOKEN="$TRAINING_HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" \
     "$BASE_MODEL" \
     "$ADAPTER_DIR" \
     "$FUSED_DIR"

@@ -12,31 +12,30 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.ollama.config.hailo import get_model_config, get_conversation_model_options
-from models.ollama.identity import build_identity_system_prompt
-
 # -------- path / config --------
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
-config = get_model_config()
-
+MODEL_HEF = "Qwen2.5-1.5B-Instruct.hef"
 MODELS_DIR = PROJECT_ROOT / "src" / "lib" / "hailo" / "models"
-MODEL_PATH = MODELS_DIR / f"{config['model_hef']}"
+MODEL_PATH = MODELS_DIR / MODEL_HEF
 
 ITERATIONS = 10
 WARMUP_RUNS = 1
 
-OPTIONS = get_conversation_model_options()
+OPTIONS = {
+    "max_generated_tokens": 64,
+    "do_sample": True,
+    "temperature": 0.7,
+    "top_k": 40,
+    "top_p": 0.9,
+}
 PROMPT = (
     "Briefly explain why the sky appears blue to a human observer, "
     "using exactly one sentence without using the word 'scattering'."
 )
-SYSTEM_PROMPT = build_identity_system_prompt()
-
 MESSAGES = [
-    {"role": "system", "content": SYSTEM_PROMPT},
     {"role": "user", "content": PROMPT},
 ]
 
@@ -67,7 +66,7 @@ def benchmark():
         print(f"[Hailo] ERROR: HEF not found: {MODEL_PATH}")
         sys.exit(2)
 
-    print(f"[Hailo] Model: {config['model_hef']}")
+    print(f"[Hailo] Model: {MODEL_HEF}")
     print(f"[Hailo] HEF:   {MODEL_PATH}")
     print("[Hailo] Loading model...")
 
@@ -99,7 +98,7 @@ def benchmark():
         print("   BENCHMARK RESULTS   ")
         print("=" * 21)
 
-        print(f"Model:            {config['model_hef']}")
+        print(f"Model:            {MODEL_HEF}")
         print(f"Total Iterations: {ITERATIONS}")
         print(f"Fastest Run:      {min(times):.2f}s")
         print(f"Average Time:     {statistics.mean(times):.2f}s")

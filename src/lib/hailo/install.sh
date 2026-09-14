@@ -25,7 +25,7 @@ if [ -f "$ENV_FILE" ]; then
         | tr -d "'")
 
     WHISPER_MODEL_HEF=$(grep -v '^#' "$ENV_FILE" \
-        | grep '^HAILO_WHISPER_MODEL_HEF=' \
+        | grep '^WHISPER_MODEL_HEF=' \
         | cut -d '=' -f2 \
         | tr -d '"' \
         | tr -d "'")
@@ -74,7 +74,7 @@ install_model "$MODEL_HEF"
 if [ -n "$WHISPER_MODEL_HEF" ]; then
     install_model "$WHISPER_MODEL_HEF"
 else
-    echo "[Hailo] HAILO_WHISPER_MODEL_HEF not set. Skipping Whisper model download."
+    echo "[Hailo] WHISPER_MODEL_HEF not set. Skipping Whisper model download."
 fi
 
 echo "[Hailo] Done."

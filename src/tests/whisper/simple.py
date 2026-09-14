@@ -12,7 +12,7 @@ Usage:
 
 Env vars (all optional, see src/config.py for the same names used elsewhere;
 see lib/hailo/whisper.py for the full rationale behind each default):
-    HAILO_WHISPER_MODEL_HEF         Whisper HEF file name under lib/hailo/models
+    WHISPER_MODEL_HEF         Whisper HEF file name under lib/hailo/models
                                     (required; e.g. "Whisper-Small.hef")
     MIC_DEVICE                      arecord -D device string, e.g. "plughw:0,0"
     WHISPER_SAMPLE_RATE             Mic sample rate, default 16000 (model requirement)
@@ -85,10 +85,10 @@ def on_filtered(reason: str, **metrics):
 
 
 def main():
-    whisper_model_name = os.getenv("HAILO_WHISPER_MODEL_HEF")
+    whisper_model_name = os.getenv("WHISPER_MODEL_HEF")
     if not whisper_model_name:
-        print("[ERROR] HAILO_WHISPER_MODEL_HEF is not set.")
-        print("       Set environment variable, e.g.: export HAILO_WHISPER_MODEL_HEF=Whisper-Small.hef")
+        print("[ERROR] WHISPER_MODEL_HEF is not set.")
+        print("       Set environment variable, e.g.: export WHISPER_MODEL_HEF=Whisper-Small.hef")
         sys.exit(1)
 
     try:

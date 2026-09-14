@@ -11,7 +11,7 @@ Name = getenv('NAME')
 
 Env = Enum (
   BrainConfidenceScore      = float(getenv('BRAIN_CONFIDENCE_THRESHOLD', '0.9')),
-  BrainContextLimit         = int(getenv('OLLAMA_HISTORY_LIMIT', '4')),
+  BrainContextLimit         = int(getenv('CONVERSATION_HISTORY_LIMIT', '4')),
   BrainFrequencyDelta       = int(getenv('BRAIN_FREQUENCY_DELTA', '1')),
   BrainFrequencyGamma       = int(getenv('BRAIN_FREQUENCY_GAMMA', '20')),
   Debug                     = bool(int(getenv('DEBUG', '0'))),
@@ -19,7 +19,7 @@ Env = Enum (
   Voice                     = getenv('PIPER_MODEL_NAME', 'en_US-danny-low'),
   VoiceSampleRate           = int(getenv('PIPER_SAMPLE_RATE', '16000')),
   WhisperWakeAliases        = getenv('WHISPER_WAKE_ALIASES', 'robot'),
-  WhisperModel              = getenv('HAILO_WHISPER_MODEL_HEF'),
+  WhisperModel              = getenv('WHISPER_MODEL_HEF'),
   WhisperSampleRate         = int(getenv('WHISPER_SAMPLE_RATE', '16000')),
 )
 

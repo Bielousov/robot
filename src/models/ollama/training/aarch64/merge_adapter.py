@@ -19,7 +19,7 @@ def main():
     output_dir = sys.argv[3]
 
     print(f"[train] Loading base model {base_model_name}...")
-    hf_token = os.environ.get("HF_TOKEN", None)
+    hf_token = os.environ.get("TRAINING_HF_TOKEN", None)
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_name,
         trust_remote_code=True,

@@ -39,13 +39,13 @@ After training on your Mac, upload the whole model folder (fused model + Modelfi
 
 ```bash
 # 1. Upload
-rsync -avz --progress build/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/pip/
+rsync -avz --progress build/pip/ pip@pip.local:/home/pip/robot/src/models/ollama/build/pip/
 
 # Or with SSH key authentication
-rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/pip/
+rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/pip/ pip@pip.local:/home/pip/robot/src/models/ollama/build/pip/
 
 # 2. Install (checks the Modelfile/fused model exist before creating)
-ssh pip@robot '/home/pip/robot/src/models/ollama/install.sh pip'
+ssh pip@pip.local '/home/pip/robot/src/models/ollama/install.sh pip'
 ```
 
 **Network tips:**
@@ -57,7 +57,7 @@ ssh pip@robot '/home/pip/robot/src/models/ollama/install.sh pip'
 Once uploaded, restart the robot service:
 
 ```bash
-ssh pip@robot "sudo systemctl restart robot.service"
+ssh pip@pip.local "sudo systemctl restart robot.service"
 ```
 
 ### Running with Ollama (CPU Fallback)
@@ -94,9 +94,9 @@ for chunk in response:
 
 ### Main Entry Point
 
-| Script                   | Purpose                                                                                  |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| [train.sh](train.sh)     | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else) |
+| Script                   | Purpose                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| [train.sh](train.sh)     | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else)                                       |
 | [install.sh](install.sh) | Run on the target machine after uploading a build folder - verifies the Modelfile/fused model exist, then runs `ollama create` |
 
 ### CPU Training Backend (PyTorch - aarch64)
@@ -182,7 +182,7 @@ pip install mlx mlx-lm huggingface_hub
 
 ```bash
 # Fix remote directory permissions
-ssh pip@robot "mkdir -p /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused && chmod 755 /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused"
+ssh pip@pip.local "mkdir -p /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused && chmod 755 /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused"
 ```
 
 **Want to use on Hailo?**

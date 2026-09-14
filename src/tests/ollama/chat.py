@@ -131,7 +131,11 @@ def main():
         print(f"[Ollama] ERROR: Could not prepare model: {exc}")
         return
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    # Omit the system message entirely (rather than sending one with empty
+    # content) when there's nothing to say - an explicit system message,
+    # even an empty one, overrides the Modelfile's own baked-in SYSTEM
+    # prompt for a trained model, silently stripping its personality.
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] if SYSTEM_PROMPT else []
 
     print("Type a prompt and press Enter. Ctrl+C to quit.\n")
 

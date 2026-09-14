@@ -78,11 +78,13 @@ def run_test():
         print(f"[Ollama] ERROR: Could not prepare model: {exc}")
         return
 
-    messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT,
-        },
+    # Omit the system message entirely (rather than sending one with empty
+    # content) when there's nothing to say - an explicit system message,
+    # even an empty one, overrides the Modelfile's own baked-in SYSTEM
+    # prompt for a trained model, silently stripping its personality.
+    system_message = [{"role": "system", "content": SYSTEM_PROMPT}] if SYSTEM_PROMPT else []
+
+    messages = system_message + [
         {
             "role": "user",
             "content": PROMPT,
@@ -99,11 +101,7 @@ def run_test():
         # Consume the stream so the request fully completes.
         for _ in client.chat(
             model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT,
-                },
+            messages=system_message + [
                 {
                     "role": "user",
                     "content": "System check.",

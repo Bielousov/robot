@@ -46,8 +46,11 @@ PROMPT = (
 # layer a redundant/conflicting one on top (same reasoning as Mind.py).
 SYSTEM_PROMPT = "" if USING_TRAINED_MODEL else build_identity_system_prompt()
 
-MESSAGES = [
-    {"role": "system", "content": SYSTEM_PROMPT},
+# Omit the system message entirely (rather than sending one with empty
+# content) when there's nothing to say - an explicit system message, even an
+# empty one, overrides the Modelfile's own baked-in SYSTEM prompt for a
+# trained model, silently stripping its personality.
+MESSAGES = ([{"role": "system", "content": SYSTEM_PROMPT}] if SYSTEM_PROMPT else []) + [
     {"role": "user", "content": PROMPT},
 ]
 

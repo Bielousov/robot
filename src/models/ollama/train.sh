@@ -20,8 +20,9 @@ BASE_MODEL=${BASE_MODEL:-${OLLAMA_BASE_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}}
 MODEL_NAME=${OLLAMA_MODEL_NAME:-pip}
 HF_TOKEN=${HF_TOKEN:-}
 
-ADAPTER_DIR=${ADAPTER_DIR:-$SCRIPT_DIR/build/adapters/$MODEL_NAME}
-FUSED_DIR=${FUSED_DIR:-$SCRIPT_DIR/build/fused/$MODEL_NAME}
+BUILD_DIR=${BUILD_DIR:-$SCRIPT_DIR/build/$MODEL_NAME}
+ADAPTER_DIR=${ADAPTER_DIR:-$BUILD_DIR/adapters}
+FUSED_DIR=${FUSED_DIR:-$BUILD_DIR/fused}
 DATA_DIR=${DATA_DIR:-$SCRIPT_DIR/training/build}
 TRAIN_ITERS=${TRAIN_ITERS:-300}
 BATCH_SIZE=${BATCH_SIZE:-1}
@@ -146,8 +147,8 @@ HF_TOKEN="$HF_TOKEN" "$PYTHON" "$SCRIPT_DIR/training/$BACKEND/merge_adapter.py" 
 require_file "$FUSED_DIR/config.json"
 
 printf '%s\n' "[train] Creating Ollama model"
-mkdir -p "$SCRIPT_DIR/build"
-MODELFILE="$SCRIPT_DIR/build/Modelfile.$MODEL_NAME"
+mkdir -p "$BUILD_DIR"
+MODELFILE="$BUILD_DIR/Modelfile"
 
 sed "s|{{FUSED_MODEL_DIR}}|$FUSED_DIR|g" "$SCRIPT_DIR/training/Modelfile.template" > "$MODELFILE"
 
@@ -168,16 +169,13 @@ printf '%s\n' "[train] Merged model:   $FUSED_DIR"
 printf '%s\n' "[train] Backend:        $BACKEND"
 printf '%s\n' "[train]"
 printf '%s\n' "[train] Upload to RPi5:"
-printf '%s\n' "[train]   # 1. Upload fused model"
-printf '%s\n' "[train]   rsync -avz --progress $FUSED_DIR/ pip@robot:/home/pip/robot/src/models/ollama/build/fused/$MODEL_NAME/"
+printf '%s\n' "[train]   # 1. Upload the whole model folder (fused model + Modelfile)"
+printf '%s\n' "[train]   rsync -avz --progress $BUILD_DIR/ pip@robot:/home/pip/robot/src/models/ollama/build/$MODEL_NAME/"
 printf '%s\n' "[train]"
-printf '%s\n' "[train]   # 2. Upload Modelfile"
-printf '%s\n' "[train]   rsync -avz --progress $MODELFILE pip@robot:/home/pip/robot/src/models/ollama/build/"
+printf '%s\n' "[train]   # 2. Create Ollama model on RPi5"
+printf '%s\n' "[train]   ssh pip@robot '/home/pip/robot/src/models/ollama/install.sh $MODEL_NAME'"
 printf '%s\n' "[train]"
-printf '%s\n' "[train]   # 3. Create Ollama model on RPi5"
-printf '%s\n' "[train]   ssh pip@robot 'ollama create $MODEL_NAME -f /home/pip/robot/src/models/ollama/build/Modelfile.$MODEL_NAME'"
-printf '%s\n' "[train]"
-printf '%s\n' "[train]   # 4. Restart robot service"
+printf '%s\n' "[train]   # 3. Restart robot service"
 printf '%s\n' "[train]   ssh pip@robot 'sudo systemctl restart robot.service'"
 printf '%s\n' "[train]"
 printf '%s\n' "[train] Usage (local):"

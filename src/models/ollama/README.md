@@ -20,7 +20,7 @@ That's it. The script auto-detects your platform:
 - **Apple Soilicon Mac with MLX**: Uses GPU training (fast)
 - **Everywhere else**: Uses PyTorch CPU training (universal)
 
-Outputs merged model to `build/fused/pip/`.
+Outputs merged model to `build/pip/fused/`.
 
 **Customizable parameters:**
 
@@ -35,14 +35,17 @@ LEARNING_RATE=1e-4 \
 
 ### Upload to RPi5
 
-After training on your Mac, upload the merged model to the robot:
+After training on your Mac, upload the whole model folder (fused model + Modelfile) to the robot in one go, then run [install.sh](install.sh) on the robot to create the Ollama model:
 
 ```bash
-# Copy merged model to RPi5
-rsync -avz --progress build/fused/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/fused/pip/
+# 1. Upload
+rsync -avz --progress build/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/pip/
 
 # Or with SSH key authentication
-rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/fused/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/fused/pip/
+rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa" build/pip/ pip@robot:/home/pip/robot/src/models/ollama/build/pip/
+
+# 2. Install (checks the Modelfile/fused model exist before creating)
+ssh pip@robot '/home/pip/robot/src/models/ollama/install.sh pip'
 ```
 
 **Network tips:**
@@ -63,7 +66,7 @@ Once trained, use the merged model with Ollama:
 
 ```bash
 # Import the merged model into Ollama
-ollama create pip-qwen2.5-1.5b -f build/Modelfile.pip-qwen2.5-1.5b
+ollama create pip-qwen2.5-1.5b -f build/pip-qwen2.5-1.5b/Modelfile
 
 # Chat with it
 ollama run pip-qwen2.5-1.5b "Hello, who are you?"
@@ -91,9 +94,10 @@ for chunk in response:
 
 ### Main Entry Point
 
-| Script               | Purpose                                                                                  |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| [train.sh](train.sh) | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else) |
+| Script                   | Purpose                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| [train.sh](train.sh)     | Auto-detects platform and runs appropriate backend (GPU on Apple Silicon Macs, CPU else) |
+| [install.sh](install.sh) | Run on the target machine after uploading a build folder - verifies the Modelfile/fused model exist, then runs `ollama create` |
 
 ### CPU Training Backend (PyTorch - aarch64)
 
@@ -119,14 +123,16 @@ for chunk in response:
 
 ```
 build/
-├── adapters/pip-qwen2.5/       # LoRA adapter weights (intermediate)
-│   ├── adapter_config.json
-│   └── adapter_model.safetensors
-└── fused/pip-qwen2.5/           # Merged model (final output for Hailo)
-    ├── config.json
-    ├── model.safetensors
-    ├── tokenizer.json
-    └── tokenizer_config.json
+└── pip-qwen2.5/                # One directory per trained model
+    ├── adapters/                # LoRA adapter weights (intermediate)
+    │   ├── adapter_config.json
+    │   └── adapter_model.safetensors
+    ├── fused/                   # Merged model (final output for Hailo)
+    │   ├── config.json
+    │   ├── model.safetensors
+    │   ├── tokenizer.json
+    │   └── tokenizer_config.json
+    └── Modelfile                # Ollama Modelfile (FROM ./fused, absolute path)
 ```
 
 ## Configuration
@@ -176,7 +182,7 @@ pip install mlx mlx-lm huggingface_hub
 
 ```bash
 # Fix remote directory permissions
-ssh pip@robot "mkdir -p /home/pip/robot/src/models/ollama/build/fused && chmod 755 /home/pip/robot/src/models/ollama/build/fused"
+ssh pip@robot "mkdir -p /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused && chmod 755 /home/pip/robot/src/models/ollama/build/pip-qwen2.5-1.5b/fused"
 ```
 
 **Want to use on Hailo?**

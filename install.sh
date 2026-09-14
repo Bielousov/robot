@@ -9,9 +9,9 @@ echo "[Main] Detected Script Directory: $SCRIPT_DIR"
 
 # Define the installer paths
 OLLAMA_INSTALLER="$SCRIPT_DIR/src/lib/ollama/install.sh"
+OLLAMA_MODEL_INSTALLER="$SCRIPT_DIR/src/models/ollama/install.sh"
 PIPER_INSTALLER="$SCRIPT_DIR/src/lib/piper/install.sh"
 HAILO_INSTALLER="$SCRIPT_DIR/src/lib/hailo/install.sh"
-WEB_INSTALLER="$SCRIPT_DIR/web/install.sh"
 
 
 # --- Run Ollama Installer ---
@@ -23,6 +23,23 @@ else
     echo "[Error] Could not find Ollama installer at: $OLLAMA_INSTALLER"
     exit 1
 fi
+
+# --- Run Ollama Personality Model Installer ---
+# Non-fatal: a trained model is optional (uploaded separately after running
+# src/models/ollama/train.sh elsewhere), so a missing/untrained model should
+# not abort the rest of the install - just warn and keep going.
+if [ -f "$OLLAMA_MODEL_INSTALLER" ]; then
+    echo "[Main] Launching Ollama personality model installer..."
+    chmod +x "$OLLAMA_MODEL_INSTALLER"
+    if ! bash "$OLLAMA_MODEL_INSTALLER"; then
+        echo "[Warning] Personality model not installed - continuing with the base model."
+        echo "[Warning] Train one with src/models/ollama/train.sh, upload it, then re-run: $OLLAMA_MODEL_INSTALLER"
+    fi
+else
+    echo "[Warning] Could not find Ollama model installer at: $OLLAMA_MODEL_INSTALLER - skipping."
+fi
+
+
 
 # --- Run Piper Installer ---
 if [ -f "$PIPER_INSTALLER" ]; then
@@ -44,15 +61,6 @@ if [ -f "$HAILO_INSTALLER" ]; then
 else
     echo "[Error] Could not find Hailo installer at: $HAILO_INSTALLER"
 fi
-
-# --- Run Web Installer ---
-# if [ -f "$WEB_INSTALLER" ]; then
-#     echo "[Main] Launching Web UI Installer..."
-#     chmod +x "$WEB_INSTALLER"
-#     bash "$WEB_INSTALLER"
-# else
-#     echo "[Error] Could not find Web installer at: $WEB_INSTALLER"
-# fi
 
 # --- Install systemd services ---
 ROBOT_SERVICE="$SCRIPT_DIR/system/services/robot.service"

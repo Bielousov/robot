@@ -18,7 +18,7 @@ if [ -f "$ENV_FILE" ]; then
         | tr -d '"' \
         | tr -d "'")
 
-    MODEL_HEF=$(grep -v '^#' "$ENV_FILE" \
+    OLLAMA_MODEL_HEF=$(grep -v '^#' "$ENV_FILE" \
         | grep '^HAILO_MODEL_HEF=' \
         | cut -d '=' -f2 \
         | tr -d '"' \
@@ -32,7 +32,6 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 HAILO_VERSION=${HAILO_VERSION:-"5.3.0"}
-MODEL_HEF=${MODEL_HEF:-"Qwen2.5-1.5B-Instruct.hef"}
 
 install_model() {
     local model_hef="$1"
@@ -69,7 +68,11 @@ install_model() {
     ls -lh "$model_file"
 }
 
-install_model "$MODEL_HEF"
+if [ -n "$OLLAMA_MODEL_HEF" ]; then
+    install_model "$OLLAMA_MODEL_HEF"
+else
+    echo "[Hailo] HAILO_MODEL_HEF not set. Skipping LLM model download."
+fi
 
 if [ -n "$WHISPER_MODEL_HEF" ]; then
     install_model "$WHISPER_MODEL_HEF"

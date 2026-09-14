@@ -17,7 +17,8 @@ from models.ollama.config.ollama import get_model_config
 # Path / environment
 # ---------------------------------------------------------------------------
 
-load_dotenv(project_path / ".env")
+PROJECT_ROOT = project_path.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 # ---------------------------------------------------------------------------

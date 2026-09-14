@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[4]
 load_dotenv(ROOT / ".env")
 
 def get_model_config() -> Dict[str, Any]:

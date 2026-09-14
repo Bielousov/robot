@@ -51,6 +51,17 @@ fi
 
 require_file "$FUSED_DIR/config.json"
 
+# The uploaded Modelfile's FROM line is an absolute path baked in on the
+# training machine (e.g. /Users/you/.../fused) - it won't exist on this
+# machine, which makes `ollama create` fail with "invalid model name" (it
+# can't find that path locally, so it tries to parse it as a remote model
+# reference instead). Regenerate the Modelfile from the template using this
+# machine's own $FUSED_DIR so FROM always points somewhere that actually
+# exists here, regardless of where it was trained.
+TEMPLATE="$SCRIPT_DIR/training/Modelfile.template"
+require_file "$TEMPLATE"
+sed "s|{{FUSED_MODEL_DIR}}|$FUSED_DIR|g" "$TEMPLATE" > "$MODELFILE"
+
 printf '%s\n' "[install] Creating Ollama model..."
 ollama create "$MODEL_NAME" -f "$MODELFILE"
 

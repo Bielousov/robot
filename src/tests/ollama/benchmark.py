@@ -59,7 +59,7 @@ def run_once(client):
         options=OPTIONS,
         stream=True,
         think=False,
-        keep_alive=-1,
+        keep_alive="1m",
     ):
         pass
 

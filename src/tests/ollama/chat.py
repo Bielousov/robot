@@ -52,7 +52,7 @@ def generate(client, messages):
         options=OPTIONS,
         stream=True,
         think=False,
-        keep_alive=-1,
+        keep_alive="1m",
     )
 
     for chunk in stream:

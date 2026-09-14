@@ -27,6 +27,8 @@ class Mind:
         self._debug = debug
         self._is_ready = False
 
+        using_trained_ollama_model = False
+
         if LLM_ENGINE == "hailo":
             self._setup_hailo_client()
         else:
@@ -38,7 +40,18 @@ class Mind:
             )
 
             config = get_model_config()
-            self.model_name = config["model_name"]
+
+            # Prefer the personality-trained model (src/models/ollama/train.sh,
+            # registered under OLLAMA_MODEL_NAME) over the plain base model tag
+            # (OLLAMA_MODEL) once one has been trained/installed. Falls back to
+            # the base model if OLLAMA_MODEL_NAME isn't set.
+            trained_model_name = os.getenv("OLLAMA_MODEL_NAME", "").strip()
+            if trained_model_name:
+                self.model_name = trained_model_name
+                using_trained_ollama_model = True
+            else:
+                self.model_name = config["model_name"]
+
             self.client = OllamaClient(
                 host=config["host"],
                 lora_path=get_lora_path(),
@@ -49,7 +62,12 @@ class Mind:
         self._get_classifier_model_options = get_classifier_model_options
 
         self.lora_path = get_lora_path()
-        self.system_prompt = build_identity_system_prompt()
+
+        # A trained Ollama model already has its personality baked in via the
+        # Modelfile's SYSTEM directive (see train.sh) - layering Mind's own
+        # text system prompt on top would be redundant, so skip it here the
+        # same way it's already skipped when a Hailo LoRA path is configured.
+        self.system_prompt = "" if using_trained_ollama_model else build_identity_system_prompt()
 
         self._load_model(model=self.model_name)
 

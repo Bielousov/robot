@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pathlib import Path
@@ -24,12 +25,21 @@ load_dotenv(project_path / ".env")
 # Configuration
 # ---------------------------------------------------------------------------
 config = get_model_config()
-MODEL_NAME = config["model_name"]
 OLLAMA_HOST = config["host"]
+
+# Prefer the personality-trained model (src/models/ollama/train.sh, installed
+# under OLLAMA_MODEL_NAME) over the plain base model tag once one exists.
+TRAINED_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME", "").strip()
+USING_TRAINED_MODEL = bool(TRAINED_MODEL_NAME)
+MODEL_NAME = TRAINED_MODEL_NAME or config["model_name"]
 
 OPTIONS = get_conversation_model_options()
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
-SYSTEM_PROMPT = build_identity_system_prompt()
+
+# A trained model already has its personality baked in via the Modelfile's
+# SYSTEM directive - skip Mind's separate text system prompt so we don't
+# layer a redundant/conflicting one on top (same reasoning as Mind.py).
+SYSTEM_PROMPT = "" if USING_TRAINED_MODEL else build_identity_system_prompt()
 
 
 def run_test():
@@ -56,7 +66,13 @@ def run_test():
 
     try:
         print(f"[Ollama] Ensuring model '{MODEL_NAME}' is available...")
-        client.pull(MODEL_NAME)
+        if USING_TRAINED_MODEL:
+            # Trained/local models are created via `ollama create` and never
+            # published to any registry - pulling one fails with a 404, so
+            # just verify it's already registered instead.
+            client.show(MODEL_NAME)
+        else:
+            client.pull(MODEL_NAME)
         print(f"[Ollama] Model '{MODEL_NAME}' is ready.")
     except Exception as exc:
         print(f"[Ollama] ERROR: Could not prepare model: {exc}")

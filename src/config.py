@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from os import getenv, path
-from sklearn.neural_network import MLPClassifier
 
 from lib.Enum import Enum
 

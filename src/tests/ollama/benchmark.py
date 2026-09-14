@@ -1,3 +1,4 @@
+import os
 import statistics
 import sys
 import time
@@ -41,6 +42,12 @@ PROMPT = (
 
 MESSAGES = [{"role": "user", "content": PROMPT}]
 
+# Mirrors lib/ollama/client.py's OllamaClient.chat(): OLLAMA_THREADS controls
+# CPU thread count for generation, same as production.
+OPTIONS = {}
+if os.environ.get("OLLAMA_THREADS"):
+    OPTIONS["num_thread"] = int(os.environ["OLLAMA_THREADS"])
+
 
 def run_once(client):
     """Execute one direct Ollama request and return its elapsed time."""
@@ -49,6 +56,7 @@ def run_once(client):
     for _ in client.chat(
         model=MODEL_NAME,
         messages=MESSAGES,
+        options=OPTIONS,
         stream=True,
         think=False,
         keep_alive=-1,

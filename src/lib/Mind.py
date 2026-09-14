@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 from lib.Threads import Process
-from models.ollama.classifier import build_conversation_classifier_prompt
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -24,10 +23,7 @@ class Mind:
         self._is_ready = False
 
         from lib.ollama.client import OllamaClient
-        from models.ollama.config.ollama import (
-            get_classifier_model_options,
-            get_model_config,
-        )
+        from models.ollama.config.ollama import get_model_config
 
         # Mind only ever runs Ollama on the RPi CPU, against the
         # trained/personality model (src/models/ollama/train.sh, registered
@@ -42,7 +38,6 @@ class Mind:
         config = get_model_config()
         self.model_name = config["model_name"]
         self.client = OllamaClient(host=config["host"])
-        self._get_classifier_model_options = get_classifier_model_options
         self._get_conversation_model_options = lambda: {}
         self.system_prompt = ""
 
@@ -56,9 +51,9 @@ class Mind:
         # aren't blocked for the duration of a (possibly streamed) generation.
         self._think_process = Process()
 
-        # Tracks in-flight requests (think()/classify_conversation(), including
-        # ones fired from ad-hoc background threads elsewhere) so stop() can
-        # wait for them to finish before tearing down the client/device.
+        # Tracks in-flight requests (think(), including ones fired from
+        # ad-hoc background threads elsewhere) so stop() can wait for them
+        # to finish before tearing down the client/device.
         self._active_requests = 0
         self._active_requests_lock = threading.Lock()
         self._idle_event = threading.Event()
@@ -298,153 +293,6 @@ class Mind:
 
         return self._response_format("".join(answer_parts))
 
-    def classify_conversation(self, text: Optional[str] = None) -> Optional[float]:
-        """Classify whether an STT fragment was addressed to the robot.
-
-        Returns:
-            1.0 = ADDRESSED
-            0.5 = AMBIGUOUS
-            0.0 = NOT_ADDRESSED
-            None = classification could not be parsed
-        """
-
-        request = (
-            text
-            or (self.history[-1].get("content", "") if self.history else "")
-        ).strip()
-
-        if not request:
-            print("[Robot] Analyze skipped: empty STT fragment")
-            return None
-
-        options = self._get_classifier_model_options()
-        prompt = build_conversation_classifier_prompt(request)
-        started_at = time.perf_counter()
-
-        self._begin_request()
-        try:
-            response = self.client.chat(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                options=options,
-                logprobs=True,
-            )
-
-            raw_response = ""
-            final_chunk = {}
-            for chunk in response:
-                content = (chunk.get("message", {}) or {}).get("content", "")
-                if content:
-                    raw_response += content
-                if chunk.get("done", False):
-                    final_chunk = chunk
-
-            raw_response = raw_response.strip()
-            elapsed_seconds = time.perf_counter() - started_at
-
-            # ---------------------------------------------------------
-            # Parse classification
-            # ---------------------------------------------------------
-
-            classification = None
-
-            normalized_response = raw_response.upper()
-
-            if normalized_response.startswith("ADDRESSED"):
-                classification = "ADDRESSED"
-
-            elif normalized_response.startswith("NOT_ADDRESSED"):
-                classification = "NOT_ADDRESSED"
-
-            elif normalized_response.startswith("AMBIGUOUS"):
-                classification = "AMBIGUOUS"
-
-            # ---------------------------------------------------------
-            # Map classification directly to score
-            # ---------------------------------------------------------
-
-            if classification == "ADDRESSED":
-                score = 1.0
-
-            elif classification == "AMBIGUOUS":
-                score = 0.5
-
-            elif classification == "NOT_ADDRESSED":
-                score = 0.0
-
-            else:
-                score = None
-
-            # ---------------------------------------------------------
-            # Timing
-            # ---------------------------------------------------------
-
-            api_time = final_chunk.get("total_duration", 0) / 1e9
-
-            score_text = (
-                f"{score:.1f}"
-                if score is not None
-                else "unavailable"
-            )
-
-            classification_text = (
-                classification
-                if classification is not None
-                else "unparsed"
-            )
-
-            # ---------------------------------------------------------
-            # Logging
-            # ---------------------------------------------------------
-
-            if self._debug:
-                print(
-                    f"[Robot] Analyze request: {request}"
-                )
-
-                print(
-                    f"[Robot] Analyze response: "
-                    f"{raw_response!r}"
-                )
-
-                print(
-                    f"[Robot] Analyze classification: "
-                    f"{classification_text}"
-                )
-
-                print(
-                    f"[Robot] Analyze score: "
-                    f"{score_text}"
-                )
-
-                print(
-                    f"[Robot] Analyze response time: "
-                    f"{elapsed_seconds:.3f}s "
-                    f"(API: {api_time:.3f}s)"
-                )
-
-            return score
-
-        except Exception as exc:
-            elapsed_seconds = time.perf_counter() - started_at
-
-            print(
-                f"[Robot] Analyze request: {request}"
-            )
-
-            print(
-                f"[Robot] Analyze failed after "
-                f"{elapsed_seconds:.3f}s: {exc}"
-            )
-
-            return None
-        finally:
-            self._end_request()
-
     def add_to_history(self, role: str, message: str) -> list:
         """
         Appends a message to context and maintains the sliding window.
@@ -534,8 +382,8 @@ class Mind:
     def stop(self):
         self._think_process.stop()
 
-        # Wait for any in-flight think()/classify_conversation() call to
-        # finish before this object goes away.
+        # Wait for any in-flight think() call to finish before this object
+        # goes away.
         if not self._idle_event.wait(timeout=5.0):
             print("[Mind] Warning: stopping with a request still in flight.")
 

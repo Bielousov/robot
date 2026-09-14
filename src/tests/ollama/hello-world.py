@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pathlib import Path
@@ -33,6 +34,12 @@ OLLAMA_HOST = config["host"]
 MODEL_NAME = config["model_name"]
 
 PROMPT = " ".join(sys.argv[1:]) or "Tell me about yourself"
+
+# Mirrors lib/ollama/client.py's OllamaClient.chat(): OLLAMA_THREADS controls
+# CPU thread count for generation, same as production.
+OPTIONS = {}
+if os.environ.get("OLLAMA_THREADS"):
+    OPTIONS["num_thread"] = int(os.environ["OLLAMA_THREADS"])
 
 
 def run_test():
@@ -95,6 +102,7 @@ def run_test():
                     "content": "System check.",
                 },
             ],
+            options=OPTIONS,
             stream=True,
             think=False,
             keep_alive=-1,
@@ -122,6 +130,7 @@ def run_test():
         stream = client.chat(
             model=MODEL_NAME,
             messages=messages,
+            options=OPTIONS,
             stream=True,
             think=False,
             keep_alive=-1,

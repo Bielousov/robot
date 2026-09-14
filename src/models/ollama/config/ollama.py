@@ -20,15 +20,3 @@ def get_model_config() -> Dict[str, Any]:
         "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
         "model_name": os.getenv("OLLAMA_MODEL_NAME", "pip"),
     }
-
-def get_classifier_model_options() -> Dict[str, Any]:
-    return {
-        "num_ctx": 1024,
-        "num_predict": 4,
-        "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
-        "repeat_penalty": 1.0,
-        "seed": 42,
-        "temperature": 0.0,
-        "top_k": 1,
-        "top_p": 1.0,
-    }

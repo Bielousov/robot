@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pathlib import Path
@@ -30,6 +31,12 @@ config = get_model_config()
 OLLAMA_HOST = config["host"]
 MODEL_NAME = config["model_name"]
 
+# Mirrors lib/ollama/client.py's OllamaClient.chat(): OLLAMA_THREADS controls
+# CPU thread count for generation, same as production.
+OPTIONS = {}
+if os.environ.get("OLLAMA_THREADS"):
+    OPTIONS["num_thread"] = int(os.environ["OLLAMA_THREADS"])
+
 
 def generate(client, messages):
     """Stream one Ollama response and return its text and timing metrics."""
@@ -42,6 +49,7 @@ def generate(client, messages):
     stream = client.chat(
         model=MODEL_NAME,
         messages=messages,
+        options=OPTIONS,
         stream=True,
         think=False,
         keep_alive=-1,

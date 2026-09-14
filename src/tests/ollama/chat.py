@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 from pathlib import Path
@@ -10,8 +9,7 @@ project_path = Path(__file__).parent.parent.parent.resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from models.ollama.config.ollama import get_conversation_model_options, get_model_config
-from models.ollama.identity import build_identity_system_prompt
+from models.ollama.config.ollama import get_model_config
 
 # ---------------------------------------------------------------------------
 # Path / environment
@@ -21,22 +19,16 @@ load_dotenv(project_path / ".env")
 
 # ---------------------------------------------------------------------------
 # Configuration
+#
+# Only ever the trained/personality model (OLLAMA_MODEL_NAME) - no base-model
+# fallback, no generation options, no separate system prompt. Its Modelfile
+# already carries the right defaults and a baked-in SYSTEM prompt; sending an
+# explicit system message here (even an empty one) would override it instead
+# of adding to it.
 # ---------------------------------------------------------------------------
 config = get_model_config()
 OLLAMA_HOST = config["host"]
-
-# Prefer the personality-trained model (src/models/ollama/train.sh, installed
-# under OLLAMA_MODEL_NAME) over the plain base model tag once one exists.
-TRAINED_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME", "").strip()
-USING_TRAINED_MODEL = bool(TRAINED_MODEL_NAME)
-MODEL_NAME = TRAINED_MODEL_NAME or config["model_name"]
-
-OPTIONS = get_conversation_model_options()
-
-# A trained model already has its personality baked in via the Modelfile's
-# SYSTEM directive - skip Mind's separate text system prompt so we don't
-# layer a redundant/conflicting one on top (same reasoning as Mind.py).
-SYSTEM_PROMPT = "" if USING_TRAINED_MODEL else build_identity_system_prompt()
+MODEL_NAME = config["model_name"]
 
 
 def generate(client, messages):
@@ -50,7 +42,6 @@ def generate(client, messages):
     stream = client.chat(
         model=MODEL_NAME,
         messages=messages,
-        options=OPTIONS,
         stream=True,
         think=False,
         keep_alive=-1,
@@ -119,23 +110,19 @@ def main():
 
     try:
         print(f"[Ollama] Ensuring model '{MODEL_NAME}' is available...")
-        if USING_TRAINED_MODEL:
-            # Trained/local models are created via `ollama create` and never
-            # published to any registry - pulling one fails with a 404, so
-            # just verify it's already registered instead.
-            client.show(MODEL_NAME)
-        else:
-            client.pull(MODEL_NAME)
+        # A trained/local model is created via `ollama create` and never
+        # published to any registry - pulling it would fail with a 404, so
+        # just verify it's already registered instead.
+        client.show(MODEL_NAME)
         print(f"[Ollama] Model '{MODEL_NAME}' is ready.")
     except Exception as exc:
         print(f"[Ollama] ERROR: Could not prepare model: {exc}")
         return
 
-    # Omit the system message entirely (rather than sending one with empty
-    # content) when there's nothing to say - an explicit system message,
-    # even an empty one, overrides the Modelfile's own baked-in SYSTEM
-    # prompt for a trained model, silently stripping its personality.
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}] if SYSTEM_PROMPT else []
+    # No system message: the trained model's Modelfile already carries its
+    # own SYSTEM prompt. Sending one here, even an empty one, would override
+    # it instead of adding to it.
+    messages = []
 
     print("Type a prompt and press Enter. Ctrl+C to quit.\n")
 

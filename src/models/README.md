@@ -10,13 +10,11 @@ between them.
 ```mermaid
 flowchart TB
     RM["<b>1. Robot Model</b><br/>numpy + scikit-learn MLPClassifier<br/>runs in Mind's tick loop, &Delta;/&Gamma; Hz (asleep/awake)"]
-    OL["<b>2. Ollama / HailoRT LLM</b><br/>Qwen2.5:1.5B-Instruct<br/>(Ollama on CPU, or a compiled .hef on Hailo-10H)"]
-    LORA["<b>2.a LoRA personality wrapper</b><br/>optional fine-tuned adapter<br/>(replaces the text personality prompt when set)"]
+    OL["<b>2. Ollama / HailoRT LLM</b><br/>Ollama: trained personality model (own Modelfile SYSTEM prompt)<br/>Hailo: personality-tuned .hef on Hailo-10H"]
     WH["<b>3. \"Whistler\"</b><br/>Whisper (Small), on HailoRT<br/>speech-to-text"]
     PIPER["<b>Piper</b><br/>text-to-speech"]
 
     RM --> OL
-    OL -. wraps .-> LORA
     OL --> WH
     WH --> PIPER
 ```
@@ -24,8 +22,7 @@ flowchart TB
 | #   | Model                        | Framework / runtime                                                                                 | Role                                                                                                        |
 | --- | ---------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | 1   | **Robot Model**              | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled        | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak) |
-| 2   | **Ollama / HailoRT LLM**     | `Qwen2.5:1.5B-Instruct`, served by Ollama (CPU) or `hailo_platform.genai.LLM` on a Hailo-10H `.hef` | Turns a prompt + conversation context into a reply                                                          |
-| 2.a | **LoRA personality wrapper** | GGUF adapter (Ollama) or a fine-tuned/fused checkpoint                                              | Optional; when configured, it _is_ Pip's personality and the base text system-prompt is disabled            |
+| 2   | **Ollama / HailoRT LLM**     | Ollama: trained model (`src/models/ollama/train.sh`) served on CPU; Hailo: personality-tuned `.hef` via `hailo_platform.genai.LLM` on a Hailo-10H | Turns a prompt + conversation context into a reply, personality baked in (Ollama's Modelfile SYSTEM directive, or the HEF itself) |
 | 3   | **"Whistler"**               | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H                               | Turns microphone audio into text                                                                            |
 | —   | **Piper**                    | ONNX TTS, driven as a subprocess                                                                    | Turns text into speech audio                                                                                |
 
@@ -64,7 +61,7 @@ flowchart TB
     INTENT -->|action = SLEEP / WAKE / UTTER| STATE
 
     subgraph Mind["Mind - its own worker thread"]
-        MIND_CALL --> LLM["Ollama / HailoRT LLM\nQwen2.5:1.5B &#40;+ LoRA&#41;"]
+        MIND_CALL --> LLM["Ollama / HailoRT LLM\ntrained model / personality-tuned .hef"]
         LLM -->|streamed chunks, via callback| STATE
     end
 
@@ -127,7 +124,6 @@ the next tick.
 | Model                    | Config                                                                                    | Code                                                                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Robot Model              | `BRAIN_FREQUENCY_DELTA`, `BRAIN_FREQUENCY_GAMMA`, `BRAIN_CONFIDENCE_THRESHOLD`            | `src/main.py` (`_brain_tick`, `_brain_frequency_manager`), [`src/models/robot/`](robot/) (training guide, `train.sh`) |
-| LLM                      | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL` / `HAILO_MODEL_HEF`, `PERSONALIZED_MODEL` | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/`                                                    |
-| LoRA personality wrapper | `LLM_LORA_PATH`                                                                           | `src/models/ollama/` (training guide, generated `Modelfile` in `build/`)                                              |
+| LLM                      | `LLM_ENGINE` (`ollama`/`hailo`), `OLLAMA_MODEL_NAME` / `HAILO_MODEL_HEF`                  | `src/lib/Mind.py`, `src/lib/hailo/client.py`, `src/models/ollama/`                                                    |
 | Whisper ("Whistler")     | `HAILO_WHISPER_MODEL_HEF`                                                                 | `src/lib/Ears.py`                                                                                                     |
 | Piper                    | `PIPER_MODEL_NAME`, `PIPER_SAMPLE_RATE`                                                   | `src/lib/Voice.py`                                                                                                    |

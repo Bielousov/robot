@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Union
 
 from lib.Threads import Process
 from models.ollama.classifier import build_conversation_classifier_prompt
-from models.ollama.identity import build_identity_system_prompt, get_lora_path
+from models.ollama.identity import build_identity_system_prompt
 
 # Path configuration
 LIB_PATH = Path(__file__).parent.resolve()
@@ -27,47 +27,31 @@ class Mind:
         self._debug = debug
         self._is_ready = False
 
-        using_trained_ollama_model = False
-
         if LLM_ENGINE == "hailo":
             self._setup_hailo_client()
+            self.system_prompt = build_identity_system_prompt()
         else:
             from lib.ollama.client import OllamaClient
             from models.ollama.config.ollama import (
                 get_classifier_model_options,
-                get_conversation_model_options,
                 get_model_config,
             )
 
+            # Ollama only ever runs the trained/personality model
+            # (src/models/ollama/train.sh, registered under OLLAMA_MODEL_NAME)
+            # - there is no base-model fallback. Its Modelfile already
+            # carries the right generation parameters and a baked-in SYSTEM
+            # prompt, so nothing here overrides them: no conversation options
+            # are sent (self._get_conversation_model_options returns {}), and
+            # no separate text system prompt is built or sent (an explicit
+            # system message, even an empty one, would override the
+            # Modelfile's own SYSTEM directive instead of adding to it).
             config = get_model_config()
-
-            # Prefer the personality-trained model (src/models/ollama/train.sh,
-            # registered under OLLAMA_MODEL_NAME) over the plain base model tag
-            # (OLLAMA_MODEL) once one has been trained/installed. Falls back to
-            # the base model if OLLAMA_MODEL_NAME isn't set.
-            trained_model_name = os.getenv("OLLAMA_MODEL_NAME", "").strip()
-            if trained_model_name:
-                self.model_name = trained_model_name
-                using_trained_ollama_model = True
-            else:
-                self.model_name = config["model_name"]
-
-            self.client = OllamaClient(
-                host=config["host"],
-                lora_path=get_lora_path(),
-                personalized_model=config["personalized_model"],
-            )
-
-        self._get_conversation_model_options = get_conversation_model_options
-        self._get_classifier_model_options = get_classifier_model_options
-
-        self.lora_path = get_lora_path()
-
-        # A trained Ollama model already has its personality baked in via the
-        # Modelfile's SYSTEM directive (see train.sh) - layering Mind's own
-        # text system prompt on top would be redundant, so skip it here the
-        # same way it's already skipped when a Hailo LoRA path is configured.
-        self.system_prompt = "" if using_trained_ollama_model else build_identity_system_prompt()
+            self.model_name = config["model_name"]
+            self.client = OllamaClient(host=config["host"])
+            self._get_classifier_model_options = get_classifier_model_options
+            self._get_conversation_model_options = lambda: {}
+            self.system_prompt = ""
 
         self._load_model(model=self.model_name)
 
@@ -102,32 +86,18 @@ class Mind:
 
         config = get_model_config()
         self.model_name = config["model_hef"]
-        self.client = HailoClient(lora_path=get_lora_path())
-    
-    def _setup_ollama_client(self):
-        from lib.ollama.client import OllamaClient
-        from models.ollama.config.ollama import (
-            get_classifier_model_options,
-            get_conversation_model_options,
-            get_model_config,
-        )
-
-        config = get_model_config()
-        self.model_name = config["model_name"]
-        self.client = OllamaClient(
-            host=config["host"],
-            lora_path=get_lora_path(),
-            personalized_model=config["personalized_model"],
-        )
+        self.client = HailoClient()
+        self._get_classifier_model_options = get_classifier_model_options
+        self._get_conversation_model_options = get_conversation_model_options
 
     def _load_model(self, model):
-        """Pull the given base model via the client and mark the runtime ready."""
+        """Load the given model via the client and mark the runtime ready."""
         try:
             self.client.load_model(model)
             self._is_ready = True
         except Exception as exc:
             self._is_ready = False
-            print(f"[Error] Could not load base model '{model}': {exc}")
+            print(f"[Error] Could not load model '{model}': {exc}")
             raise
 
     def _begin_request(self):
@@ -156,19 +126,14 @@ class Mind:
         if not final_prompt:
             return []
 
-        self.lora_path = get_lora_path()
-        self.system_prompt = build_identity_system_prompt()
-
-        # Keep the legacy text identity available for non-LoRA runs, but never
-        # force a system prompt when a tuned adapter is selected.
-        if self.lora_path:
-            messages = []
-        else:
-            messages = [
-                {"role": "system", "content": self.system_prompt},
-            ]
-
-        # `messages` is assigned above to support the LoRA/no-system-prompt flow.
+        # self.system_prompt was decided once in __init__ (per engine/model -
+        # empty for ollama's trained model, built from identity for Hailo
+        # unless a LoRA path is configured). Recomputing it here would
+        # silently reintroduce a system message even when the trained model's
+        # own Modelfile SYSTEM directive is meant to be the only one in
+        # effect - an explicit system message, even an empty one, overrides
+        # it rather than adding to it.
+        messages = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
 
         recent_history = self.history[-self.history_limit:] if self.history else []
         for entry in recent_history:

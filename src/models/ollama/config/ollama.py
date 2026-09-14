@@ -8,25 +8,17 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 def get_model_config() -> Dict[str, Any]:
-    """Load Ollama model settings from environment variables."""
+    """Load Ollama model settings from environment variables.
+
+    Only ever the trained/personality model (src/models/ollama/train.sh,
+    registered under OLLAMA_MODEL_NAME) - there is no base-model fallback.
+    Its Modelfile already carries the right generation defaults and a baked-in
+    SYSTEM prompt, so nothing here overrides them.
+    """
 
     return {
         "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-        "model_name": os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b"),
-        "personalized_model": os.getenv("PERSONALIZED_MODEL", ""),
-        "identity": os.getenv("OLLAMA_SYSTEM_PROMPT", ""),
-    }
-
-def get_conversation_model_options() -> Dict[str, Any]:
-    return {
-        "num_ctx": int(os.getenv("OLLAMA_CONTEXT_LENGTH", 1024)),
-        "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", 64)),
-        "num_thread": int(os.getenv("OLLAMA_THREADS", 4)),
-        "temperature": float(os.getenv("OLLAMA_TEMPERATURE", 0.9)),
-        "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", 1.2)),
-        "top_k": int(os.getenv("OLLAMA_TOP_K", 40)),
-        "top_p": float(os.getenv("OLLAMA_TOP_P", 0.9)),
-        "stop": ["User:"],
+        "model_name": os.getenv("OLLAMA_MODEL_NAME", "pip"),
     }
 
 def get_classifier_model_options() -> Dict[str, Any]:

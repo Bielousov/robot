@@ -21,7 +21,7 @@ flowchart TB
 
 | #   | Model                    | Framework / runtime                                                                                                                               | Role                                                                                                                              |
 | --- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Robot Model**          | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled                                                      | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak)                       |
+| 1   | **Robot Model**          | scikit-learn `MLPClassifier` (16,16 hidden layers) + `StandardScaler`, both `joblib`-pickled                                                      | Turns a small numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/speak) - spontaneous "utterance" is decided separately, in code |
 | 2   | **Ollama / HailoRT LLM** | Ollama: trained model (`src/models/ollama/train.sh`) served on CPU; Hailo: personality-tuned `.hef` via `hailo_platform.genai.LLM` on a Hailo-10H | Turns a prompt + conversation context into a reply, personality baked in (Ollama's Modelfile SYSTEM directive, or the HEF itself) |
 | 3   | **"Whistler"**           | `Whisper (Small)` via `hailo_platform.genai.Speech2Text` on Hailo-10H                                                                             | Turns microphone audio into text                                                                                                  |
 | —   | **Piper**                | ONNX TTS, driven as a subprocess                                                                                                                  | Turns text into speech audio                                                                                                      |
@@ -49,9 +49,10 @@ flowchart TB
     ON_RECORD --> STATE[("State\nprompts / eavesdrop /\nis_speaking / is_thinking / eavesdropped_context / ...")]
 
     subgraph Brain["Brain thread - interval = 1/&Delta; or 1/&Gamma;"]
-        STATE -->|get_context&#40;&#41; 10-value vector| SCALE["StandardScaler.transform"]
+        STATE -->|get_context&#40;&#41; 5-value vector| SCALE["StandardScaler.transform"]
         SCALE --> MLP["Robot Model\nMLPClassifier.predict_proba"]
         MLP -->|argmax + confidence &gt; threshold| INTENT["IntentHandler.handle&#40;action&#41;"]
+        INTENT -->|action == Nothing| UTTER["Utterances.consider&#40;&#41;\neavesdropped_context / time_since_heard"]
     end
 
     FREQ["Frequency-manager thread"] -. "sets interval\n(awake -> &Gamma;, asleep -> &Delta;)" .-> Brain
@@ -89,39 +90,50 @@ top-to-bottom:
 
 ## 3. Robot Model activations -> intents
 
-`State.get_context()` is the entire sensory input to the Robot Model - ten
+`State.get_context()` is the entire sensory input to the Robot Model - five
 numbers, no text:
 
 ```
-[ chaos, awake_phase, has_pending_prompt, eavesdropped_context, is_thinking,
-  has_pending_response, is_speaking, last_spoke_time_diff, time_since_heard,
-  time_of_day ]
+[ awake_phase, has_pending_prompt, is_thinking, has_pending_response,
+  is_speaking ]
 ```
 
-`chaos` is a random tie-breaker; `eavesdropped_context` is the total word
-count across all buffered eavesdropped utterances (`State.eavesdrop`),
-capped at 100; `last_spoke_time_diff`/`time_since_heard` are integer seconds
-since the robot last spoke / last heard speech (capped at 3600 and 60
-respectively); the rest are plain flags read off `State`. `predict_proba`
-turns that into a probability per action, and `argmax` picks the action:
+All plain flags read off `State`. `predict_proba` turns that into a
+probability per action, and `argmax` (mapped through `model.classes_`, since
+label 4 is never one of the model's own classes - see below) picks the
+action:
 
-| action | name      | what `IntentHandler` does                                           |
-| ------ | --------- | ------------------------------------------------------------------- |
-| 0      | idle      | nothing                                                             |
-| 1      | sleep     | speaks a goodbye, `is_awake = False`                                |
-| 2      | wake up   | `is_awake = True`, queues a `"hello"` prompt if none pending        |
-| 3      | prompt    | drains `state.prompts`, calls `mind.think()` with eavesdrop context |
-| 4      | utterance | queues a `"utter"` prompt                                           |
-| 5      | speak     | pops one queued response, calls `voice.say()`                       |
+| action | name      | what decides it                                                              | what `IntentHandler` does                                           |
+| ------ | --------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 0      | idle      | Robot Model                                                                   | nothing                                                             |
+| 1      | sleep     | Robot Model                                                                   | speaks a goodbye, `is_awake = False`                                |
+| 2      | wake up   | Robot Model                                                                   | `is_awake = True`, queues a `"hello"` prompt if none pending        |
+| 3      | prompt    | Robot Model                                                                   | drains `state.prompts`, calls `mind.think()` with eavesdrop context |
+| 4      | utterance | `Utterances.consider()` (only checked from `IntentHandler`'s own action == 0 branch) | confidence-weighted coin flip, then queues a `"utter"` prompt       |
+| 5      | speak     | Robot Model                                                                   | pops one queued response, calls `voice.say()`                       |
 
 So "prompts" and "responses" are just lists sitting on `State`, filled by
 `Ears` (wake word / heard speech -> `state.prompts`) and by `Mind`'s
 streaming callback (-> `state.responses`), and drained by the Robot Model's
 own decisions about _when_ to act on them. The Robot Model doesn't know
-anything about LLMs or audio - it only ever sees the ten numbers above,
-which is why `is_thinking`/`is_speaking`/`has_pending_*`/`eavesdropped_context`/
-`time_since_heard` all feed back into `get_context()`: they're how the
-outcome of one intent shows up as input to the next tick.
+anything about LLMs or audio - it only ever sees the five numbers above,
+which is why `is_thinking`/`is_speaking`/`has_pending_*` all feed back into
+`get_context()`: they're how the outcome of one intent shows up as input to
+the next tick.
+
+**Why utterance isn't a model class**: it depends on `eavesdropped_context`
+(word count overheard) and `time_since_heard` (silence duration) - both were
+tried as model features gated by a random `chaos` value, but the resulting
+region was too narrow and rare for the classifier to reliably separate from
+the broad "nothing to do" rules around it (StandardScaler-normalized MLP
+decision boundaries can't hold a fine distinction there). Pulling it out
+into plain code instead - `IntentHandler.handle()` (`src/intents.py`) calls
+`Utterances.consider()` (`src/utterances.py`) from its own `action == 0`
+branch, which gates on `State.eavesdropped_context`/`State.time_since_heard`
+directly and then applies `confidence * random() > random()` - makes both
+the eligibility check and the "free will" randomization precise and
+independently testable, instead of hoping a trained boundary lands in the
+right place.
 
 ## 4. Where each model is configured
 

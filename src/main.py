@@ -80,7 +80,7 @@ class Robot:
             scaled_input = self.scaler.transform(context)
             probabilities = self.model.predict_proba(scaled_input)[0]
             confidence = np.max(probabilities)
-            prediction = np.argmax(probabilities)
+            prediction = self.model.classes_[np.argmax(probabilities)]
 
             if confidence > Env.BrainConfidenceScore:
                 if Env.Debug and prediction > 0:
@@ -94,9 +94,9 @@ class Robot:
                         f"with confidence {confidence * 100:.2f}%  "
                         f"[{formatted_str}]"
                     )
-                
+
                 self.intent.handle(prediction)
-                
+
         except Exception as e:
             print(f"Brain Error: {e}")
 

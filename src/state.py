@@ -1,6 +1,5 @@
-import random, time
+import time
 import numpy as np
-from datetime import datetime
 from collections import deque
 
 from config import Env
@@ -18,11 +17,6 @@ class State:
         self.eavesdrop = deque(maxlen=self.eavesdrop_limit)
         self.prompts = []
         self.responses = []
-
-    @property
-    def chaos(self):
-        # Mostly small numbers; 0.99 becomes very rare.
-        return random.triangular(0, 1, 0);
 
     @property
     def awake_phase (self):
@@ -52,11 +46,6 @@ class State:
     def time_since_heard(self):
         return self._get_time_since(self.last_heard_time, 60)
 
-    @property
-    def time_of_day(self):
-        now = datetime.now()
-        return now.hour + (now.minute / 60.0)
-
     def _get_state_phase(self, current, next):
         if current == next:
             return 1.0 if current else 0.0
@@ -76,21 +65,24 @@ class State:
     def get_context(self):
         """
         Generates the input vector for the Neural Network.
-        Matches training: [chaos, awake_phase, has_pending_prompt,
-        eavesdropped_context, is_thinking, has_pending_response, speaking,
-        time_since_spoke, time_since_heard, tod]
+        Matches training: [awake_phase, has_pending_prompt, is_thinking,
+        has_pending_response, speaking]
+
+        eavesdropped_context/time_since_heard/last_spoke_time_diff are
+        deliberately not part of this vector - they only ever gated the
+        spontaneous "utterance" behavior (label 4), which turned out to be a
+        narrow region the classifier couldn't reliably separate from the
+        broad "nothing to do" rules surrounding it (StandardScaler-normalized
+        MLP decision boundaries washing out fine distinctions). That decision
+        is now made directly in code (see Utterances.consider() in
+        utterances.py), reading these properties straight off State instead.
         """
         return np.array([[
-            self.chaos, # chaos random input
             self.awake_phase,
             self.has_pending_prompt,
-            self.eavesdropped_context,
             self.is_thinking,
             self.has_pending_response,
-            self.is_speaking,
-            self.last_spoke_time_diff,
-            self.time_since_heard,
-            self.time_of_day
+            self.is_speaking
         ]])
 
     def append_eavesdrop(self, text: str):

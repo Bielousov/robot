@@ -1,8 +1,11 @@
 from datetime import datetime
 
+from utterances import Utterances
+
 class IntentHandler:
     def __init__(self, robot):
         self.robot = robot
+        self.utterances = Utterances(robot)
         self._debug("IntentHandler Initialized.", tag="System")
 
     def _debug(self, message, tag="Intent"):
@@ -12,6 +15,9 @@ class IntentHandler:
 
     def handle(self, action):
         if action == 0:
+            # Nothing more pressing to do - consider a spontaneous
+            # "free will" utterance instead of just idling.
+            self.utterances.consider()
             return
 
         # --- PHASE 1: ACTION EXECUTION ---
@@ -32,10 +38,6 @@ class IntentHandler:
                 self._handle_prompt_intent(prompts_to_process)
             else:
                 self._debug("No prompts", tag="ROBOT")
-
-        elif action == 4: # UTTERANCE
-            self._debug("Action: UTTERANCE", tag="ROBOT")
-            self._handle_utterance_intent()
 
         elif action == 5: # SPEAK
             self._debug("Action: SPEAK", tag="ROBOT")
@@ -94,9 +96,6 @@ class IntentHandler:
 
         self._debug(f"Processing Prompts: {processed_prompts}", tag="ROBOT")
         self.robot.mind.think(processed_prompts, callback, context=heard_context)
-
-    def _handle_utterance_intent(self):
-        self.robot.state.prompts.append('utter')
 
     def _handle_speak_intent(self, phrase):
         if not phrase:

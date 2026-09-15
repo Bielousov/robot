@@ -17,7 +17,7 @@ from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
 ACCURACY_TRESHOLD = 0.95
-TRAINING_DATA_RANGE_STEPS = 5
+TRAINING_DATA_RANGE_STEPS = 4
 
 manager = ModelManager(Paths)
 

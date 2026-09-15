@@ -42,6 +42,14 @@ OPTIONS = {}
 if os.environ.get("OLLAMA_THREADS"):
     OPTIONS["num_thread"] = int(os.environ["OLLAMA_THREADS"])
 
+# Only include `options` in the request when non-empty: Ollama resolves
+# every sampling parameter from its own hardcoded defaults once `options` is
+# present at all (even `{}`), overriding whatever the model/Modelfile would
+# otherwise apply - so an always-present empty dict here would silently
+# drift generation away from the trained model, unlike `ollama run` (and
+# OllamaClient.chat() in production), which omits it entirely.
+EXTRA_OPTIONS = {"options": OPTIONS} if OPTIONS else {}
+
 
 def run_test():
     print("[Ollama] Initializing Ollama client...")
@@ -93,8 +101,7 @@ def run_test():
     print("[Ollama] Warming up engine...")
 
     try:
-        # Consume the stream so the request fully completes. No `options`:
-        # rely entirely on the Modelfile's own generation parameters.
+        # Consume the stream so the request fully completes.
         for _ in client.chat(
             model=MODEL_NAME,
             messages=[
@@ -103,10 +110,10 @@ def run_test():
                     "content": "System check.",
                 },
             ],
-            options=OPTIONS,
             stream=True,
             think=False,
             keep_alive="1m",
+            **EXTRA_OPTIONS,
         ):
             pass
 
@@ -131,10 +138,10 @@ def run_test():
         stream = client.chat(
             model=MODEL_NAME,
             messages=messages,
-            options=OPTIONS,
             stream=True,
             think=False,
             keep_alive="1m",
+            **EXTRA_OPTIONS,
         )
 
         for chunk in stream:

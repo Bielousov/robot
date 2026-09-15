@@ -47,13 +47,21 @@ def generate(client, messages):
     response_parts = []
     final_response = None
 
+    # Only include `options` when non-empty: Ollama resolves every sampling
+    # parameter from its own hardcoded defaults once `options` is present at
+    # all (even `{}`), overriding whatever the model/Modelfile would
+    # otherwise apply - so an always-present empty dict here would silently
+    # drift generation away from the trained model, unlike `ollama run`
+    # (and OllamaClient.chat() in production), which omits it entirely.
+    extra = {"options": OPTIONS} if OPTIONS else {}
+
     stream = client.chat(
         model=MODEL_NAME,
         messages=messages,
-        options=OPTIONS,
         stream=True,
         think=False,
         keep_alive="1m",
+        **extra,
     )
 
     for chunk in stream:

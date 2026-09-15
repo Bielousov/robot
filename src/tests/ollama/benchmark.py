@@ -54,13 +54,21 @@ def run_once(client):
     """Execute one direct Ollama request and return its elapsed time."""
     start = time.perf_counter()
 
+    # Only include `options` when non-empty: Ollama resolves every sampling
+    # parameter from its own hardcoded defaults once `options` is present at
+    # all (even `{}`), overriding whatever the model/Modelfile would
+    # otherwise apply - so an always-present empty dict here would silently
+    # drift generation away from the trained model, unlike `ollama run`
+    # (and OllamaClient.chat() in production), which omits it entirely.
+    extra = {"options": OPTIONS} if OPTIONS else {}
+
     for _ in client.chat(
         model=MODEL_NAME,
         messages=MESSAGES,
-        options=OPTIONS,
         stream=True,
         think=False,
         keep_alive="1m",
+        **extra,
     ):
         pass
 

@@ -17,6 +17,7 @@ from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
 ACCURACY_TRESHOLD = 0.95
+TRAINING_DATA_RANGE_STEPS = 5
 
 manager = ModelManager(Paths)
 
@@ -74,7 +75,11 @@ except Exception as e:
 
 # --- DYNAMIC KEY DETECTION ---
 input_keys = list(raw_training_data[0]['inputs'].keys())
-X, y, expanded_data = expand_dataset(raw_training_data, input_keys, steps=5)
+X, y, expanded_data = expand_dataset(
+    raw_training_data,
+    input_keys,
+    steps=TRAINING_DATA_RANGE_STEPS
+)
 
 print(f"[System] Deduplication complete: {len(X)} unique samples remaining.")
 

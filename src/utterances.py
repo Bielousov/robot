@@ -14,8 +14,8 @@ class Utterances:
     """
 
     MIN_CONTEXT = 8
-    MIN_SILENCE_S = 30
-    RAMP_S = 60
+    MIN_SILENCE_S = 15
+    RAMP_S = 30
 
     # _brain_tick calls consider() on every tick - tens of times a second
     # while awake (Env.BrainFrequencyGamma) - so even a 50/50 coin flip would

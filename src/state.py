@@ -10,6 +10,7 @@ class State:
         self.is_awake = False
         self.is_awake_next = False
         self.last_spoke_time = time.time()
+        self.last_heard_time = time.time()
         self.is_listening = False
         self.is_speaking = False
         self.is_thinking = False
@@ -45,8 +46,12 @@ class State:
 
     @property
     def last_spoke_time_diff(self):
-        return self._get_time_since(self.last_spoke_time, 60)
-    
+        return self._get_time_since(self.last_spoke_time, 3600)
+
+    @property
+    def time_since_heard(self):
+        return self._get_time_since(self.last_heard_time, 60)
+
     @property
     def time_of_day(self):
         now = datetime.now()
@@ -60,13 +65,12 @@ class State:
             return 2.0 if next else -1.0
 
     def _get_time_since(self, t, max_value=None):
-        now = time.time()
-        minutes = (now - t) / 60.0
+        seconds = int(time.time() - t)
 
         if max_value is not None:
-            return min(minutes, max_value)
+            return min(seconds, max_value)
 
-        return minutes
+        return seconds
 
 
     def get_context(self):
@@ -74,7 +78,7 @@ class State:
         Generates the input vector for the Neural Network.
         Matches training: [chaos, awake_phase, has_pending_prompt,
         eavesdropped_context, is_thinking, has_pending_response, speaking,
-        time_since_spoke, tod]
+        time_since_spoke, time_since_heard, tod]
         """
         return np.array([[
             self.chaos, # chaos random input
@@ -85,6 +89,7 @@ class State:
             self.has_pending_response,
             self.is_speaking,
             self.last_spoke_time_diff,
+            self.time_since_heard,
             self.time_of_day
         ]])
 
@@ -101,3 +106,6 @@ class State:
 
     def set_last_spoke(self):
         self.last_spoke_time = time.time()
+
+    def set_last_heard(self):
+        self.last_heard_time = time.time()

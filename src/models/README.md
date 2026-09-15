@@ -49,7 +49,7 @@ flowchart TB
     ON_RECORD --> STATE[("State\nprompts / eavesdrop /\nis_speaking / is_thinking / eavesdropped_context / ...")]
 
     subgraph Brain["Brain thread - interval = 1/&Delta; or 1/&Gamma;"]
-        STATE -->|get_context&#40;&#41; 9-value vector| SCALE["StandardScaler.transform"]
+        STATE -->|get_context&#40;&#41; 10-value vector| SCALE["StandardScaler.transform"]
         SCALE --> MLP["Robot Model\nMLPClassifier.predict_proba"]
         MLP -->|argmax + confidence &gt; threshold| INTENT["IntentHandler.handle&#40;action&#41;"]
     end
@@ -89,19 +89,21 @@ top-to-bottom:
 
 ## 3. Robot Model activations -> intents
 
-`State.get_context()` is the entire sensory input to the Robot Model - nine
+`State.get_context()` is the entire sensory input to the Robot Model - ten
 numbers, no text:
 
 ```
 [ chaos, awake_phase, has_pending_prompt, eavesdropped_context, is_thinking,
-  has_pending_response, is_speaking, last_spoke_time_diff, time_of_day ]
+  has_pending_response, is_speaking, last_spoke_time_diff, time_since_heard,
+  time_of_day ]
 ```
 
 `chaos` is a random tie-breaker; `eavesdropped_context` is the total word
 count across all buffered eavesdropped utterances (`State.eavesdrop`),
-capped at 100; the rest are plain flags/timers read off `State`.
-`predict_proba` turns that into a probability per action, and `argmax`
-picks the action:
+capped at 100; `last_spoke_time_diff`/`time_since_heard` are integer seconds
+since the robot last spoke / last heard speech (capped at 3600 and 60
+respectively); the rest are plain flags read off `State`. `predict_proba`
+turns that into a probability per action, and `argmax` picks the action:
 
 | action | name      | what `IntentHandler` does                                           |
 | ------ | --------- | ------------------------------------------------------------------- |
@@ -116,10 +118,10 @@ So "prompts" and "responses" are just lists sitting on `State`, filled by
 `Ears` (wake word / heard speech -> `state.prompts`) and by `Mind`'s
 streaming callback (-> `state.responses`), and drained by the Robot Model's
 own decisions about _when_ to act on them. The Robot Model doesn't know
-anything about LLMs or audio - it only ever sees the nine numbers above,
-which is why `is_thinking`/`is_speaking`/`has_pending_*`/`eavesdropped_context`
-all feed back into `get_context()`: they're how the outcome of one intent
-shows up as input to the next tick.
+anything about LLMs or audio - it only ever sees the ten numbers above,
+which is why `is_thinking`/`is_speaking`/`has_pending_*`/`eavesdropped_context`/
+`time_since_heard` all feed back into `get_context()`: they're how the
+outcome of one intent shows up as input to the next tick.
 
 ## 4. Where each model is configured
 

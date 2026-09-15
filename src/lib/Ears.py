@@ -23,6 +23,7 @@ class Ears:
             on_listen: Optional[Callable[[bool], None]] = None,
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
+            is_muted: Optional[Callable[[], bool]] = None,
             debug: bool = False,
         ):
 
@@ -67,6 +68,7 @@ class Ears:
         self.__on_listen = on_listen
         self.__on_record = on_record
         self.__on_wake = on_wake
+        self.__is_muted = is_muted
 
         # Cleanup on exit
         atexit.register(self.stop_listening)
@@ -132,6 +134,15 @@ class Ears:
                 pass
 
         if not data:
+            return
+
+        # Drop audio captured while the robot's own speaker is playing (plus
+        # a short tail, see Robot._is_muted() in main.py) instead of feeding
+        # it to the segmenter - by the time an utterance would finalize
+        # (after its trailing silence), playback may well have already
+        # ended, so checking the mute state there would be too late to stop
+        # the robot from hearing its own voice.
+        if self.__is_muted and self.__is_muted():
             return
 
         utterance = self._segmenter.process(data)

@@ -32,6 +32,7 @@ class Voice:
             voice_model_name="en_US-danny-low.onnx",
             voice_sample_rate=16000,
             on_speak: Optional[Callable[[bool], None]] = None,
+            on_playback: Optional[Callable[[bool], None]] = None,
             debug: bool = False,
         ):
         self._debug = debug
@@ -55,6 +56,7 @@ class Voice:
 
         # Callback handlers
         self.__on_speak = on_speak
+        self.__on_playback = on_playback
 
         if not PIPER_BIN.exists():
             print(f"[Voice Warning]: Piper binary not found at {PIPER_BIN}")
@@ -98,9 +100,12 @@ class Voice:
     def _synthesize(self, utterance: "_Utterance"):
         """Run Piper for one utterance and buffer its raw PCM output.
 
-        is_speaking brackets this synthesis step (not playback), so the next
-        utterance can start synthesizing as soon as this one is done, even
-        while its audio is still queued or playing.
+        is_speaking (on_speak) brackets this synthesis step, not playback, so
+        the next utterance can start synthesizing as soon as this one is
+        done, even while its audio is still queued or playing. The actual
+        speaker-output window is bracketed separately by on_playback (see
+        _playback_worker) - that's the one that matters for muting Ears
+        against the robot's own voice.
         """
         if self.__on_speak:
             self.__on_speak(True)
@@ -149,6 +154,8 @@ class Voice:
                 if not utterance.audio:
                     continue
 
+                if self.__on_playback:
+                    self.__on_playback(True)
                 try:
                     self._aplay = subprocess.Popen(
                         ["aplay", "-r", str(self._sample_rate), "-f", "S16_LE", "-t", "raw"],
@@ -161,6 +168,8 @@ class Voice:
                     print(f"[Voice Error]: {e}")
                 finally:
                     self._aplay = None
+                    if self.__on_playback:
+                        self.__on_playback(False)
             finally:
                 self._playback_queue.task_done()
 

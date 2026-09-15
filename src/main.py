@@ -25,7 +25,16 @@ class Robot:
         self.quick_responses = Dictionary(Paths.Responses)
 
         self.state = State()
-        
+
+        # Tracks the robot's own speaker output so Ears can ignore audio
+        # captured while (and briefly after) it's playing - otherwise the
+        # mic picks up Voice's own TTS output as if it were user speech.
+        # Kept separate from State.is_speaking, which brackets Piper
+        # synthesis (not playback) and feeds the trained Robot Model - this
+        # must not change that model's input semantics.
+        self._voice_playing = False
+        self._voice_muted_until = 0.0
+
         # 2. Prefrontal Cortex (LLM)
         self.mind = Mind(
             debug=Env.Debug,
@@ -42,6 +51,7 @@ class Robot:
             on_listen=self._on_listen,
             on_record=self._on_hear_speach,
             on_wake=self._on_wake_word,
+            is_muted=self._is_own_voice_playing,
         )
 
         # 3. Voice Setup
@@ -50,6 +60,7 @@ class Robot:
             voice_model_name=Env.Voice,
             voice_sample_rate=Env.VoiceSampleRate,
             on_speak=self._on_speak, # Treat spoken text as eavesdrop input
+            on_playback=self._on_playback,
         )
         
         # 4. Intent handler setup
@@ -111,6 +122,23 @@ class Robot:
         """Callback for Voice to indicate when speaking is done."""
         self.state.is_speaking = speaking
         self.state.set_last_spoke()
+
+    # Grace period after the speaker stops so Ears ignores any trailing
+    # acoustic decay (room reverb, mic buffering lag) instead of picking it
+    # up as the start of a new utterance.
+    _PLAYBACK_MUTE_TAIL_S = 0.4
+
+    def _on_playback(self, playing: bool):
+        """Callback for Voice to mark the actual speaker-output window."""
+        self._voice_playing = playing
+        if not playing:
+            self._voice_muted_until = time.monotonic() + self._PLAYBACK_MUTE_TAIL_S
+
+    def _is_own_voice_playing(self) -> bool:
+        """Passed to Ears as its `is_muted` gate - True while the robot's
+        speaker is (or just was) outputting audio, so its own voice never
+        gets transcribed and treated as user speech."""
+        return self._voice_playing or time.monotonic() < self._voice_muted_until
 
     def _on_listen(self, listening: bool):
         """Callback for Ears to send recognized text for processing."""

@@ -1,6 +1,6 @@
 # Robot Brain Model
 
-The Robot Model is a scikit-learn `MLPClassifier` (16×16 hidden layers) + `StandardScaler` that turns an 8-value numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak).
+The Robot Model is a scikit-learn `MLPClassifier` (16×16 hidden layers) + `StandardScaler` that turns a 9-value numeric snapshot of the robot's state into an **intent** (idle/sleep/wake/prompt/utter/speak).
 
 ## Training
 
@@ -52,7 +52,7 @@ Edit `data/training_data.json` to add or modify decision rules. Each rule has:
 
 Features are fixed and must match what `State.get_context()` returns:
 ```
-chaos, awake_phase, has_pending_prompt, is_thinking,
+chaos, awake_phase, has_pending_prompt, eavesdropped_context, is_thinking,
 has_pending_response, is_speaking, time_since_spoke, tod
 ```
 

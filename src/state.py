@@ -34,7 +34,15 @@ class State:
     @property
     def has_pending_response(self):
         return 1.0 if len(self.responses) > 0 else 0.0
-    
+
+    @property
+    def eavesdropped_context(self):
+        """Total word count across all buffered eavesdropped utterances,
+        capped at 100 (matches Robot Model training range) so a long-running
+        conversation doesn't blow out the feature's scale."""
+        word_count = sum(len(text.split()) for text in self.eavesdrop)
+        return min(word_count, 100)
+
     @property
     def last_spoke_time_diff(self):
         return self._get_time_since(self.last_spoke_time, 60)
@@ -64,13 +72,15 @@ class State:
     def get_context(self):
         """
         Generates the input vector for the Neural Network.
-        Matches training: [chaos, phase, prompted, speaking, time_since_spoke, tod]
-        """   
-        chaos = random.uniform(0, 1)
+        Matches training: [chaos, awake_phase, has_pending_prompt,
+        eavesdropped_context, is_thinking, has_pending_response, speaking,
+        time_since_spoke, tod]
+        """
         return np.array([[
-            self.chaos, # chaos random input 
+            self.chaos, # chaos random input
             self.awake_phase,
             self.has_pending_prompt,
+            self.eavesdropped_context,
             self.is_thinking,
             self.has_pending_response,
             self.is_speaking,

@@ -1,9 +1,11 @@
 import json
+import os
 import sys
 import time
 import numpy as np
 from itertools import product
 from pathlib import Path
+from joblib import Parallel, delayed
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
@@ -16,8 +18,17 @@ if str(project_path) not in sys.path:
 from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
-ACCURACY_TRESHOLD = 0.95
+ACCURACY_TRESHOLD = 0.99
 TRAINING_DATA_RANGE_STEPS = 4
+
+# MLPClassifier.fit() is inherently sequential (no n_jobs) and sensitive to
+# random weight initialization/Adam's stochasticity - the same data can land
+# in a meaningfully better or worse local optimum run to run. Instead of one
+# single-core fit, run one independent fit per CPU core (different
+# random_state each) in parallel and keep the best result - this uses all
+# of the RPi5's cores productively without needing MLPClassifier itself to
+# support parallel training.
+TRAINING_RESTARTS = os.cpu_count() or 4
 
 manager = ModelManager(Paths)
 
@@ -91,17 +102,29 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # --- TRAINING ---
-print(f"[System] Training Neural Network (this may take a moment)", end="", flush=True)
-model = MLPClassifier(**ModelConfig)
+print(
+    f"[System] Training {TRAINING_RESTARTS} candidate networks in parallel "
+    f"(one per core)...",
+    end="", flush=True,
+)
 
-# Training progress "fake" pulse because MLPClassifier.fit is blocking
-# For true live progress, we'd use partial_fit, but that's overkill for this size
-model.fit(X_scaled, y)
+def _fit_candidate(seed):
+    candidate = MLPClassifier(**ModelConfig, random_state=seed)
+    candidate.fit(X_scaled, y)
+    candidate_pred = candidate.predict(X_scaled)
+    candidate_accuracy = accuracy_score(y, candidate_pred)
+    return candidate, candidate_accuracy
+
+candidates = Parallel(n_jobs=TRAINING_RESTARTS)(
+    delayed(_fit_candidate)(seed) for seed in range(TRAINING_RESTARTS)
+)
 print(" Done.")
+
+# Best candidate wins: highest training accuracy, ties broken by lowest loss.
+model, accuracy = max(candidates, key=lambda c: (c[1], -c[0].loss_))
 
 # --- DIAGNOSTICS ---
 y_pred = model.predict(X_scaled)
-accuracy = accuracy_score(y, y_pred)
 total_end_time = time.perf_counter()
 total_duration = total_end_time - total_start_time
 
@@ -112,6 +135,7 @@ print("="*40)
 print(f"Overall Process Time : {total_duration:.2f} seconds")
 print(f"Unique Samples       : {len(X)}")
 print(f"Feature Set          : {', '.join(input_keys)}")
+print(f"Restarts Tried       : {TRAINING_RESTARTS} (best of, by accuracy/loss)")
 print(f"Epochs Run           : {model.n_iter_} / {model.max_iter}")
 print(f"Loss Score           : {model.loss_:.6f}")
 print(f"Training Accuracy    : {accuracy * 100:.2f}%")

@@ -170,8 +170,13 @@ SPEECH_BAND_RATIO_THRESHOLD = float(os.getenv("WHISPER_SPEECH_BAND_RATIO_THRESHO
 # sharp spike followed by fast decay - most of the buffer is near-silent
 # ringdown - so its peak-to-RMS ratio is much higher than continuous
 # phonation, where energy is spread more evenly across syllables.
-# Typical continuous speech sits ~3-6; needs calibration against your mic/room.
-CREST_FACTOR_MAX = float(os.getenv("WHISPER_CREST_FACTOR_MAX", "7.0"))
+# Typical continuous speech sits ~3-6, but short utterances/plosive-heavy
+# words (a strong onset consonant against an otherwise quiet buffer) have
+# measured up to ~8 in real usage logs - 7.0 was rejecting real speech at
+# that end of the range. Needs calibration against your mic/room; re-tune
+# from your own printed ratios if real speech still gets skipped, or if
+# noise starts passing through.
+CREST_FACTOR_MAX = float(os.getenv("WHISPER_CREST_FACTOR_MAX", "10.0"))
 
 
 def improve_input_audio(audio: np.ndarray) -> np.ndarray:

@@ -32,7 +32,7 @@ MSE_THRESHOLD = 0.01
 # always tries at least 16 restarts even on a 4-core RPi5 rather than
 # capping at the core count - more tries meaningfully improves the odds of
 # clearing the thresholds above for negligible extra wall-clock time.
-TRAINING_RESTARTS = max(os.cpu_count() or 4, 16)
+TRAINING_RESTARTS = max(os.cpu_count() or 4, 8)
 
 manager = ModelManager(Paths)
 

@@ -26,7 +26,7 @@ ACCURACY_TRESHOLD = 0.99
 # random_state each) in parallel and keep the best result - this uses all
 # of the RPi5's cores productively without needing MLPClassifier itself to
 # support parallel training.
-TRAINING_RESTARTS = max(os.cpu_count() or 4, 16)
+TRAINING_RESTARTS = max(os.cpu_count() or 4, 8)
 
 manager = ModelManager(Paths)
 

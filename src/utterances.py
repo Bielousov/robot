@@ -35,7 +35,7 @@ class Utterances:
     # RAMP_S), not "next tick": the per-tick probability is scaled down so
     # that, across all the ticks in that window, firing at least once is
     # about as likely as not.
-    MEAN_SECONDS_TO_FIRE = 180  # ~3 minutes
+    MEAN_SECONDS_TO_FIRE = 60  # ~1 minute
 
     def __init__(self, robot):
         self.robot = robot

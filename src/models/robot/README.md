@@ -13,10 +13,17 @@ branch, which hard-gates on `State.eavesdropped_context`/`State.time_since_heard
 confidence from a **second, separate model** - a small `MLPRegressor`
 (`utterance_model.pkg`) fit over both values, since a continuous surface is
 exactly what neural nets are good at (unlike the sharp classification
-boundary the first attempt needed). More overheard context raises confidence
-even at the same time_since_heard, not just longer silence. That confidence
-then feeds a coin flip (`confidence * random() > random()`) rather than
-firing automatically.
+boundary the first attempt needed).
+
+The surface isn't a simple ramp: `time_since_heard` shapes a **hump**, not a
+monotonic increase - confidence rises from `MIN_SILENCE_S` (don't cut off a
+conversation that just paused) to a peak around 15s, then fades back toward
+0 by 60s (the overheard context is stale by then). `eavesdropped_context`
+acts as a **multiplier** on that whole hump: with little context, even the
+peak stays low - only a lucky roll fires; with a lot of context, confidence
+is already substantial well before the 15s peak, so it can fire earlier
+too. That confidence then feeds a coin flip
+(`confidence * random() > random()`) rather than firing automatically.
 
 ## Training
 

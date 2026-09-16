@@ -18,27 +18,38 @@ class Utterances:
     The confidence itself is neural-network-driven (see
     training/train_utterance.py) rather than a hand-written formula - a
     small MLPRegressor fit to a target surface over both
-    (eavesdropped_context, time_since_heard): more overheard context raises
-    confidence even at the same time_since_heard, not just longer silence.
+    (eavesdropped_context, time_since_heard):
+
+    - time_since_heard shapes a hump, not a monotonic ramp: confidence
+      rises from MIN_SILENCE_S (don't cut off a conversation that just
+      paused) up to a peak around 15s, then fades back down toward 0 by
+      60s (the overheard context is stale by then - speaking up "late"
+      about something no longer relevant feels wrong even with plenty of
+      silence).
+    - eavesdropped_context acts as a multiplier on that whole hump: with
+      little overheard context, even the peak (~15s) stays low - only a
+      lucky roll fires. With a lot of context, the multiplier is high
+      enough that confidence is already substantial well before the peak,
+      so it can fire earlier than 15s too.
+
     MIN_CONTEXT/MIN_SILENCE_S themselves stay hard gates here, in code,
     rather than something the model has to learn - they're step conditions
     ("not eligible at all" below either floor), and repeating the Robot
     Model's own `chaos`-removal lesson, MLPs fit curves well and hard steps
-    poorly. Above both floors, the model's job is purely the graduated part:
-    how much either factor should raise confidence.
+    poorly. Above both floors, the model's job is purely the graduated part.
     """
 
     MIN_CONTEXT = 8
-    MIN_SILENCE_S = 15
-    RAMP_S = 30
+    # True floor: never fire before this many seconds of silence, so a
+    # brief pause mid-conversation is never mistaken for an opening.
+    MIN_SILENCE_S = 5
 
     # _brain_tick calls consider() on every tick - tens of times a second
     # while awake (Env.BrainFrequencyGamma) - so even a 50/50 coin flip would
     # fire within a fraction of a second of becoming eligible. This is the
-    # average real time between fires at full confidence (silence >=
-    # RAMP_S), not "next tick": the per-tick probability is scaled down so
-    # that, across all the ticks in that window, firing at least once is
-    # about as likely as not.
+    # average real time between fires at full confidence, not "next tick":
+    # the per-tick probability is scaled down so that, across all the ticks
+    # in that window, firing at least once is about as likely as not.
     MEAN_SECONDS_TO_FIRE = 60  # ~1 minute
 
     def __init__(self, robot):
@@ -111,5 +122,9 @@ class Utterances:
         """
         x = np.array([[eavesdropped_context, time_since_heard]])
         x_scaled = self.scaler.transform(x)
-        prediction = float(self.model.predict(x_scaled)[0])
+        # Same harmless matmul over/underflow noise as during training (see
+        # train_utterance.py's _fit_candidate) - this runs on every eligible
+        # brain tick, so silence it here too rather than spamming the logs.
+        with np.errstate(all='ignore'):
+            prediction = float(self.model.predict(x_scaled)[0])
         return min(max(prediction, 0.0), 1.0)

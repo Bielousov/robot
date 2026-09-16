@@ -23,16 +23,9 @@ from lib.ModelManager import ModelManager
 # terms (confidence is scaled 0..1, so 0.01 MSE is a small, believable
 # fitting error - the curve has two corners a small ReLU net can't trace
 # perfectly, just very closely).
-R2_THRESHOLD = 0.95
+R2_THRESHOLD = 0.9
 MSE_THRESHOLD = 0.01
-
-# See Robot Model's own train.py for why this runs several independent fits
-# in parallel and keeps the best, rather than a single fit. Unlike that
-# model, fitting ~60 points with a tiny network is nearly instant, so this
-# always tries at least 16 restarts even on a 4-core RPi5 rather than
-# capping at the core count - more tries meaningfully improves the odds of
-# clearing the thresholds above for negligible extra wall-clock time.
-TRAINING_RESTARTS = max(os.cpu_count() or 4, 8)
+TRAINING_RESTARTS = os.cpu_count() or 1
 
 manager = ModelManager(Paths)
 
@@ -66,8 +59,7 @@ X_scaled = scaler.fit_transform(X)
 
 # --- TRAINING ---
 print(
-    f"[System] Training {TRAINING_RESTARTS} candidate networks in parallel "
-    f"(one per core)...",
+    f"[System] Training {TRAINING_RESTARTS} candidate networks in parallel ",
     end="", flush=True,
 )
 

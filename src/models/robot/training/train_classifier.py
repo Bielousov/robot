@@ -18,15 +18,7 @@ from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
 ACCURACY_TRESHOLD = 0.99
-
-# MLPClassifier.fit() is inherently sequential (no n_jobs) and sensitive to
-# random weight initialization/Adam's stochasticity - the same data can land
-# in a meaningfully better or worse local optimum run to run. Instead of one
-# single-core fit, run one independent fit per CPU core (different
-# random_state each) in parallel and keep the best result - this uses all
-# of the RPi5's cores productively without needing MLPClassifier itself to
-# support parallel training.
-TRAINING_RESTARTS = max(os.cpu_count() or 4, 8)
+TRAINING_RESTARTS = os.cpu_count() or 1
 
 manager = ModelManager(Paths)
 
@@ -59,8 +51,7 @@ X_scaled = scaler.fit_transform(X)
 
 # --- TRAINING ---
 print(
-    f"[System] Training {TRAINING_RESTARTS} candidate networks in parallel "
-    f"(one per core)...",
+    f"[System] Training {TRAINING_RESTARTS} candidate networks in parallel ",
     end="", flush=True,
 )
 

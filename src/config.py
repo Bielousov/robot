@@ -46,14 +46,18 @@ ModelConfig = {
     'alpha': 0.01,
 }
 
-# Single-input (time_since_heard) -> 1-output (confidence) regressor - a
-# smooth ramp curve, much simpler to fit than the Robot Model's
-# classification, so a much smaller network is enough. eavesdropped_context
-# stays a hard gate in code (Utterances._eligible_confidence) rather than a
-# model input - it's a step condition, not a curve, and MLPs are bad at
-# hard steps (same lesson as the Robot Model's own removed `chaos` feature).
+# 2-input (eavesdropped_context, time_since_heard) -> 1-output (confidence)
+# regressor - a smooth surface (a rising-then-fading hump in time_since_heard,
+# scaled by an eavesdropped_context multiplier), still much simpler to fit
+# than the Robot Model's classification. The absolute floors
+# (MIN_CONTEXT/MIN_SILENCE_S in Utterances) stay hard gates in code rather
+# than model inputs - they're step conditions, and MLPs are bad at hard
+# steps (same lesson as the Robot Model's own removed `chaos` feature).
+# (32, 32) here (vs (16, 16) for the single-ramp version) because the hump
+# shape has more corners to trace; verified empirically to reliably clear
+# train_utterance.py's R2/MSE thresholds even with as few as 8 restarts.
 UtteranceModelConfig = {
-    'hidden_layer_sizes': (16, 16),
+    'hidden_layer_sizes': (32, 32),
     'max_iter': 100_000,
     'activation': 'relu',
     'solver': 'adam',

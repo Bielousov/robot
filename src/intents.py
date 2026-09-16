@@ -39,7 +39,7 @@ class IntentHandler:
             else:
                 self._debug("No prompts", tag="ROBOT")
 
-        elif action == 5: # SPEAK
+        elif action == 4: # SPEAK
             self._debug("Action: SPEAK", tag="ROBOT")
             if self.robot.state.responses:
                 message = self.robot.state.responses.pop(0)

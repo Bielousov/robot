@@ -1,5 +1,8 @@
+import sys
 import time
 import threading
+from pathlib import Path
+
 import numpy as np
 
 from lib.Dictionary import Dictionary
@@ -12,6 +15,35 @@ from lib.Voice import Voice
 from config import Env, Name, Paths
 from intents import IntentHandler
 from state import State
+
+# Both trained models Robot needs at startup - the Robot Model
+# (idle/sleep/wake/prompt/speak classifier) and the Utterance Model (the
+# "free will" confidence regressor, loaded inside IntentHandler ->
+# Utterances). Checked upfront, before any subsystem (Mind/Ears/Voice) is
+# constructed, so a missing model fails fast with one clear message instead
+# of a raw traceback after other processes (e.g. Mind's Ollama server) are
+# already running and left dangling.
+REQUIRED_MODEL_FILES = {
+    "Robot Model": Paths.Model,
+    "Robot Model scaler": Paths.ModelScaler,
+    "Utterance Model": Paths.UtteranceModel,
+    "Utterance Model scaler": Paths.UtteranceModelScaler,
+}
+
+
+def _verify_models_exist():
+    missing = [
+        (name, path) for name, path in REQUIRED_MODEL_FILES.items()
+        if not Path(path).is_file()
+    ]
+    if not missing:
+        return
+
+    print("[Error] Missing trained model file(s):")
+    for name, path in missing:
+        print(f"  - {name}: {path}")
+    print("Run 'src/models/robot/train.sh' to train and save both models.")
+    sys.exit(1)
 
 class Robot:
     def __init__(self):
@@ -199,7 +231,18 @@ class Robot:
         self.mind.stop()
 
 if __name__ == "__main__":
-    robot = Robot()
+    _verify_models_exist()
+
+    try:
+        robot = Robot()
+    except Exception as e:
+        # Covers failures _verify_models_exist() can't catch upfront (e.g. a
+        # corrupted .pkg or a numpy/scikit-learn version mismatch raised by
+        # ModelManager) - still a clean message and exit instead of a raw
+        # traceback, since nothing else has started yet at this point.
+        print(f"[Error] Failed to start: {e}")
+        sys.exit(1)
+
     robot.run()
     try:
         while True:

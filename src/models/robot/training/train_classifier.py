@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import numpy as np
-from itertools import product
 from pathlib import Path
 from joblib import Parallel, delayed
 from sklearn.neural_network import MLPClassifier
@@ -19,7 +18,6 @@ from config import Paths, ModelConfig
 from lib.ModelManager import ModelManager
 
 ACCURACY_TRESHOLD = 0.99
-TRAINING_DATA_RANGE_STEPS = 4
 
 # MLPClassifier.fit() is inherently sequential (no n_jobs) and sensitive to
 # random weight initialization/Adam's stochasticity - the same data can land
@@ -28,54 +26,13 @@ TRAINING_DATA_RANGE_STEPS = 4
 # random_state each) in parallel and keep the best result - this uses all
 # of the RPi5's cores productively without needing MLPClassifier itself to
 # support parallel training.
-TRAINING_RESTARTS = os.cpu_count() or 4
+TRAINING_RESTARTS = max(os.cpu_count() or 4, 16)
 
 manager = ModelManager(Paths)
 
-def expand_dataset(data, input_keys, steps=5):
-    """Generates Cartesian product and deduplicates samples."""
-    unique_samples = {} # Use a dict to keep {tuple_of_inputs: label}
-    
-    print(f"[System] Expanding dataset", end="", flush=True)
-    
-    for entry in data:
-        prop_variants = []
-        for key in input_keys:
-            val = entry['inputs'][key]
-            if isinstance(val, list):
-                start, end = val[0], val[1]
-                # Adaptive rounding: use 2 decimals for large ranges, more for small ranges
-                range_val = end - start
-                decimals = 2 if range_val >= 1 else 4
-                steps_list = [round(start + (i * (end - start) / (steps - 1)), decimals) for i in range(steps)]
-                prop_variants.append(steps_list)
-            else:
-                prop_variants.append([val])
-        
-        # Cartesian Product
-        for combination in product(*prop_variants):
-            # DEDUPLICATION: 
-            # If the same input combo exists, the latest rule in JSON wins
-            unique_samples[combination] = entry['label']
-            
-        print(".", end="", flush=True) # Progress dots for expansion
-            
-    X_expanded = [list(k) for k in unique_samples.keys()]
-    y_expanded = list(unique_samples.values())
-    
-    # Rebuild verification list from unique samples
-    verification_list = [
-        {"description": "Unique Sample", "inputs": dict(zip(input_keys, k)), "label": v}
-        for k, v in unique_samples.items()
-    ]
-    
-    print(f" Done.")
-    return np.array(X_expanded), np.array(y_expanded), verification_list
-
-
 try:
     training_data_path = Paths.ModelTrainingData
-    if not Path(training_data_path).exists():   
+    if not Path(training_data_path).exists():
         raise FileNotFoundError(f"Training data file not found at: {training_data_path}")
     with open(training_data_path, 'r', encoding='utf-8') as f:
         raw_training_data = json.load(f)
@@ -85,14 +42,13 @@ except Exception as e:
     sys.exit(1)
 
 # --- DYNAMIC KEY DETECTION ---
+# Every rule is a single exact (no ranges) input combination now - no
+# Cartesian expansion needed, just read the values straight off.
 input_keys = list(raw_training_data[0]['inputs'].keys())
-X, y, expanded_data = expand_dataset(
-    raw_training_data,
-    input_keys,
-    steps=TRAINING_DATA_RANGE_STEPS
-)
+X = np.array([[entry['inputs'][key] for key in input_keys] for entry in raw_training_data])
+y = np.array([entry['label'] for entry in raw_training_data])
 
-print(f"[System] Deduplication complete: {len(X)} unique samples remaining.")
+print(f"[System] Loaded {len(X)} training samples.")
 
 # Start the overall timer
 total_start_time = time.perf_counter()
@@ -109,22 +65,43 @@ print(
 )
 
 def _fit_candidate(seed):
-    candidate = MLPClassifier(**ModelConfig, random_state=seed)
-    candidate.fit(X_scaled, y)
-    candidate_pred = candidate.predict(X_scaled)
+    # A handful of random initializations occasionally diverge (exploding
+    # ReLU/Adam activations) before settling or getting discarded below -
+    # harmless since only the best candidate is kept, but numpy's matmul
+    # floating-point warnings for that transient blowup are just noise at
+    # this scale. Scoped around both fit and predict (and the caller reuses
+    # this same prediction below instead of calling predict() again
+    # unprotected) so real warnings elsewhere still surface normally.
+    with np.errstate(all='ignore'):
+        candidate = MLPClassifier(**ModelConfig, random_state=seed)
+        candidate.fit(X_scaled, y)
+        candidate_pred = candidate.predict(X_scaled)
     candidate_accuracy = accuracy_score(y, candidate_pred)
-    return candidate, candidate_accuracy
+    return candidate, candidate_accuracy, candidate_pred
 
 candidates = Parallel(n_jobs=TRAINING_RESTARTS)(
     delayed(_fit_candidate)(seed) for seed in range(TRAINING_RESTARTS)
 )
 print(" Done.")
 
+# A diverged candidate's own recorded loss_ can come back NaN - max() with a
+# NaN key is unreliable (NaN comparisons are always False), so it could
+# otherwise end up "winning" the tie-break by accident depending on
+# iteration order. Filter those out before picking the best of what's left.
+finite_candidates = [c for c in candidates if np.isfinite(c[0].loss_)]
+diverged = len(candidates) - len(finite_candidates)
+if diverged:
+    print(f"[System] {diverged}/{len(candidates)} candidate(s) diverged and were discarded.")
+if not finite_candidates:
+    print("[Error] All candidates diverged; no usable model to save.")
+    sys.exit(1)
+
 # Best candidate wins: highest training accuracy, ties broken by lowest loss.
-model, accuracy = max(candidates, key=lambda c: (c[1], -c[0].loss_))
+# Reuses the prediction already computed (under errstate) in _fit_candidate
+# rather than calling predict() again here unprotected.
+model, accuracy, y_pred = max(finite_candidates, key=lambda c: (c[1], -c[0].loss_))
 
 # --- DIAGNOSTICS ---
-y_pred = model.predict(X_scaled)
 total_end_time = time.perf_counter()
 total_duration = total_end_time - total_start_time
 
@@ -142,11 +119,12 @@ print(f"Training Accuracy    : {accuracy * 100:.2f}%")
 print("-" * 40)
 
 # 6. Detailed Report
-# Label 4 (Utterance/"free will" spontaneous speech) is deliberately not a
-# class the Robot Model predicts - see State.get_context()'s docstring.
-# IntentHandler decides it directly from State instead.
+# Utterance ("free will" spontaneous speech) is deliberately not a class the
+# Robot Model predicts at all - see State.get_context()'s docstring.
+# IntentHandler decides it directly from State instead, so there's no gap to
+# skip here: labels are the plain 0..4 range.
 target_names = ['Nothing', 'Hello', 'Goodbye', 'Prompt', 'Speak']
-print(classification_report(y, y_pred, labels=[0, 1, 2, 3, 5], target_names=target_names, zero_division=0))
+print(classification_report(y, y_pred, labels=[0, 1, 2, 3, 4], target_names=target_names, zero_division=0))
 
 # 8. Save
 if accuracy > ACCURACY_TRESHOLD:

@@ -123,17 +123,23 @@ the next tick.
 
 **Why utterance isn't a model class**: it depends on `eavesdropped_context`
 (word count overheard) and `time_since_heard` (silence duration) - both were
-tried as model features gated by a random `chaos` value, but the resulting
-region was too narrow and rare for the classifier to reliably separate from
-the broad "nothing to do" rules around it (StandardScaler-normalized MLP
-decision boundaries can't hold a fine distinction there). Pulling it out
-into plain code instead - `IntentHandler.handle()` (`src/intents.py`) calls
-`Utterances.consider()` (`src/utterances.py`) from its own `action == 0`
-branch, which gates on `State.eavesdropped_context`/`State.time_since_heard`
-directly and then applies `confidence * random() > random()` - makes both
-the eligibility check and the "free will" randomization precise and
-independently testable, instead of hoping a trained boundary lands in the
-right place.
+tried as Robot Model features gated by a random `chaos` value, but the
+resulting region was too narrow and rare for that classifier to reliably
+separate from the broad "nothing to do" rules around it
+(StandardScaler-normalized MLP decision boundaries can't hold a fine
+distinction there). It's pulled out into `IntentHandler.handle()`
+(`src/intents.py`) calling `Utterances.consider()` (`src/utterances.py`)
+from its own `action == 0` branch instead, which splits the two features by
+what they actually are: `eavesdropped_context` is a hard step condition
+(code, not a model - `if context < MIN_CONTEXT: return None`), while
+`time_since_heard -> confidence` is a genuine smooth curve, which is
+exactly what a neural net fits well. That part is now its own tiny
+`MLPRegressor` (`src/models/robot/training/train_utterance.py`,
+`build/utterance_model.pkg`), separate from the Robot Model itself. The
+resulting confidence then feeds `confidence * random() > random()` -
+eligibility, the learned curve, and the "free will" randomization are all
+independently testable, instead of hoping one trained classifier boundary
+lands in the right place for everything at once.
 
 ## 4. Where each model is configured
 

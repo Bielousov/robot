@@ -1,0 +1,368 @@
+[
+  {
+    "inputs": {
+      "time_since_heard": 0
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 1
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 2
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 3
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 4
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 5
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 6
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 7
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 8
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 9
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 10
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 11
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 12
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 13
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 14
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 15
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 16
+    },
+    "confidence": 0.0667
+  },
+  {
+    "inputs": {
+      "time_since_heard": 17
+    },
+    "confidence": 0.1333
+  },
+  {
+    "inputs": {
+      "time_since_heard": 18
+    },
+    "confidence": 0.2
+  },
+  {
+    "inputs": {
+      "time_since_heard": 19
+    },
+    "confidence": 0.2667
+  },
+  {
+    "inputs": {
+      "time_since_heard": 20
+    },
+    "confidence": 0.3333
+  },
+  {
+    "inputs": {
+      "time_since_heard": 21
+    },
+    "confidence": 0.4
+  },
+  {
+    "inputs": {
+      "time_since_heard": 22
+    },
+    "confidence": 0.4667
+  },
+  {
+    "inputs": {
+      "time_since_heard": 23
+    },
+    "confidence": 0.5333
+  },
+  {
+    "inputs": {
+      "time_since_heard": 24
+    },
+    "confidence": 0.6
+  },
+  {
+    "inputs": {
+      "time_since_heard": 25
+    },
+    "confidence": 0.6667
+  },
+  {
+    "inputs": {
+      "time_since_heard": 26
+    },
+    "confidence": 0.7333
+  },
+  {
+    "inputs": {
+      "time_since_heard": 27
+    },
+    "confidence": 0.8
+  },
+  {
+    "inputs": {
+      "time_since_heard": 28
+    },
+    "confidence": 0.8667
+  },
+  {
+    "inputs": {
+      "time_since_heard": 29
+    },
+    "confidence": 0.9333
+  },
+  {
+    "inputs": {
+      "time_since_heard": 30
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 31
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 32
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 33
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 34
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 35
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 36
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 37
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 38
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 39
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 40
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 41
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 42
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 43
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 44
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 45
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 46
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 47
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 48
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 49
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 50
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 51
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 52
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 53
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 54
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 55
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 56
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 57
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 58
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 59
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "time_since_heard": 60
+    },
+    "confidence": 1.0
+  }
+]

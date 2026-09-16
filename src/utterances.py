@@ -1,6 +1,9 @@
 import random
 
-from config import Env
+import numpy as np
+
+from config import Env, Paths
+from lib.ModelManager import ModelManager
 
 
 class Utterances:
@@ -11,6 +14,14 @@ class Utterances:
     considering when the model itself finds nothing else pressing to do
     ("Nothing"/action 0), so IntentHandler only ever calls consider() from
     its own action == 0 branch.
+
+    The confidence ramp itself (time_since_heard -> confidence) is now
+    neural-network-driven (see training/train_utterance.py) rather than a
+    hand-written formula - a small MLPRegressor fit to the same target
+    curve. eavesdropped_context stays a hard gate here, in code, rather
+    than a model input: it's a step condition, not a curve, and repeating
+    the Robot Model's own `chaos`-removal lesson, MLPs fit curves well and
+    hard steps poorly.
     """
 
     MIN_CONTEXT = 8
@@ -28,6 +39,9 @@ class Utterances:
 
     def __init__(self, robot):
         self.robot = robot
+        self.model, self.scaler = ModelManager(Paths).load(
+            model_key="UtteranceModel", scaler_key="UtteranceModelScaler"
+        )
 
     def consider(self):
         """Checks eligibility, then applies a confidence-weighted coin flip -
@@ -64,9 +78,10 @@ class Utterances:
         return 1.5 / (ticks_per_second * self.MEAN_SECONDS_TO_FIRE)
 
     def _eligible_confidence(self):
-        """None if not eligible at all; otherwise a 0..1 confidence that
-        ramps up the longer it's been quiet, approaching 1 as time since
-        anything was last heard nears RAMP_S seconds.
+        """None if not eligible at all; otherwise a 0..1 confidence from the
+        trained model, which ramps up the longer it's been quiet,
+        approaching 1 as time since anything was last heard nears RAMP_S
+        seconds.
         """
         state = self.robot.state
 
@@ -81,4 +96,15 @@ class Utterances:
         if state.time_since_heard < self.MIN_SILENCE_S:
             return None
 
-        return min(state.time_since_heard / self.RAMP_S, 1.0)
+        return self._predict_confidence(state.time_since_heard)
+
+    def _predict_confidence(self, time_since_heard):
+        """Runs the trained ramp model for one time_since_heard value,
+        clipped to [0, 1] since MLPRegressor's output isn't bounded and can
+        slightly over/undershoot near the curve's two corners (0 at
+        MIN_SILENCE_S, 1 at RAMP_S).
+        """
+        x = np.array([[time_since_heard]])
+        x_scaled = self.scaler.transform(x)
+        prediction = float(self.model.predict(x_scaled)[0])
+        return min(max(prediction, 0.0), 1.0)

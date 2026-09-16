@@ -35,7 +35,7 @@ class ModelManager:
                     "installed numpy/scikit-learn versions don't match the ones "
                     "used to train it. Run 'pip install -r requirements.txt' to "
                     "sync versions, then retrain with "
-                    "'python src/models/robot/train.py'."
+                    "'src/models/robot/train.sh'."
                 ) from exc
         else:
             raise TypeError(f"Unsupported file format for: {path}")

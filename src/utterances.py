@@ -15,13 +15,17 @@ class Utterances:
     ("Nothing"/action 0), so IntentHandler only ever calls consider() from
     its own action == 0 branch.
 
-    The confidence ramp itself (time_since_heard -> confidence) is now
-    neural-network-driven (see training/train_utterance.py) rather than a
-    hand-written formula - a small MLPRegressor fit to the same target
-    curve. eavesdropped_context stays a hard gate here, in code, rather
-    than a model input: it's a step condition, not a curve, and repeating
-    the Robot Model's own `chaos`-removal lesson, MLPs fit curves well and
-    hard steps poorly.
+    The confidence itself is neural-network-driven (see
+    training/train_utterance.py) rather than a hand-written formula - a
+    small MLPRegressor fit to a target surface over both
+    (eavesdropped_context, time_since_heard): more overheard context raises
+    confidence even at the same time_since_heard, not just longer silence.
+    MIN_CONTEXT/MIN_SILENCE_S themselves stay hard gates here, in code,
+    rather than something the model has to learn - they're step conditions
+    ("not eligible at all" below either floor), and repeating the Robot
+    Model's own `chaos`-removal lesson, MLPs fit curves well and hard steps
+    poorly. Above both floors, the model's job is purely the graduated part:
+    how much either factor should raise confidence.
     """
 
     MIN_CONTEXT = 8
@@ -79,9 +83,9 @@ class Utterances:
 
     def _eligible_confidence(self):
         """None if not eligible at all; otherwise a 0..1 confidence from the
-        trained model, which ramps up the longer it's been quiet,
-        approaching 1 as time since anything was last heard nears RAMP_S
-        seconds.
+        trained model - higher with either more overheard context or more
+        time since anything was last heard, so a lot of context can raise
+        confidence even before time_since_heard alone would.
         """
         state = self.robot.state
 
@@ -96,15 +100,16 @@ class Utterances:
         if state.time_since_heard < self.MIN_SILENCE_S:
             return None
 
-        return self._predict_confidence(state.time_since_heard)
+        return self._predict_confidence(state.eavesdropped_context, state.time_since_heard)
 
-    def _predict_confidence(self, time_since_heard):
-        """Runs the trained ramp model for one time_since_heard value,
-        clipped to [0, 1] since MLPRegressor's output isn't bounded and can
-        slightly over/undershoot near the curve's two corners (0 at
-        MIN_SILENCE_S, 1 at RAMP_S).
+    def _predict_confidence(self, eavesdropped_context, time_since_heard):
+        """Runs the trained model for one (eavesdropped_context,
+        time_since_heard) pair, clipped to [0, 1] since MLPRegressor's
+        output isn't bounded and can slightly over/undershoot near the
+        target surface's corners (0 at either floor, 1 once both ramps are
+        maxed out).
         """
-        x = np.array([[time_since_heard]])
+        x = np.array([[eavesdropped_context, time_since_heard]])
         x_scaled = self.scaler.transform(x)
         prediction = float(self.model.predict(x_scaled)[0])
         return min(max(prediction, 0.0), 1.0)

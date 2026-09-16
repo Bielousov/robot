@@ -1,366 +1,2821 @@
 [
   {
     "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 0
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 1
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 2
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 3
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 4
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 5
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 6
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 7
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 8
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 9
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 10
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 11
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 12
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 13
-    },
-    "confidence": 0.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 0,
       "time_since_heard": 14
     },
     "confidence": 0.0
   },
   {
     "inputs": {
-      "time_since_heard": 15
+      "eavesdropped_context": 0,
+      "time_since_heard": 16
+    },
+    "confidence": 0.0333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 18
+    },
+    "confidence": 0.1
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 20
+    },
+    "confidence": 0.1667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 22
+    },
+    "confidence": 0.2333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 24
+    },
+    "confidence": 0.3
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 26
+    },
+    "confidence": 0.3667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 28
+    },
+    "confidence": 0.4333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 30
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 32
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 34
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 36
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 38
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 40
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 42
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 44
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 46
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 48
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 50
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 52
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 54
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 56
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 58
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 0,
+      "time_since_heard": 60
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 0
     },
     "confidence": 0.0
   },
   {
     "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 2
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 4
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 6
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 8
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 10
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 12
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 14
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
       "time_since_heard": 16
     },
-    "confidence": 0.0667
+    "confidence": 0.0333
   },
   {
     "inputs": {
-      "time_since_heard": 17
-    },
-    "confidence": 0.1333
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 4,
       "time_since_heard": 18
     },
-    "confidence": 0.2
+    "confidence": 0.1
   },
   {
     "inputs": {
-      "time_since_heard": 19
-    },
-    "confidence": 0.2667
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 4,
       "time_since_heard": 20
     },
-    "confidence": 0.3333
+    "confidence": 0.1667
   },
   {
     "inputs": {
-      "time_since_heard": 21
-    },
-    "confidence": 0.4
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 4,
       "time_since_heard": 22
     },
-    "confidence": 0.4667
+    "confidence": 0.2333
   },
   {
     "inputs": {
-      "time_since_heard": 23
+      "eavesdropped_context": 4,
+      "time_since_heard": 24
+    },
+    "confidence": 0.3
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 26
+    },
+    "confidence": 0.3667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 28
+    },
+    "confidence": 0.4333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 30
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 32
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 34
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 36
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 38
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 40
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 42
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 44
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 46
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 48
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 50
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 52
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 54
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 56
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 58
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 4,
+      "time_since_heard": 60
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 0
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 2
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 4
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 6
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 8
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 10
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 12
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 14
+    },
+    "confidence": 0.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 16
+    },
+    "confidence": 0.0333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 18
+    },
+    "confidence": 0.1
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 20
+    },
+    "confidence": 0.1667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 22
+    },
+    "confidence": 0.2333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 24
+    },
+    "confidence": 0.3
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 26
+    },
+    "confidence": 0.3667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 28
+    },
+    "confidence": 0.4333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 30
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 32
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 34
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 36
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 38
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 40
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 42
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 44
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 46
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 48
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 50
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 52
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 54
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 56
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 58
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 8,
+      "time_since_heard": 60
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 0
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 2
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 4
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 6
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 8
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 10
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 12
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 14
+    },
+    "confidence": 0.0714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 16
+    },
+    "confidence": 0.1048
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 18
+    },
+    "confidence": 0.1714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 20
+    },
+    "confidence": 0.2381
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 22
+    },
+    "confidence": 0.3048
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 24
+    },
+    "confidence": 0.3714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 26
+    },
+    "confidence": 0.4381
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 28
+    },
+    "confidence": 0.5048
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 30
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 32
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 34
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 36
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 38
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 40
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 42
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 44
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 46
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 48
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 50
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 52
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 54
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 56
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 58
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 16,
+      "time_since_heard": 60
+    },
+    "confidence": 0.5714
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 0
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 2
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 4
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 6
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 8
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 10
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 12
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 14
+    },
+    "confidence": 0.1429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 16
+    },
+    "confidence": 0.1762
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 18
+    },
+    "confidence": 0.2429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 20
+    },
+    "confidence": 0.3095
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 22
+    },
+    "confidence": 0.3762
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 24
+    },
+    "confidence": 0.4429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 26
+    },
+    "confidence": 0.5095
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 28
+    },
+    "confidence": 0.5762
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 30
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 32
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 34
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 36
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 38
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 40
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 42
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 44
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 46
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 48
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 50
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 52
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 54
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 56
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 58
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 24,
+      "time_since_heard": 60
+    },
+    "confidence": 0.6429
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 0
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 2
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 4
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 6
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 8
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 10
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 12
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 14
+    },
+    "confidence": 0.2143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 16
+    },
+    "confidence": 0.2476
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 18
+    },
+    "confidence": 0.3143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 20
+    },
+    "confidence": 0.381
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 22
+    },
+    "confidence": 0.4476
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 24
+    },
+    "confidence": 0.5143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 26
+    },
+    "confidence": 0.581
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 28
+    },
+    "confidence": 0.6476
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 30
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 32
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 34
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 36
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 38
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 40
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 42
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 44
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 46
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 48
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 50
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 52
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 54
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 56
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 58
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 32,
+      "time_since_heard": 60
+    },
+    "confidence": 0.7143
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 0
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 2
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 4
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 6
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 8
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 10
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 12
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 14
+    },
+    "confidence": 0.2857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 16
+    },
+    "confidence": 0.319
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 18
+    },
+    "confidence": 0.3857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 20
+    },
+    "confidence": 0.4524
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 22
+    },
+    "confidence": 0.519
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 24
+    },
+    "confidence": 0.5857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 26
+    },
+    "confidence": 0.6524
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 28
+    },
+    "confidence": 0.719
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 30
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 32
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 34
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 36
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 38
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 40
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 42
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 44
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 46
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 48
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 50
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 52
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 54
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 56
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 58
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 40,
+      "time_since_heard": 60
+    },
+    "confidence": 0.7857
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 0
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 2
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 4
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 6
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 8
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 10
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 12
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 14
+    },
+    "confidence": 0.3571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 16
+    },
+    "confidence": 0.3905
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 18
+    },
+    "confidence": 0.4571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 20
+    },
+    "confidence": 0.5238
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 22
+    },
+    "confidence": 0.5905
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 24
+    },
+    "confidence": 0.6571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 26
+    },
+    "confidence": 0.7238
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 28
+    },
+    "confidence": 0.7905
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 30
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 32
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 34
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 36
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 38
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 40
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 42
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 44
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 46
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 48
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 50
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 52
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 54
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 56
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 58
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 48,
+      "time_since_heard": 60
+    },
+    "confidence": 0.8571
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 0
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 2
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 4
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 6
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 8
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 10
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 12
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 14
+    },
+    "confidence": 0.4286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 16
+    },
+    "confidence": 0.4619
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 18
+    },
+    "confidence": 0.5286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 20
+    },
+    "confidence": 0.5952
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 22
+    },
+    "confidence": 0.6619
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 24
+    },
+    "confidence": 0.7286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 26
+    },
+    "confidence": 0.7952
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 28
+    },
+    "confidence": 0.8619
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 30
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 32
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 34
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 36
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 38
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 40
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 42
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 44
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 46
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 48
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 50
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 52
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 54
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 56
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 58
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 56,
+      "time_since_heard": 60
+    },
+    "confidence": 0.9286
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 0
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 2
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 4
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 6
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 8
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 10
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 12
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 14
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 64,
+      "time_since_heard": 16
     },
     "confidence": 0.5333
   },
   {
     "inputs": {
-      "time_since_heard": 24
+      "eavesdropped_context": 64,
+      "time_since_heard": 18
     },
     "confidence": 0.6
   },
   {
     "inputs": {
-      "time_since_heard": 25
+      "eavesdropped_context": 64,
+      "time_since_heard": 20
     },
     "confidence": 0.6667
   },
   {
     "inputs": {
-      "time_since_heard": 26
+      "eavesdropped_context": 64,
+      "time_since_heard": 22
     },
     "confidence": 0.7333
   },
   {
     "inputs": {
-      "time_since_heard": 27
+      "eavesdropped_context": 64,
+      "time_since_heard": 24
     },
     "confidence": 0.8
   },
   {
     "inputs": {
-      "time_since_heard": 28
+      "eavesdropped_context": 64,
+      "time_since_heard": 26
     },
     "confidence": 0.8667
   },
   {
     "inputs": {
-      "time_since_heard": 29
+      "eavesdropped_context": 64,
+      "time_since_heard": 28
     },
     "confidence": 0.9333
   },
   {
     "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 30
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 31
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 32
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 33
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 34
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 35
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 36
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 37
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 38
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 39
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 40
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 41
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 42
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 43
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 44
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 45
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 46
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 47
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 48
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 49
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 50
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 51
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 52
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 53
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 54
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 55
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 56
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 57
-    },
-    "confidence": 1.0
-  },
-  {
-    "inputs": {
+      "eavesdropped_context": 64,
       "time_since_heard": 58
     },
     "confidence": 1.0
   },
   {
     "inputs": {
-      "time_since_heard": 59
+      "eavesdropped_context": 64,
+      "time_since_heard": 60
     },
     "confidence": 1.0
   },
   {
     "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 0
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 2
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 4
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 6
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 8
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 10
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 12
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 14
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 16
+    },
+    "confidence": 0.5333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 18
+    },
+    "confidence": 0.6
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 20
+    },
+    "confidence": 0.6667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 22
+    },
+    "confidence": 0.7333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 24
+    },
+    "confidence": 0.8
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 26
+    },
+    "confidence": 0.8667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 28
+    },
+    "confidence": 0.9333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 30
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 32
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 34
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 36
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 38
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 40
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 42
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 44
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 46
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 48
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 50
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 52
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 54
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 56
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 58
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 72,
+      "time_since_heard": 60
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 0
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 2
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 4
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 6
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 8
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 10
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 12
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 14
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 16
+    },
+    "confidence": 0.5333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 18
+    },
+    "confidence": 0.6
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 20
+    },
+    "confidence": 0.6667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 22
+    },
+    "confidence": 0.7333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 24
+    },
+    "confidence": 0.8
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 26
+    },
+    "confidence": 0.8667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 28
+    },
+    "confidence": 0.9333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 30
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 32
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 34
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 36
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 38
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 40
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 42
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 44
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 46
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 48
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 50
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 52
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 54
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 56
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 58
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 84,
+      "time_since_heard": 60
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 0
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 2
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 4
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 6
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 8
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 10
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 12
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 14
+    },
+    "confidence": 0.5
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 16
+    },
+    "confidence": 0.5333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 18
+    },
+    "confidence": 0.6
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 20
+    },
+    "confidence": 0.6667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 22
+    },
+    "confidence": 0.7333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 24
+    },
+    "confidence": 0.8
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 26
+    },
+    "confidence": 0.8667
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 28
+    },
+    "confidence": 0.9333
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 30
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 32
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 34
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 36
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 38
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 40
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 42
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 44
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 46
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 48
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 50
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 52
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 54
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 56
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
+      "time_since_heard": 58
+    },
+    "confidence": 1.0
+  },
+  {
+    "inputs": {
+      "eavesdropped_context": 100,
       "time_since_heard": 60
     },
     "confidence": 1.0

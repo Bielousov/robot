@@ -8,13 +8,15 @@ reliably separate from the broad "nothing to do" rules surrounding it once
 its random `chaos` gating feature was removed. It's decided directly in code
 instead: `IntentHandler.handle()` (`src/intents.py`) calls
 `Utterances.consider()` (`src/utterances.py`) from its own `action == 0`
-branch, which gates on `State.eavesdropped_context` (a hard cutoff, in code)
-and, once past that, looks up a confidence for `State.time_since_heard` from
-a **second, separate model** - a small `MLPRegressor` (`utterance_model.pkg`)
-trained to fit a smooth 0→1 ramp curve, since a continuous curve is exactly
-what neural nets are good at fitting (unlike the sharp classification
-boundary the first attempt needed). That confidence then feeds a coin flip
-(`confidence * random() > random()`) rather than firing automatically.
+branch, which hard-gates on `State.eavesdropped_context`/`State.time_since_heard`
+(below either floor, not eligible at all) and, once past both, looks up a
+confidence from a **second, separate model** - a small `MLPRegressor`
+(`utterance_model.pkg`) fit over both values, since a continuous surface is
+exactly what neural nets are good at (unlike the sharp classification
+boundary the first attempt needed). More overheard context raises confidence
+even at the same time_since_heard, not just longer silence. That confidence
+then feeds a coin flip (`confidence * random() > random()`) rather than
+firing automatically.
 
 ## Training
 
@@ -23,9 +25,9 @@ Two independent models live here, each with its own training data and script:
 | Model                                   | Purpose                                            | Training data                                 | Script                         |
 | --------------------------------------- | -------------------------------------------------- | --------------------------------------------- | ------------------------------ |
 | Robot Model (`classifier_model.pkg`)    | idle/sleep/wake/prompt/speak classification        | `training/data/classifier_training_data.json` | `training/classifier_train.py` |
-| Utterance Model (`utterance_model.pkg`) | `time_since_heard` -> "free will" confidence curve | `training/data/utterance_training_data.json`  | `training/train_utterance.py`  |
+| Utterance Model (`utterance_model.pkg`) | `(eavesdropped_context, time_since_heard)` -> "free will" confidence | `training/data/utterance_training_data.json`  | `training/train_utterance.py`  |
 
-The classifier's training data is a direct list of labeled examples - each rule is one exact input combination, read straight into the training set (no ranges, no expansion). The regressor's training data is likewise a direct list, but of `(time_since_heard, confidence)` points describing the target curve - there's no classification step, just curve-fitting.
+The classifier's training data is a direct list of labeled examples - each rule is one exact input combination, read straight into the training set (no ranges, no expansion). The regressor's training data is likewise a direct list, but of `(eavesdropped_context, time_since_heard, confidence)` points describing the target surface - there's no classification step, just curve-fitting.
 
 ### Quick Start
 
@@ -83,17 +85,18 @@ awake_phase, has_pending_prompt, is_thinking, has_pending_response,
 is_speaking
 ```
 
-Edit `training/utterance_training_data.json` to reshape the free-will confidence curve instead. Each entry is a single `(time_since_heard, confidence)` point:
+Edit `training/data/utterance_training_data.json` to reshape the free-will confidence surface instead. Each entry is a single `(eavesdropped_context, time_since_heard, confidence)` point:
 
 ```json
-{ "inputs": { "time_since_heard": 20 }, "confidence": 0.3333 }
+{ "inputs": { "eavesdropped_context": 40, "time_since_heard": 20 }, "confidence": 0.4750 }
 ```
 
-Add, remove, or re-value points to change the curve's shape - there's no
-"correct" curve, just whatever behavior feels right. Keep it continuous
-(no sudden jumps between adjacent points) - `MLPRegressor` can trace a
-sharp corner fairly well, but not a true discontinuity, so training will
-undershoot the fit and may not clear the accuracy thresholds.
+Add, remove, or re-value points to change the surface's shape - there's no
+"correct" surface, just whatever behavior feels right. Keep it continuous
+(no sudden jumps between adjacent points in either dimension) -
+`MLPRegressor` can trace a sharp corner fairly well, but not a true
+discontinuity, so training will undershoot the fit and may not clear the
+accuracy thresholds.
 
 ### Debugging
 

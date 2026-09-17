@@ -23,7 +23,7 @@ from lib.ModelManager import ModelManager
 # terms (confidence is scaled 0..1, so 0.01 MSE is a small, believable
 # fitting error - the curve has two corners a small ReLU net can't trace
 # perfectly, just very closely).
-R2_THRESHOLD = 0.9
+R2_THRESHOLD = 0.95
 MSE_THRESHOLD = 0.01
 TRAINING_RESTARTS = os.cpu_count() or 1
 

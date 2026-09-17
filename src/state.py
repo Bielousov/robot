@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from collections import deque
+from datetime import datetime
 
 from config import Env
 
@@ -45,6 +46,17 @@ class State:
     @property
     def time_since_heard(self):
         return self._get_time_since(self.last_heard_time, 60)
+
+    @property
+    def time_of_day(self):
+        """Hour of day as a float in [0.0, 24.0) - used only by the
+        Utterance Model (see Utterances), not the Robot Model's own
+        get_context(). 24.0 itself never occurs (midnight is 0.0), but the
+        Utterance Model's training data includes it as the range's closed
+        upper end so the "late night" fade-out is anchored on both sides.
+        """
+        now = datetime.now()
+        return now.hour + (now.minute / 60.0)
 
     def _get_state_phase(self, current, next):
         if current == next:

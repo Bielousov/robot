@@ -22,8 +22,12 @@ conversation that just paused) to a peak around 15s, then fades back toward
 acts as a **multiplier** on that whole hump: with little context, even the
 peak stays low - only a lucky roll fires; with a lot of context, confidence
 is already substantial well before the 15s peak, so it can fire earlier
-too. That confidence then feeds a coin flip
-(`confidence * random() > random()`) rather than firing automatically.
+too. `time_of_day` is a second multiplier: confidence is significantly
+lower overnight (ramping down 21.5→24.0, back up 0.0→7.5) than during the
+day/evening (7.5-21.5, unaffected) - the robot shouldn't be as chatty at
+3am even with plenty of context and a quiet room. That confidence then
+feeds a coin flip (`confidence * random() > random()`) rather than firing
+automatically.
 
 ## Training
 
@@ -32,9 +36,9 @@ Two independent models live here, each with its own training data and script:
 | Model                                   | Purpose                                            | Training data                                 | Script                         |
 | --------------------------------------- | -------------------------------------------------- | --------------------------------------------- | ------------------------------ |
 | Robot Model (`classifier_model.pkg`)    | idle/sleep/wake/prompt/speak classification        | `training/data/classifier_training_data.json` | `training/classifier_train.py` |
-| Utterance Model (`utterance_model.pkg`) | `(eavesdropped_context, time_since_heard)` -> "free will" confidence | `training/data/utterance_training_data.json`  | `training/train_utterance.py`  |
+| Utterance Model (`utterance_model.pkg`) | `(eavesdropped_context, time_since_heard, time_of_day)` -> "free will" confidence | `training/data/utterance_training_data.json`  | `training/train_utterance.py`  |
 
-The classifier's training data is a direct list of labeled examples - each rule is one exact input combination, read straight into the training set (no ranges, no expansion). The regressor's training data is likewise a direct list, but of `(eavesdropped_context, time_since_heard, confidence)` points describing the target surface - there's no classification step, just curve-fitting.
+The classifier's training data is a direct list of labeled examples - each rule is one exact input combination, read straight into the training set (no ranges, no expansion). The regressor's training data is likewise a direct list, but of `(eavesdropped_context, time_since_heard, time_of_day, confidence)` points describing the target surface - there's no classification step, just curve-fitting.
 
 ### Quick Start
 
@@ -92,10 +96,10 @@ awake_phase, has_pending_prompt, is_thinking, has_pending_response,
 is_speaking
 ```
 
-Edit `training/data/utterance_training_data.json` to reshape the free-will confidence surface instead. Each entry is a single `(eavesdropped_context, time_since_heard, confidence)` point:
+Edit `training/data/utterance_training_data.json` to reshape the free-will confidence surface instead. Each entry is a single `(eavesdropped_context, time_since_heard, time_of_day, confidence)` point:
 
 ```json
-{ "inputs": { "eavesdropped_context": 40, "time_since_heard": 20 }, "confidence": 0.4750 }
+{ "inputs": { "eavesdropped_context": 40, "time_since_heard": 20, "time_of_day": 14.0 }, "confidence": 0.4601 }
 ```
 
 Add, remove, or re-value points to change the surface's shape - there's no

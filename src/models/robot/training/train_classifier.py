@@ -14,7 +14,7 @@ project_path = Path(__file__).parents[3].resolve()
 if str(project_path) not in sys.path:
     sys.path.insert(0, str(project_path))
 
-from config import Paths, ModelConfig
+from config import Paths, ClassifierModelConfig
 from lib.ModelManager import ModelManager
 
 ACCURACY_TRESHOLD = 0.99
@@ -64,7 +64,7 @@ def _fit_candidate(seed):
     # this same prediction below instead of calling predict() again
     # unprotected) so real warnings elsewhere still surface normally.
     with np.errstate(all='ignore'):
-        candidate = MLPClassifier(**ModelConfig, random_state=seed)
+        candidate = MLPClassifier(**ClassifierModelConfig, random_state=seed)
         candidate.fit(X_scaled, y)
         candidate_pred = candidate.predict(X_scaled)
     candidate_accuracy = accuracy_score(y, candidate_pred)

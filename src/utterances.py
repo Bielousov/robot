@@ -17,8 +17,8 @@ class Utterances:
 
     The confidence itself is neural-network-driven (see
     training/train_utterance.py) rather than a hand-written formula - a
-    small MLPRegressor fit to a target surface over both
-    (eavesdropped_context, time_since_heard):
+    small MLPRegressor fit to a target surface over
+    (eavesdropped_context, time_since_heard, time_of_day):
 
     - time_since_heard shapes a hump, not a monotonic ramp: confidence
       rises from MIN_SILENCE_S (don't cut off a conversation that just
@@ -31,6 +31,11 @@ class Utterances:
       lucky roll fires. With a lot of context, the multiplier is high
       enough that confidence is already substantial well before the peak,
       so it can fire earlier than 15s too.
+    - time_of_day is a second multiplier: confidence is significantly
+      lower overnight (ramping down from 21.5 to 24.0, back up from 0.0 to
+      7.5) than during the day/evening (7.5-21.5, unaffected) - the robot
+      shouldn't be as chatty in the middle of the night even if it's heard
+      plenty and the room's been quiet a while.
 
     MIN_CONTEXT/MIN_SILENCE_S themselves stay hard gates here, in code,
     rather than something the model has to learn - they're step conditions
@@ -111,16 +116,18 @@ class Utterances:
         if state.time_since_heard < self.MIN_SILENCE_S:
             return None
 
-        return self._predict_confidence(state.eavesdropped_context, state.time_since_heard)
+        return self._predict_confidence(
+            state.eavesdropped_context, state.time_since_heard, state.time_of_day
+        )
 
-    def _predict_confidence(self, eavesdropped_context, time_since_heard):
+    def _predict_confidence(self, eavesdropped_context, time_since_heard, time_of_day):
         """Runs the trained model for one (eavesdropped_context,
-        time_since_heard) pair, clipped to [0, 1] since MLPRegressor's
-        output isn't bounded and can slightly over/undershoot near the
-        target surface's corners (0 at either floor, 1 once both ramps are
-        maxed out).
+        time_since_heard, time_of_day) triple, clipped to [0, 1] since
+        MLPRegressor's output isn't bounded and can slightly over/undershoot
+        near the target surface's corners (0 at either floor, 1 once both
+        ramps are maxed out and it's not the middle of the night).
         """
-        x = np.array([[eavesdropped_context, time_since_heard]])
+        x = np.array([[eavesdropped_context, time_since_heard, time_of_day]])
         x_scaled = self.scaler.transform(x)
         # Same harmless matmul over/underflow noise as during training (see
         # train_utterance.py's _fit_candidate) - this runs on every eligible

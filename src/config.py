@@ -38,7 +38,7 @@ Paths = Enum (
   Responses = path.join(BASE_DIR, "dictionary/responses.json")
 )
 
-ModelConfig = {
+ClassifierModelConfig = {
     'hidden_layer_sizes': (16, 16),
     'max_iter': 100_000,
     'activation': 'relu',
@@ -46,20 +46,19 @@ ModelConfig = {
     'alpha': 0.01,
 }
 
-# 2-input (eavesdropped_context, time_since_heard) -> 1-output (confidence)
-# regressor - a smooth surface (a rising-then-fading hump in time_since_heard,
-# scaled by an eavesdropped_context multiplier), still much simpler to fit
-# than the Robot Model's classification. The absolute floors
+# 3-input (eavesdropped_context, time_since_heard, time_of_day) -> 1-output
+# (confidence) regressor - a smooth surface: a rising-then-fading hump in
+# time_since_heard, scaled by an eavesdropped_context multiplier and a
+# time_of_day multiplier (dipped overnight), still much simpler to fit than
+# the Robot Model's classification. The absolute floors
 # (MIN_CONTEXT/MIN_SILENCE_S in Utterances) stay hard gates in code rather
-# than model inputs - they're step conditions, and MLPs are bad at hard
-# steps (same lesson as the Robot Model's own removed `chaos` feature).
-# (32, 32) here (vs (16, 16) for the single-ramp version) because the hump
-# shape has more corners to trace; verified empirically to reliably clear
-# train_utterance.py's R2/MSE thresholds even with as few as 8 restarts.
+# than model inputs - they're step conditions, and MLPs are bad at hard steps.
+# (64, 64) here (up from (32, 32) for the 2-input version) because the
+# 3-factor surface has more corners to trace;
 UtteranceModelConfig = {
-    'hidden_layer_sizes': (32, 32),
+    'hidden_layer_sizes': (64, 64),
     'max_iter': 100_000,
     'activation': 'relu',
     'solver': 'adam',
-    'alpha': 0.00001,
+    'alpha': 0.000001,
 }

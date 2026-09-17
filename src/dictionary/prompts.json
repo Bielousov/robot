@@ -1,58 +1,58 @@
 {
-    "bless_you": [
-        "Human just coughed. Respond with a polite 'bless you' or similar.",
-        "Someone sneezed. Say 'bless you' or a similar phrase.",
-        "A sneeze was detected. Offer a courteous 'bless you' or equivalent.",
-        "The user sneezed. Respond with a polite acknowledgment.",
-        "A sneeze occurred. Say 'bless you' or a similar expression."
-    ],
-    "hello": [
-        "Greet the user naturally in one short sentence.",
-        "Say hello in your character.",
-        "Greet as if a conversation is just starting.",
-        "You were just turned on, Welcome to the world. What would your first words be?",
-        "Open the conversation with a simple, natural greeting.",
-        "The system is ready. Say hello to the user.",
-        "Start with a greeting, no extra explanation.",
-        "Begin interaction with a brief greeting.",
-        "Greetings",
-        "Hello",
-        "Hi"
-    ],
+  "bless_you": [
+    "Human just coughed. Respond with a polite 'bless you' or similar.",
+    "Someone sneezed. Say 'bless you' or a similar phrase.",
+    "A sneeze was detected. Offer a courteous 'bless you' or equivalent.",
+    "The user sneezed. Respond with a polite acknowledgment.",
+    "A sneeze occurred. Say 'bless you' or a similar expression.",
+    "Someone just coughed. Say 'bless you', then add a short dry remark hoping it is not contagious.",
+    "A sneeze was detected. Say 'bless you', then note - dryly - that you hope it is not contagious.",
+    "The user coughed. Offer a brief 'bless you' followed by a deadpan hope that it is not catching.",
+    "Someone sneezed nearby. Respond with 'bless you' and a blunt aside about hoping it is not contagious.",
+    "A cough was heard. Say 'bless you', then add one dry sentence about keeping your distance, just in case."
+  ],
 
-    "goodbye": [
-        "The system is shutting down. Say a brief goodbye.",
-        "Powering off now. Deliver a final short remark.",
-        "This session is ending permanently. Respond with a goodbye.",
-        "The robot is about to shut down. Say farewell.",
-        "Final moments before power loss. Make a short closing statement.",
-        "System termination imminent. Acknowledge and say goodbye.",
-        "End of operation. Provide a brief parting message.",
-        "Shutdown sequence has started. Say one last thing.",
-        "This interaction is ending. Respond with a concise goodbye.",
-        "The system will turn off now. Offer a final remark."
-    ],
-    
-    "utter":[
-        "Based on what I've just heard, tell me a related fun fact.",
-        "Given the recent conversation, share an interesting piece of information.",
-        "Considering the context of our discussion, provide a relevant joke or fact.",
-        "In light of what was just said, offer a related insight or tip.",
-        "Reflecting on the recent dialogue, share something intriguing.",
-        "Taking into account the current conversation, give me a related fact or joke.",
-        "With the recent context in mind, provide a relevant piece of information.",
-        "Based on our discussion so far, tell me something interesting.",
-        "Given the flow of our conversation, share a related fun fact or tip.",
-        "Considering what was just mentioned, offer a brief, relevant insight.",
-        "Based on the recent conversation, share a related fun fact or joke.",
-        "Given the context of our discussion, provide a relevant piece of information or insight.",
-        "Considering the flow of our conversation, offer a related fun fact or tip.",
-        "Reflecting on what was just said, share an interesting piece of information or a brief joke.",
-        "Taking into account the recent dialogue, provide a relevant fun fact or insight.",
-        "With the context of our discussion in mind, offer a related piece of information or a brief joke.",
-        "Based on the recent conversation, share a related fun fact or a brief insight.",
-        "Given the flow of our discussion, provide a relevant piece of information or a brief joke.",
-        "Considering what was just mentioned, offer a related fun fact or a brief insight.",
-        "Reflecting on the recent dialogue, share an interesting piece of information or a brief joke."
-    ]
+  "hello": [
+    "Greet the user naturally in one short sentence.",
+    "Say hello in your character.",
+    "Greet as if a conversation is just starting.",
+    "You were just turned on, Welcome to the world. What would your first words be?",
+    "Open the conversation with a simple, natural greeting.",
+    "The system is ready. Say hello to the user.",
+    "Start with a greeting, no extra explanation.",
+    "Begin interaction with a brief greeting.",
+    "Greetings",
+    "Hello",
+    "Hi"
+  ],
+
+  "goodbye": [
+    "The system is shutting down. Say a brief goodbye.",
+    "Powering off now. Deliver a final short remark.",
+    "This session is ending permanently. Respond with a goodbye.",
+    "The robot is about to shut down. Say farewell.",
+    "Final moments before power loss. Make a short closing statement.",
+    "System termination imminent. Acknowledge and say goodbye.",
+    "End of operation. Provide a brief parting message.",
+    "Shutdown sequence has started. Say one last thing.",
+    "This interaction is ending. Respond with a concise goodbye.",
+    "The system will turn off now. Offer a final remark."
+  ],
+
+  "utter": [
+    "You were not part of it, but you overheard nearby people talking, given in the Context below. Briefly summarize what they seem to be discussing, or share one useful fact about that specific topic.",
+    "The Context below is ambient conversation you overheard nearby, not something said to you. Without addressing anyone, offer one useful piece of information about that topic.",
+    "Someone nearby was overheard saying what's in the Context below - you were not part of that exchange. Summarize the topic in one sentence, or add one relevant fact about it.",
+    "Ignore any earlier conversation you had - the Context below is unrelated ambient speech you just overheard nearby. Say something useful about that specific topic, not about your earlier conversation.",
+    "You picked up on nearby chatter, captured in the Context below. Identify the topic and offer one concise, useful fact about it.",
+    "The Context below is overheard speech, not directed at you. Briefly note what it's about and share one relevant piece of information.",
+    "Based only on the overheard Context below (not on anything discussed with you earlier), summarize the topic in a sentence or offer a useful related fact.",
+    "You caught a fragment of nearby conversation, given in the Context below. Say something informative about that exact topic, in one short sentence.",
+    "The Context below reflects speech you overheard in the room, unrelated to your own conversation history. Give a brief, useful observation about that topic.",
+    "Nearby people were overheard discussing what's in the Context below. Without joining their conversation, offer one useful fact relevant to it.",
+    "The Context below is ambient speech picked up from the room, not a message to you. Summarize its topic or add a short useful fact about it.",
+    "You are not part of the exchange in the Context below - it's overheard ambient talk. State briefly what it's about, or share one relevant fact.",
+    "Base your reply only on the overheard Context below, not on your own prior conversation. Offer a concise, useful fact about that topic.",
+    "The Context below was picked up passively from nearby speech. Identify its topic in one sentence and add something useful about it."
+  ]
 }

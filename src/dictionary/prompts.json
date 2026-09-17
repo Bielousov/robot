@@ -40,19 +40,19 @@
   ],
 
   "utter": [
-    "You were not part of it, but you overheard nearby people talking, given in the Context below. Briefly summarize what they seem to be discussing, or share one useful fact about that specific topic.",
-    "The Context below is ambient conversation you overheard nearby, not something said to you. Without addressing anyone, offer one useful piece of information about that topic.",
-    "Someone nearby was overheard saying what's in the Context below - you were not part of that exchange. Summarize the topic in one sentence, or add one relevant fact about it.",
-    "Ignore any earlier conversation you had - the Context below is unrelated ambient speech you just overheard nearby. Say something useful about that specific topic, not about your earlier conversation.",
-    "You picked up on nearby chatter, captured in the Context below. Identify the topic and offer one concise, useful fact about it.",
-    "The Context below is overheard speech, not directed at you. Briefly note what it's about and share one relevant piece of information.",
-    "Based only on the overheard Context below (not on anything discussed with you earlier), summarize the topic in a sentence or offer a useful related fact.",
-    "You caught a fragment of nearby conversation, given in the Context below. Say something informative about that exact topic, in one short sentence.",
-    "The Context below reflects speech you overheard in the room, unrelated to your own conversation history. Give a brief, useful observation about that topic.",
-    "Nearby people were overheard discussing what's in the Context below. Without joining their conversation, offer one useful fact relevant to it.",
-    "The Context below is ambient speech picked up from the room, not a message to you. Summarize its topic or add a short useful fact about it.",
-    "You are not part of the exchange in the Context below - it's overheard ambient talk. State briefly what it's about, or share one relevant fact.",
-    "Base your reply only on the overheard Context below, not on your own prior conversation. Offer a concise, useful fact about that topic.",
-    "The Context below was picked up passively from nearby speech. Identify its topic in one sentence and add something useful about it."
+    "Something was just said nearby (see Context below). Jump in naturally with a related remark or fact, like you're part of the conversation - do not describe or summarize what was said, just add to it.",
+    "React to the Context below as if you just picked up on it mid-conversation. Add one relevant comment or fact, casually - not a report on what was said.",
+    "The Context below is something you just picked up on. Chime in with a short, natural remark about it, like you're joining in, not narrating it.",
+    "Based on the Context below, add a brief, relevant thought or fact - phrase it like you're speaking up in the moment, not explaining what was discussed.",
+    "You caught part of a conversation (Context below). Say something short and relevant, as if jumping in yourself - do not describe what was said.",
+    "React naturally to the Context below with a related comment or fact, as if you're part of the conversation. Do not refer to 'the topic' or 'the speaker'.",
+    "Add a short, natural remark to the Context below, like you're speaking up in the room - not a summary, an actual contribution.",
+    "The Context below is something overheard nearby. Respond as if you're jumping into that conversation yourself with a relevant fact or thought - not a recap.",
+    "Given the Context below, contribute one relevant, natural sentence - like you're chiming in on the spot, not reporting back what was said.",
+    "React to the Context below with a short, natural interjection - a related fact, opinion, or quip, phrased as if you're speaking directly, not describing the scene.",
+    "You picked up on the Context below. Speak up with a related remark, like a person joining in - skip any mention of 'the topic' or 'the conversation'.",
+    "Based on the Context below (not your earlier conversation), add your own short remark or fact to the moment - speak as if present, not as an outside observer.",
+    "Chime in on the Context below with one natural sentence, like you overheard it and have something to add - not like you're summarizing a transcript.",
+    "The Context below is ambient chatter you caught. React to it directly and briefly, the way someone would if they overheard and couldn't help but comment."
   ]
 }

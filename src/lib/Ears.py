@@ -63,6 +63,7 @@ class Ears:
         # Threading Management
         self.__threads = Threads()
         self.__process_handle = None # Subprocess for arecord
+        self.__was_muted = False
 
         # Callback handlers
         self.__on_listen = on_listen
@@ -143,7 +144,17 @@ class Ears:
         # ended, so checking the mute state there would be too late to stop
         # the robot from hearing its own voice.
         if self.__is_muted and self.__is_muted():
+            # Reset once, right as muting begins, so an utterance that was
+            # mid-flight when the robot started talking doesn't sit frozen
+            # with a stale start time - left alone, the first chunk fed
+            # after unmuting would see elapsed time stretched across the
+            # whole mute gap and could force-finalize a bogus, truncated
+            # utterance, eating the real speech that follows.
+            if not self.__was_muted:
+                self._segmenter.reset()
+                self.__was_muted = True
             return
+        self.__was_muted = False
 
         utterance = self._segmenter.process(data)
         if not utterance:

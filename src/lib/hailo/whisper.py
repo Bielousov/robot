@@ -379,6 +379,32 @@ class UtteranceSegmenter:
         # byte of audio eventually gets a VAD decision.
         self._vad_buffer = b""
 
+    def reset(self):
+        """Discard any in-flight utterance and stale timing/VAD state.
+
+        Callers that stop feeding process() for a while (e.g. Ears muting
+        capture during the robot's own TTS playback) must call this when
+        that gap *starts*, not just skip process() calls - otherwise
+        _start_time/_speech_active are left pointing at whatever was
+        happening right before the gap, and the first chunk fed after the
+        gap sees an elapsed_ms stretched across the whole gap, which can
+        immediately force-finalize a bogus, truncated utterance and eat the
+        real speech that follows.
+        """
+        self._speech_active = False
+        self._silence_bytes = 0
+        self._speech_bytes = 0
+        self._frames = []
+        self._start_time = 0.0
+        self._ready_for_early_emit = False
+        self._prebuffer = []
+        self._prebuffer_held = 0
+        self._vad_buffer = b""
+        if self._vad_active:
+            self._vad_active = False
+            self._on_vad_change(False)
+        self._vad.reset_states()
+
     def process(self, data: bytes):
         """Feed one chunk of audio. Returns (pcm_bytes, utterance_ms) when
         an utterance just finished, otherwise None."""

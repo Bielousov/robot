@@ -5,7 +5,8 @@ real-time transcription on a continuously-listening mic:
 
 - UtteranceSegmenter: turns a raw PCM stream into finished utterances using
   Silero VAD, with early/pause-based emission so long utterances don't wait
-  for full silence before producing a result.
+  for full silence before producing a result, and a rolling prebuffer that
+  recovers the lead-in audio lost to the VAD gate's onset latency.
 - WhisperClient: wraps Speech2Text itself, adding a repetition penalty
   (prevents hallucinated filler words on near-silence), a spectral pre-filter
   and crest-factor check (both computed only over VAD-flagged speech frames,
@@ -38,7 +39,12 @@ HAILO_MODELS_PATH = LIB_PATH / "hailo" / "models"
 # this replaced WebRTC VAD). Outputs a continuous speech probability per
 # chunk rather than webrtcvad's discrete 0-3 "aggressiveness" levels; a
 # single probability threshold controls sensitivity instead.
-VAD_THRESHOLD = float(os.getenv("WHISPER_VAD_THRESHOLD", "0.5"))
+#
+# Lowered from 0.5: short phrases were consistently losing their first
+# syllable(s) because VAD took a frame or two to cross the gate after
+# speech actually started. 0.35 trips sooner without letting steady-state
+# noise through (see PREBUFFER_MS below for the other half of the fix).
+VAD_THRESHOLD = float(os.getenv("WHISPER_VAD_THRESHOLD", "0.35"))
 
 # Silero's model requires an EXACT chunk size per sample rate - not a
 # configurable ms duration like WebRTC VAD accepted (10/20/30ms). 512
@@ -129,6 +135,13 @@ PAUSE_TO_EMIT_MS = float(os.getenv("WHISPER_PAUSE_TO_EMIT_MS", "400"))  # Brief 
 # Minimum speech duration before sending to model
 # Prevents isolated noise from triggering transcription
 MIN_SPEECH_MS = float(os.getenv("WHISPER_MIN_SPEECH_MS", "500"))
+
+# How much audio to keep buffered from *before* the VAD gate opens, so it
+# can be prepended once speech is confirmed. The gate only flips on a frame
+# or two after speech genuinely starts, which was clipping the first
+# syllable(s) of short phrases - this recovers that lead-in instead of
+# needing an even lower/noisier VAD_THRESHOLD to compensate.
+PREBUFFER_MS = float(os.getenv("WHISPER_PREBUFFER_MS", "300"))
 
 # Hallucination prevention: repetition penalty factor
 # Hailo's default is 1.5 (prevents silent audio hallucination)
@@ -328,13 +341,14 @@ def clean_transcription(text: str, previous_texts: list[str] = None) -> str:
 class UtteranceSegmenter:
     """Turns a stream of raw PCM chunks into finished utterances using Silero VAD."""
 
-    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = MIN_SPEECH_MS, vad: SileroVAD = None, early_transcribe_ms: float = EARLY_TRANSCRIBE_MS, pause_to_emit_ms: float = PAUSE_TO_EMIT_MS, on_vad_change=None, on_drop=None, on_pause_emit=None):
+    def __init__(self, sample_rate: int, silence_timeout_ms: int, max_utterance_ms: int, min_speech_ms: float = MIN_SPEECH_MS, vad: SileroVAD = None, early_transcribe_ms: float = EARLY_TRANSCRIBE_MS, pause_to_emit_ms: float = PAUSE_TO_EMIT_MS, prebuffer_ms: float = PREBUFFER_MS, on_vad_change=None, on_drop=None, on_pause_emit=None):
         self._sample_rate = sample_rate
         self._silence_timeout_bytes = int(sample_rate * 2 * silence_timeout_ms / 1000)
         self._max_utterance_ms = max_utterance_ms
         self._min_speech_bytes = int(sample_rate * 2 * min_speech_ms / 1000)
         self._early_transcribe_bytes = int(sample_rate * 2 * early_transcribe_ms / 1000) if early_transcribe_ms > 0 else 0
         self._pause_to_emit_bytes = int(sample_rate * 2 * pause_to_emit_ms / 1000)
+        self._prebuffer_bytes = int(sample_rate * 2 * prebuffer_ms / 1000)
         self._vad = vad or _default_vad()
         self._vad_frame_bytes = _vad_frame_bytes(sample_rate)
 
@@ -351,6 +365,12 @@ class UtteranceSegmenter:
         self._start_time = 0.0
         self._vad_active = False
         self._ready_for_early_emit = False  # True after we have enough speech
+
+        # Rolling lead-in buffer of pre-speech audio, prepended once the VAD
+        # gate opens so the first syllable(s) spoken while it was still
+        # closed aren't lost.
+        self._prebuffer = []
+        self._prebuffer_held = 0
 
         # Silero requires an exact chunk size (32ms @16kHz) that generally
         # won't evenly divide whatever size the caller reads from the mic
@@ -382,6 +402,11 @@ class UtteranceSegmenter:
             if not self._speech_active:
                 self._start_time = time.time()
                 self._speech_bytes = 0
+                # Recover the lead-in the gate missed while it was still
+                # closed, then drop it - it's now part of _frames.
+                self._frames.extend(self._prebuffer)
+                self._prebuffer = []
+                self._prebuffer_held = 0
             self._speech_active = True
             self._silence_bytes = 0
             self._speech_bytes += len(data)
@@ -394,6 +419,14 @@ class UtteranceSegmenter:
             return None
 
         if not self._speech_active:
+            # Keep the trailing _prebuffer_bytes of pre-speech audio around
+            # in case speech starts on the next chunk(s).
+            if self._prebuffer_bytes > 0:
+                self._prebuffer.append(data)
+                self._prebuffer_held += len(data)
+                while self._prebuffer_held > self._prebuffer_bytes and len(self._prebuffer) > 1:
+                    dropped = self._prebuffer.pop(0)
+                    self._prebuffer_held -= len(dropped)
             return None
 
         # Pause detected - check if we should emit for early transcription

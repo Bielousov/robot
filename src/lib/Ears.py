@@ -51,9 +51,13 @@ class Ears:
         # early/pause-based emission here - wake-word utterances are short
         # and should be transcribed whole, not split mid-phrase the way the
         # console test harness splits long conversational speech.
+        #
+        # silence_timeout_ms raised from 300: that was short enough that a
+        # normal mid-phrase breath/pause got treated as the end of speech,
+        # breaking a single phrase into multiple truncated utterances.
         self._segmenter = UtteranceSegmenter(
             sample_rate,
-            silence_timeout_ms=300,
+            silence_timeout_ms=600,
             max_utterance_ms=15_000,
             min_speech_ms=100,
             early_transcribe_ms=0,

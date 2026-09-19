@@ -22,7 +22,7 @@ def main():
 
         def runThread():
             dice = random.triangular(0, 1, 0);
-            if (eyes.focusPoint != [0, 0] & dice > 0.95) or dice > 0.95:
+            if (eyes.focusPoint != [0, 0] and dice > 0.95) or dice > 0.95:
                 eyes.wonder()
             elif dice > 0.9:
                 eyes.blink()

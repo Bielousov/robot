@@ -24,7 +24,7 @@ class Eyes:
         self.height = height
         self.cascaded = cascaded
         self.rotate = 1
-        self.orientation = 0
+        self.orientation = 1
         self.contrast = 64
 
         self.focusPoint = [0, 0]  # [x, y]

@@ -19,12 +19,12 @@ EyeBitmap = np.array([
 EyeBitmap.flags.writeable = False
 
 class Eyes:
-    def __init__(self, width=8, height=8, cascaded=2, port=0, device=0):
+    def __init__(self, width=8, height=8, cascaded=2, port=0, device=0, orientation=0):
         self.width = width
         self.height = height
         self.cascaded = cascaded
+        self.orientation = orientation
         self.rotate = 0
-        self.orientation = 90
         self.contrast = 64
 
         self.focusPoint = [0, 0]  # [x, y]

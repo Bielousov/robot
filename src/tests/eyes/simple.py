@@ -13,12 +13,13 @@ from lib.Eyes import Eyes
 from lib.Threads import Thread, Threads
 
 INTERVAL = 1 / 30 #FPS
+ORIENTATION = -90
 SPI_DEV_PORT = 0
 SPI_DEV_DEVICE=0
 
 def main():
     try:
-        eyes = Eyes(port = SPI_DEV_PORT, device = SPI_DEV_DEVICE)
+        eyes = Eyes(port = SPI_DEV_PORT, device = SPI_DEV_DEVICE, orientation = ORIENTATION)
 
         def runThread():
             dice = random.triangular(0, 1, 0);

@@ -156,8 +156,8 @@ class Robot:
             print(f"[Frequency Manager Error] {e}")
 
     def _eyes_handler(self):
-        if self.state.is_speaking == True or self._is_own_voice_playing() == True:
-            self.eyes.set_openness(0.75)
+        if self.state.is_thinking == True or self.state.is_listening == True or self.state.is_speaking == True or self._is_own_voice_playing() == True:
+            self.eyes.set_openness(random.uniform(0.6, 0.9), steps=4)
         else:
             self.eyes.set_openness(1 if self.state.is_awake else 0)
 
@@ -193,6 +193,7 @@ class Robot:
     def _on_listen(self, listening: bool):
         """Callback for Ears to send recognized text for processing."""
         self.state.is_listening = listening
+        self.eyes.blink()
 
     def _on_hear_speach(self, text: str = ""):
         """Callback for audio gating and recognized text handling.

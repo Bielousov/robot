@@ -13,7 +13,7 @@ from lib.Eyes import Eyes
 from lib.Threads import Thread, Threads
 
 INTERVAL = 1 / 30 #FPS
-SPI_DEV_PORT = 10
+SPI_DEV_PORT = 0
 SPI_DEV_DEVICE=0
 
 def main():
@@ -29,6 +29,7 @@ def main():
         
         threads = Threads()
         eyesThread = threads.start(INTERVAL, runThread)
+        eyes.open()
 
         while True:
             time.sleep(1)

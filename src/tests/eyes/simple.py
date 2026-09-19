@@ -12,10 +12,12 @@ from lib.Eyes import Eyes
 from lib.Threads import Thread, Threads
 
 INTERVAL = 1 / 30 #FPS
+SPI_DEV_PORT = 10
+SPI_DEV_DEVICE=0
 
 def main():
     try:
-        eyes = Eyes()
+        eyes = Eyes(port = SPI_DEV_PORT, device = SPI_DEV_DEVICE)
 
         def runThread():
             print("running eyes thread")

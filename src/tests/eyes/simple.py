@@ -33,7 +33,7 @@ def main():
         eyes.open()
 
         while True:
-            time.sleep(0.05)
+            time.sleep(0.01)
 
     except KeyboardInterrupt:
         print("\n[Eyes] Stopping...")

@@ -1,6 +1,7 @@
 dotenv
 joblib
-luma
+luma.core
+luma.led_matrix
 numpy==2.3.4
 ollama
 psutil

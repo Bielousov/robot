@@ -1,5 +1,6 @@
 dotenv
 joblib
+luma
 numpy==2.3.4
 ollama
 psutil

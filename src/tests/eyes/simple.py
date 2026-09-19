@@ -21,7 +21,6 @@ def main():
         eyes = Eyes(port = SPI_DEV_PORT, device = SPI_DEV_DEVICE)
 
         def runThread():
-            print("running eyes thread")
             if random.triangular(0, 1, 0) > 0.99:
                 eyes.wonder()
             elif random.triangular(0, 1, 0) > 0.95:

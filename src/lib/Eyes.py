@@ -23,7 +23,7 @@ class Eyes:
         self.width = width
         self.height = height
         self.cascaded = cascaded
-        self.rotate = 0
+        self.rotate = 90
         self.orientation = 0
         self.contrast = 64
 

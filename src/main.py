@@ -151,6 +151,7 @@ class Robot:
 
             if self.brain_thread is not None:
                 self.threads.set_interval(self.brain_thread, interval)
+                self.threads.set_interval(self.eyes_thread, interval)
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
 
@@ -166,11 +167,12 @@ class Robot:
         """Callback for Voice to indicate when speaking is done."""
         self.state.is_speaking = speaking
         self.state.set_last_spoke()
+        self.eyes.set_openness(0.75)
 
     # Grace period after the speaker stops so Ears ignores any trailing
     # acoustic decay (room reverb, mic buffering lag) instead of picking it
     # up as the start of a new utterance.
-    _PLAYBACK_MUTE_TAIL_S = 0.4
+    _PLAYBACK_MUTE_TAIL_S = 0.2
 
     def _on_playback(self, playing: bool):
         """Callback for Voice to mark the actual speaker-output window."""

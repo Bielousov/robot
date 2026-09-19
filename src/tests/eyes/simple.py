@@ -11,30 +11,25 @@ if str(PROJECT_PATH) not in sys.path:
 from lib.Eyes import Eyes
 from lib.Threads import Thread, Threads
 
-
-def EyesThread(eyes, threads):
-  threadInterval = 1 / 30 # 30 fps
-
-  def runThread():
-    print("running eyes thread")
-    if random.triangular(0, 1, 0) > 0.99:
-           eyes.wonder()
-    elif random.triangular(0, 1, 0) > 0.95:
-           eyes.blink()
-
-    eyes.render()
-    
-  print(f"setting up eyes thread {threadInterval}")
-  return Thread(threadInterval, runThread, threads.run_event)
+INTERVAL = 1 / 30 #FPS
 
 def main():
     try:
         eyes = Eyes()
+
+        def runThread():
+            print("running eyes thread")
+            if random.triangular(0, 1, 0) > 0.99:
+                eyes.wonder()
+            elif random.triangular(0, 1, 0) > 0.95:
+                eyes.blink()
+            eyes.render()
+        
         threads = Threads()
-        threads.start(EyesThread(eyes, threads))
+        eyesThread = threads.start(INTERVAL, runThread)
     except KeyboardInterrupt:
         print("\n[Eyes] Stopping...")
-        threads.stop()
+        eyesThread.stop()
 
 if __name__ == "__main__":
     main()

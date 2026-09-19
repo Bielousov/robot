@@ -19,7 +19,7 @@ EyeBitmap = np.array([
 EyeBitmap.flags.writeable = False
 
 class Eyes:
-    def __init__(self, width=8, height=8, cascaded=2):
+    def __init__(self, width=8, height=8, cascaded=2, port=10, device=0):
         self.width = width
         self.height = height
         self.cascaded = cascaded
@@ -32,7 +32,7 @@ class Eyes:
         self.pupilSize = 3
 
         # Serial and device
-        self.serial = spi(port=0, device=0, gpio=noop())
+        self.serial = spi(port, device, gpio=noop())
         self.device = max7219(
             self.serial,
             cascaded=self.cascaded,

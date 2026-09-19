@@ -1,6 +1,7 @@
 
 import random
 import sys
+import time
 from pathlib import Path
 
 # Anchor to project root (src) so `config` and `lib` resolve like other tests.
@@ -29,6 +30,10 @@ def main():
         
         threads = Threads()
         eyesThread = threads.start(INTERVAL, runThread)
+
+        while True:
+            time.sleep(1)
+
     except KeyboardInterrupt:
         print("\n[Eyes] Stopping...")
         eyesThread.stop()

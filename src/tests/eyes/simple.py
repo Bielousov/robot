@@ -33,11 +33,12 @@ def main():
         eyes.open()
 
         while True:
-            time.sleep(1)
+            time.sleep(0.05)
 
     except KeyboardInterrupt:
         print("\n[Eyes] Stopping...")
         eyesThread.stop()
+        time.sleep(0.1)
 
 if __name__ == "__main__":
     main()

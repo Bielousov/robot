@@ -241,6 +241,7 @@ class Robot:
         print("[System] All robot systems initialized")
     
     def stop(self):
+        self.eyes.set_openness(0.4)
         self.state.set_awake(False)
         print("[System] Shutting down...")
         time.sleep(3)

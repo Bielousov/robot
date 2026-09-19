@@ -156,6 +156,11 @@ class Robot:
             print(f"[Frequency Manager Error] {e}")
 
     def _eyes_handler(self):
+        if self._is_own_voice_playing == True:
+            self.eyes.set_openness(0.75)
+        else:
+            self.eyes.set_openness(1 if self.state.is_awake else 0)
+
         dice = random.triangular(0, 1, 0);
         if (self.eyes.focusPoint != [0, 0] and dice > 0.95) or dice > 0.98:
             self.eyes.wonder()
@@ -167,7 +172,6 @@ class Robot:
         """Callback for Voice to indicate when speaking is done."""
         self.state.is_speaking = speaking
         self.state.set_last_spoke()
-        self.eyes.set_openness(0.75)
 
     # Grace period after the speaker stops so Ears ignores any trailing
     # acoustic decay (room reverb, mic buffering lag) instead of picking it

@@ -1,12 +1,13 @@
+import random
 import sys
 import time
-import threading
 from pathlib import Path
 
 import numpy as np
 
 from lib.Dictionary import Dictionary
 from lib.Ears import Ears
+from lib.Eyes import Eyes
 from lib.Mind import Mind
 from lib.ModelManager import ModelManager
 from lib.Threads import Threads
@@ -86,7 +87,10 @@ class Robot:
             is_muted=self._is_own_voice_playing,
         )
 
-        # 3. Voice Setup
+        # 3. Eyes setup
+        self.eyes = Eyes(orientation = -90)
+
+        # 4. Voice Setup
         self.voice = Voice(
             debug=Env.Debug,
             voice_model_name=Env.Voice,
@@ -95,10 +99,10 @@ class Robot:
             on_playback=self._on_playback,
         )
         
-        # 4. Intent handler setup
+        # 5. Intent handler setup
         self.intent = IntentHandler(self)
 
-        # 5. Custom Threading Manager
+        # 6. Custom Threading Manager
         self.threads = Threads()
         self.brain_thread = None
         self.logic_thread = None
@@ -149,6 +153,14 @@ class Robot:
                 self.threads.set_interval(self.brain_thread, interval)
         except Exception as e:
             print(f"[Frequency Manager Error] {e}")
+
+    def _eyes_handler(self):
+        dice = random.triangular(0, 1, 0);
+        if (self.eyes.focusPoint != [0, 0] and dice > 0.95) or dice > 0.98:
+            self.eyes.wonder()
+        elif dice > 0.92:
+            self.eyes.blink()
+        self.eyes.render()
 
     def _on_speak(self, speaking: bool):
         """Callback for Voice to indicate when speaking is done."""
@@ -212,6 +224,9 @@ class Robot:
         # Start a small manager that periodically enforces the desired
         # interval based on awake/sleep state.
         self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
+
+        # Start eyes thread
+        self.eyes_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._eyes_handler)
 
         # Start the Ears background process
         self.ears.start_listening()

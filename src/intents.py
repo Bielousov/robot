@@ -53,12 +53,14 @@ class IntentHandler:
     def _handle_sleep_intent(self): 
         self._handle_speak_intent(self.robot.quick_responses.pick("goodbye", default="Goodbye"))
         self.robot.state.is_awake = False
+        self.robot.eyes.close()
 
     def _handle_wake_up_intent(self): 
         self.robot.state.is_awake = True
         self.robot.state.set_last_spoke()
         if not self.robot.state.prompts:
             self.robot.state.prompts.append("hello")
+        self.robot.eyes.open()
           
     def _handle_prompt_intent(self, raw_prompts):
         self.robot.state.is_thinking = True
@@ -73,6 +75,7 @@ class IntentHandler:
                 self._debug(f"LLM Error: {error}", tag="Error")
 
             if result:
+                self.robot.eyes.wonder()
                 if self.robot.state.responses:
                     self.robot.state.responses[-1] += result
                 else:
@@ -96,13 +99,16 @@ class IntentHandler:
 
         self._debug(f"Processing Prompts: {processed_prompts}", tag="ROBOT")
         self.robot.mind.think(processed_prompts, callback, context=heard_context)
+        self.robot.eyes.wonder()
 
     def _handle_speak_intent(self, phrase):
         if not phrase:
             return
         self.robot.voice.say(phrase)
+        self.robot.eyes.wonder()
         self._debug(f"Saying: {phrase}", tag="ROBOT")
 
     def _unhandled_intent(self, intent):
         self._debug(f"Unhandled Intent {intent}", tag="ROBOT")
+        self.robot.eyes.blink()
         return

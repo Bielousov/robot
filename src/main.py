@@ -164,7 +164,7 @@ class Robot:
         dice = random.triangular(0, 1, 0);
         if (self.eyes.focusPoint != [0, 0] and dice > 0.95) or dice > 0.98:
             self.eyes.wonder()
-        elif dice > 0.92:
+        elif dice > 0.9:
             self.eyes.blink()
         self.eyes.render()
 

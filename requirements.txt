@@ -4,6 +4,7 @@ luma.core
 luma.led_matrix
 numpy==2.3.4
 ollama
+onnxruntime
 psutil
 python-dotenv
 scikit-learn==1.9.0

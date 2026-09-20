@@ -104,7 +104,7 @@ class IntentHandler:
         if not phrase:
             return
         self.robot.voice.say(phrase)
-        self.robot.eyes.wonder()
+        self.robot.eyes.focus(0, 0)
         self._debug(f"Saying: {phrase}", tag="ROBOT")
 
     def _unhandled_intent(self, intent):

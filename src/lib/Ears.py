@@ -24,6 +24,7 @@ class Ears:
             on_record: Optional[Callable[[str], bool]] = None,
             on_wake: Optional[Callable[[str], None]] = None,
             is_muted: Optional[Callable[[], bool]] = None,
+            device: str = "plughw:0,0",
             debug: bool = False,
         ):
 
@@ -38,6 +39,7 @@ class Ears:
         print(f"[Ears] Whisper model '{model_name}' is ready.")
 
         # Audio Config
+        self.device = device
         self.sample_rate = sample_rate
         self.wake_word = wake_word.lower()
         self.wake_aliases = [word.strip().lower() for word in wake_aliases.split(',')]
@@ -119,7 +121,7 @@ class Ears:
         # Ensure the subprocess is alive
         if not self.__process_handle or self.__process_handle.poll() is not None:
             self.__process_handle = subprocess.Popen(
-                ["arecord", "-D", "plughw:0,0", "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
+                ["arecord", "-D", self.device, "-f", "S16_LE", "-r", str(self.sample_rate), "-c", "1", "-t", "raw"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 bufsize=self.buffer_size

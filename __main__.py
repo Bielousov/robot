@@ -66,8 +66,6 @@ def start_app():
 
     except KeyboardInterrupt:
         print("\n[System] Shutdown signal received (Ctrl+C)...")
-        robot.stop()
-        print("[System] Shutting down.")
         time.sleep(2)
 
     finally:

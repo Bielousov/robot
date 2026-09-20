@@ -75,7 +75,6 @@ class IntentHandler:
                 self._debug(f"LLM Error: {error}", tag="Error")
 
             if result:
-                self.robot.eyes.wonder()
                 if self.robot.state.responses:
                     self.robot.state.responses[-1] += result
                 else:

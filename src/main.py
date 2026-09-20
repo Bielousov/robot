@@ -222,6 +222,7 @@ class Robot:
             print(f"\n[EVENT] Wake Word Detected!")
             print(f" > Message: {text}")
             self.state.prompts.append(text)
+            self.eyes.focus(0, 0)
 
     def run(self):
         # Create brain and logic threads and keep references so we can change

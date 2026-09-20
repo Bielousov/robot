@@ -1,9 +1,8 @@
+import random
 import time
 import numpy as np
 from collections import deque
 from datetime import datetime
-
-from numpy.random import random
 
 from config import Env
 

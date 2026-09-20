@@ -156,7 +156,7 @@ class Robot:
             print(f"[Frequency Manager Error] {e}")
 
     def _eyes_handler(self):
-        if self.state.is_thinking == True or self.state.is_speaking == True or self._is_own_voice_playing() == True:
+        if self.state.is_thinking == True or self.state.is_speaking == True:
             self.eyes.set_openness(0.75, steps=4)
         else:
             self.eyes.set_openness(1 if self.state.is_awake else 0)
@@ -176,7 +176,7 @@ class Robot:
     # Grace period after the speaker stops so Ears ignores any trailing
     # acoustic decay (room reverb, mic buffering lag) instead of picking it
     # up as the start of a new utterance.
-    _PLAYBACK_MUTE_TAIL_S = 0.2
+    _PLAYBACK_MUTE_TAIL_S = 0.1
 
     def _on_playback(self, playing: bool):
         """Callback for Voice to mark the actual speaker-output window."""

@@ -62,7 +62,7 @@ def start_app():
                 running = False
 
             # Minimal sleep to prevent CPU spiking on the RPi5
-            time.sleep(0.01)
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("\n[System] Shutdown signal received (Ctrl+C)...")

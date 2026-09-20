@@ -161,11 +161,11 @@ class Robot:
         else:
             self.eyes.set_openness(1 if self.state.is_awake else 0)
 
-        dice = random.triangular(0, 1, 0);
-        if (self.eyes.focusPoint != [0, 0] and dice > 0.95) or dice > 0.98:
+        if (self.eyes.focusPoint != [0, 0] and self.state.dice(0.95)) or self.state.dice(0.99):
             self.eyes.wonder()
-        elif dice > 0.9:
+        elif self.state.dice(0.9):
             self.eyes.blink()
+
         self.eyes.render()
 
     def _on_speak(self, speaking: bool):
@@ -193,7 +193,8 @@ class Robot:
     def _on_listen(self, listening: bool):
         """Callback for Ears to send recognized text for processing."""
         self.state.is_listening = listening
-        self.eyes.blink()
+        if self.state.dice(0.75):
+            self.eyes.blink()
 
     def _on_hear_speach(self, text: str = ""):
         """Callback for audio gating and recognized text handling.
@@ -229,12 +230,13 @@ class Robot:
         # their intervals at runtime.
         self.brain_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_tick)
 
-        # Start a small manager that periodically enforces the desired
-        # interval based on awake/sleep state.
-        self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
 
         # Start eyes thread
         self.eyes_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._eyes_handler)
+
+        # Start a small manager that periodically enforces the desired
+        # interval based on awake/sleep state.
+        self.freq_thread = self.threads.start(1 / Env.BrainFrequencyDelta, self._brain_frequency_manager)
 
         # Start the Ears background process
         self.ears.start_listening()
@@ -246,13 +248,13 @@ class Robot:
         self.state.set_awake(False)
         print("[System] Shutting down...")
         time.sleep(3)
+        self.mind.stop()
         self.threads.stop()
         self.ears.stop_listening()
         # Let any pending speech (e.g. a goodbye said during the grace period
         # above) finish playing before tearing down Voice's subprocesses.
         self.voice.wait_until_idle()
         self.voice.stop()
-        self.mind.stop()
 
 if __name__ == "__main__":
     _verify_models_exist()

@@ -110,4 +110,5 @@ class IntentHandler:
     def _unhandled_intent(self, intent):
         self._debug(f"Unhandled Intent {intent}", tag="ROBOT")
         self.robot.eyes.blink()
+        self.robot.eyes.blink()
         return

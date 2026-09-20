@@ -3,6 +3,8 @@ import numpy as np
 from collections import deque
 from datetime import datetime
 
+from numpy.random import random
+
 from config import Env
 
 class State:
@@ -73,6 +75,9 @@ class State:
 
         return seconds
 
+    def dice(self, target):
+        dice = random.triangular(0, 1, 0);
+        return dice > target
 
     def get_context(self):
         """

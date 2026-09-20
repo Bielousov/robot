@@ -12,11 +12,11 @@ sounddevice
 spidev
 
 # Model Training - CPU (PyTorch + LoRA fine-tuning for personality adapter)
-torch
-peft
-transformers
-datasets
-huggingface_hub
+torch; sys_platform == "darwin"
+peft; sys_platform == "darwin"
+transformers; sys_platform == "darwin"
+datasets; sys_platform == "darwin"
+huggingface_hub; sys_platform == "darwin"
 
 # Model Training - GPU (MLX on Apple Silicon Macs only)
 mlx; sys_platform == "darwin"

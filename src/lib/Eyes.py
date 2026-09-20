@@ -103,6 +103,8 @@ class Eyes:
     def set_openness(self, target, steps=8):
         """Smoothly open/close eyes to target openness (0..1)."""
         target = max(0.0, min(1.0, target))
+        if target == self.openness:
+            return
         step_size = (target - self.openness) / steps
         for i in range(steps):
             self.openness += step_size

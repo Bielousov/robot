@@ -37,7 +37,7 @@ class State:
         """Total word count across all buffered eavesdropped utterances,
         capped at 100 (matches Robot Model training range) so a long-running
         conversation doesn't blow out the feature's scale."""
-        word_count = sum(len(text.split()) for text in self.eavesdrop)
+        word_count = sum(len(text.split()) for _, text in self.eavesdrop)
         return min(word_count, 100)
 
     @property
@@ -102,12 +102,27 @@ class State:
         ]])
 
     def append_eavesdrop(self, text: str):
-        """Append text to eavesdrop, maintaining max length limit automatically."""
-        self.eavesdrop.append(text)
-    
-    def get_eavesdrop_context(self) -> list[str]:
-        """Return eavesdrop history as a list of strings."""
-        return list(self.eavesdrop)
+        """Append (heard_at, text) to eavesdrop, maintaining max length limit
+        automatically. Timestamped so callers can tell stale overheard chatter
+        from something said moments ago (e.g. a missed wake word immediately
+        followed by a successful one)."""
+        self.eavesdrop.append((time.time(), text))
+
+    def get_eavesdrop_context(self, max_age_s: float = None) -> list[str]:
+        """Return eavesdrop history as a list of "[HH:MM:SS] text" strings,
+        oldest first.
+
+        max_age_s, if given, drops entries heard longer ago than that -
+        callers that don't need the model reasoning over long-stale chatter
+        (anything but the 'utter' free-will prompt) should pass a small
+        window rather than the full buffer.
+        """
+        now = time.time()
+        return [
+            f"[{datetime.fromtimestamp(heard_at).strftime('%H:%M:%S')}] {text}"
+            for heard_at, text in self.eavesdrop
+            if max_age_s is None or (now - heard_at) <= max_age_s
+        ]
 
     def set_awake(self, is_awake_next):
         self.is_awake_next = is_awake_next

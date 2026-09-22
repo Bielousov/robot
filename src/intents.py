@@ -84,10 +84,6 @@ class IntentHandler:
                 self.robot.state.is_thinking = False
 
         processed_prompts = []
-        heard_context = self.robot.state.get_eavesdrop_context()
-        if heard_context:
-            self.robot.state.eavesdrop.clear()
-        
         for p in raw_prompts:
             if self.robot.prompts.has(p):
 
@@ -95,6 +91,23 @@ class IntentHandler:
                 processed_prompts.append(self.robot.prompts.pick(p))
             else:
                 processed_prompts.append(p)
+
+        # 'utter' (the spontaneous "chime in on what you just heard" prompt -
+        # see dictionary/prompts.json) is the only template that reasons over
+        # overheard chatter at length, so it gets the full buffer. Every other
+        # prompt (hello/goodbye/bless_you, direct wake-word speech) still gets
+        # a short trailing window rather than nothing: a wake word the robot
+        # missed is itself captured as eavesdropped speech, and the follow-up
+        # wake word that actually lands should carry that near-miss along
+        # rather than losing it - just not the whole (possibly stale, costly
+        # to re-evaluate on CPU) buffer.
+        NON_UTTERANCE_CONTEXT_WINDOW_S = 30
+        is_utterance = 'utter' in raw_prompts
+        heard_context = self.robot.state.get_eavesdrop_context(
+            max_age_s=None if is_utterance else NON_UTTERANCE_CONTEXT_WINDOW_S
+        )
+        if self.robot.state.eavesdrop:
+            self.robot.state.eavesdrop.clear()
 
         self._debug(f"Processing Prompts: {processed_prompts}", tag="ROBOT")
         self.robot.mind.think(processed_prompts, callback, context=heard_context)

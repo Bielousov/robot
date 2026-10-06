@@ -48,6 +48,9 @@ class Utterances:
     # True floor: never fire before this many seconds of silence, so a
     # brief pause mid-conversation is never mistaken for an opening.
     MIN_SILENCE_S = 5
+    # Cooldown after the robot last spoke (any reply, not just an utterance),
+    # so it doesn't chime in again on the very next pause.
+    MIN_SINCE_SPOKE_S = 180
 
     # _brain_tick calls consider() on every tick - tens of times a second
     # while awake (Env.BrainFrequencyGamma) - so even a 50/50 coin flip would
@@ -55,7 +58,7 @@ class Utterances:
     # average real time between fires at full confidence, not "next tick":
     # the per-tick probability is scaled down so that, across all the ticks
     # in that window, firing at least once is about as likely as not.
-    MEAN_SECONDS_TO_FIRE = 60  # ~1 minute
+    MEAN_SECONDS_TO_FIRE = 180  # ~3 minutes
 
     def __init__(self, robot):
         self.robot = robot
@@ -114,6 +117,8 @@ class Utterances:
         if state.eavesdropped_context < self.MIN_CONTEXT:
             return None
         if state.time_since_heard < self.MIN_SILENCE_S:
+            return None
+        if state.last_spoke_time_diff < self.MIN_SINCE_SPOKE_S:
             return None
 
         return self._predict_confidence(

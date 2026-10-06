@@ -32,12 +32,21 @@ class State:
     def has_pending_response(self):
         return 1.0 if len(self.responses) > 0 else 0.0
 
+    # Only chatter heard this recently counts toward eavesdropped_context -
+    # otherwise a single "ok" after a long quiet spell would read as a full
+    # conversation because the buffer still holds words from long ago.
+    EAVESDROP_CONTEXT_WINDOW_S = 120
+
     @property
     def eavesdropped_context(self):
-        """Total word count across all buffered eavesdropped utterances,
-        capped at 100 (matches Robot Model training range) so a long-running
-        conversation doesn't blow out the feature's scale."""
-        word_count = sum(len(text.split()) for _, text in self.eavesdrop)
+        """Total word count across recently (EAVESDROP_CONTEXT_WINDOW_S)
+        buffered eavesdropped utterances, capped at 100 (matches Robot Model
+        training range) so a long-running conversation doesn't blow out the
+        feature's scale."""
+        cutoff = time.time() - self.EAVESDROP_CONTEXT_WINDOW_S
+        word_count = sum(
+            len(text.split()) for heard_at, text in self.eavesdrop if heard_at >= cutoff
+        )
         return min(word_count, 100)
 
     @property

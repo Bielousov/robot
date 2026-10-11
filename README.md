@@ -126,6 +126,30 @@ Run:
   bash install.sh
 ```
 
+### Autostart on boot (systemd)
+
+`install.sh` installs and enables the service as its last step. To set it up manually:
+
+[system/services/robot.service](system/services/robot.service) assumes user `pip` and repo at `/home/pip/robot` with venv in `.venv`. Edit `User`, `Group`, `WorkingDirectory` and `ExecStart` if yours differ. The user needs to be in the `audio` and `spi` groups (`sudo usermod -aG audio,spi pip`).
+
+```bash
+  sudo cp system/services/robot.service /etc/systemd/system/robot.service
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now robot.service
+```
+
+Manage it:
+
+```bash
+  systemctl status robot          # is it running
+  journalctl -u robot -f          # follow logs
+  sudo systemctl restart robot    # after pulling new code / editing .env
+  sudo systemctl stop robot       # stop before running `python .` by hand (mic/Hailo/SPI are exclusive)
+  sudo systemctl disable robot    # turn off autostart
+```
+
+After editing the unit file, copy it again and run `sudo systemctl daemon-reload`.
+
 ## State
 
 ### Awake status

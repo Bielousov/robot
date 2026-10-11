@@ -1,4 +1,4 @@
-import os, select, sys, time
+import os, select, signal, sys, time
 
 # Set the path for the v3 directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -6,7 +6,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src.lib'))
 
 from src.main import Robot
 
+def _handle_sigterm(signum, frame):
+    # systemd stops the service with SIGTERM - route it through the same
+    # clean shutdown path as Ctrl+C
+    raise KeyboardInterrupt
+
 def start_app():
+    signal.signal(signal.SIGTERM, _handle_sigterm)
+
+    # Under systemd there is no console (stdin is /dev/null), so skip the
+    # keyboard control loop instead of reading an endless stream of EOFs
+    interactive = sys.stdin.isatty()
+
     try:
         robot = Robot()
     except RuntimeError as exc:
@@ -19,7 +30,8 @@ def start_app():
     running = True
     
     print("\n--- Robot Control Active ---")
-    print("Commands: [Enter] = Prompt Fact | [s] = Sleep | [Ctrl+C] = Exit")
+    if interactive:
+        print("Commands: [Enter] = Prompt Fact | [s] = Sleep | [Ctrl+C] = Exit")
 
     try:
         # Start the robot's internal loops (Brain and Logic)
@@ -33,7 +45,9 @@ def start_app():
                 # Non-blocking check for user input (0.1s timeout)
                 # On Windows, select only works on sockets; 
                 # this works perfectly on RPi5/Linux.
-                rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
+                rlist = []
+                if interactive:
+                    rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
                 
                 if rlist:
                     line = sys.stdin.readline().strip()

@@ -1,13 +1,22 @@
 [Unit]
 Description=Robot
-After=multi-user.target
+After=multi-user.target sound.target
 
 [Service]
 Type=simple
 User=pip
 Group=pip
 WorkingDirectory=/home/pip/robot
-ExecStart=/usr/bin/python3 /home/pip/robot/src/main.py
+# Same as `python .` from the repo root (runs __main__.py), using the venv
+ExecStart=/home/pip/robot/.venv/bin/python /home/pip/robot
+Environment=PYTHONUNBUFFERED=1
+# No console under systemd: __main__.py skips the keyboard loop when stdin is not a TTY
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+# Robot.stop() needs a few seconds for the goodbye and to tear down subprocesses
+KillSignal=SIGTERM
+TimeoutStopSec=30
 Restart=on-failure
 RestartSec=5
 
